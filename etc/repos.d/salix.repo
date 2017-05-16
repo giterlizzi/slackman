@@ -1,0 +1,9 @@
+[packages]
+name=Salix packages
+enabled=false
+mirror=http://slackware.uk/salix/$arch.family/$release.real/
+
+[extra]
+name=Salix extra
+enabled=false
+mirror=http://slackware.uk/salix/$arch.family/extra-$release.real/

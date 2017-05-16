@@ -1,0 +1,20 @@
+.gitignore
+Changes
+lib/Slackware/SlackMan.pm
+lib/Slackware/SlackMan/Command.pm
+lib/Slackware/SlackMan/Config.pm
+lib/Slackware/SlackMan/DB.pm
+lib/Slackware/SlackMan/Package.pm
+lib/Slackware/SlackMan/Parser.pm
+lib/Slackware/SlackMan/Repo.pm
+lib/Slackware/SlackMan/Utils.pm
+bin/slackman
+Makefile.PL
+MANIFEST			This list of files
+README.md
+INSTALL.md
+t/00-load.t
+t/01-package-info.t
+t/manifest.t
+t/pod-coverage.t
+t/pod.t

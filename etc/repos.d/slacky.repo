@@ -1,0 +1,4 @@
+[slackbuilds]
+name=Italian Slackware Community SlackBuilds
+enabled=false
+mirror=http://repository.slacky.eu/slackware{$release.suffix}-{$release.real}/

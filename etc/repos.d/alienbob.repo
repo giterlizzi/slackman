@@ -1,0 +1,13 @@
+[slackbuilds]
+name=AlienBob SlackBuilds
+enabled=false
+mirror=http://bear.alienbase.nl/mirrors/people/alien/sbrepos/$release/$arch/
+changelog=http://bear.alienbase.nl/mirrors/people/alien/sbrepos/ChangeLog.txt
+priority=1
+
+[restricted]
+name=AlienBob Restricted SlackBuilds
+enabled=false
+mirror=http://bear.alienbase.nl/mirrors/people/alien/restricted_sbrepos/$release/$arch/
+changelog=http://bear.alienbase.nl/mirrors/people/alien/restricted_sbrepos/ChangeLog.txt
+priority=2
