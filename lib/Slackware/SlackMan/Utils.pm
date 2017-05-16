@@ -308,10 +308,12 @@ sub get_arch {
 
 sub get_slackware_release {
 
-  my $release = file_read('/etc/slackware-version');
-  chomp($release);
+  my $slackware_version_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
+  my $slackware_version      = file_read($slackware_version_file);
 
-  $release =~ /Slackware (.*)/;
+  chomp($slackware_version);
+
+  $slackware_version =~ /Slackware (.*)/;
   return $1;
 
 }
