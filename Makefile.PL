@@ -17,6 +17,7 @@ WriteMakefile(
     },
     BUILD_REQUIRES => {
         'Test::More' => '0',
+        'Test::Trap' => '0',
     },
     PREREQ_PM => {
         'DBD::SQLite'       => '0',

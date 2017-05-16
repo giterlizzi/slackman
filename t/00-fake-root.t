@@ -15,6 +15,7 @@ my @directories = qw(
   /etc/slackman/repos.d
   /var/lib/slackman
   /var/log
+  /var/lock
   /var/cache/slackman
   /var/log/packages
   /var/log/removed_packages
