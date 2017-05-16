@@ -1,34 +1,34 @@
 [packages]
 name=Slackware{$release.suffix}-$release
 enabled=true
-mirror=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/
-manifest=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/slackware{$release.suffix}/MANIFEST.bz2
+mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+manifest=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/slackware{$release.suffix}/MANIFEST.bz2
 exclude=kde-l10n-*,calligra-l10n-*
 
 [patches]
 name=Slackware{$release.suffix}-$release (Patches)
 enabled=true
-mirror=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/patches/
-gpgkey=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/GPG-KEY
+mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/patches/
+gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
 priority=10
 
 [pasture]
 name=Slackware{$release.suffix}-$release (Pasture)
 enabled=false
-mirror=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/pasture/
-gpgkey=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/GPG-KEY
+mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/pasture/
+gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
 
 [extra]
 name=Slackware{$release.suffix}-$release (Extra)
 enabled=false
-mirror=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/extra/
-gpgkey=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/GPG-KEY
+mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/extra/
+gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
 
 [testing]
 name=Slackware{$release.suffix}-$release (Testing)
 enabled=false
-mirror=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/testing/
-gpgkey=http://mirrors.slackware.com/slackware/{$release.suffix}-$release/GPG-KEY
+mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/testing/
+gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
 priority=-1
 
 [multilib]
