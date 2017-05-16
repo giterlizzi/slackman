@@ -1,9 +1,0 @@
-#!/bin/bash
-
-users=$(who | awk '{print $1}' | sort -u)
-
-update_text=$(perl slackman upgrade --summary)
-
-for user in $users;do
-  DISPLAY=:0 sudo -u $user notify-send "Slackware Packages update" "$update_text"
-done
