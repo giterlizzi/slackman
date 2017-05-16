@@ -3,35 +3,58 @@
 use 5.10.0;
 use strict;
 use warnings FATAL => 'all';
-use Test::More tests => 18;
+use Test::More;
+use File::Basename;
 
-use Slackware::SlackMan::Package qw{:all};
+my $current_directory = dirname(__FILE__);
+$ENV{ROOT} = "$current_directory/root";
 
-my $pkg_1 = 'aaa_base-14.2-x86_64-1.txz';
-my $pkg_2 = 'linux-howtos-20160401-noarch-1.txz';
-my $pkg_3 = 'komodo-ide-10.2.0-x86_64-1_SBo.tgz';
+use_ok('Slackware::SlackMan::Package');
 
-my $pkg_info_1 = package_info($pkg_1);
-my $pkg_info_2 = package_info($pkg_2);
-my $pkg_info_3 = package_info($pkg_3);
+my @pkg_data = (
+  {
+    'package'  => 'aaa_base-14.2-x86_64-1.txz',
+    'expected' => {
+      'name' => 'aaa_base',
+      'version' => '14.2',
+      'arch'    => 'x86_64',
+      'tag'     => '',
+      'build'   => '1'
+    }
+  },
+  {
+    'package'  => 'linux-howtos-20160401-noarch-1.txz',
+    'expected' => {
+      'name' => 'linux-howtos',
+      'version' => '20160401',
+      'arch'    => 'noarch',
+      'tag'     => '',
+      'build'   => '1'
+    }
+  },
+  {
+    'package'  => 'komodo-ide-10.2.0-x86_64-1_SBo.tgz',
+    'expected' => {
+      'name' => 'komodo-ide',
+      'version' => '10.2.0',
+      'arch'    => 'x86_64',
+      'tag'     => 'SBo',
+      'build'   => '1'
+    }
+  }
+);
 
-is ( $pkg_info_1->{'package'},  $pkg_1,         "Expected package: $pkg_1" );
-is ( $pkg_info_1->{'name'},     'aaa_base',     'Expected name:    aaa_base' );
-is ( $pkg_info_1->{'version'},  '14.2',         'Expected version: 14.2' );
-is ( $pkg_info_1->{'arch'},     'x86_64',       'Expected arch:    x86_64' );
-is ( $pkg_info_1->{'tag'},      '',             'Expected tag:     none' );
-is ( $pkg_info_1->{'build'},    1,              'Expected build:   1' );
+use Data::Dumper;
+foreach my $pkg_data (@pkg_data) {
 
-is ( $pkg_info_2->{'package'},  $pkg_2,         "Expected package: $pkg_2" );
-is ( $pkg_info_2->{'name'},    'linux-howtos',  'Expected name:    linux-howtos' );
-is ( $pkg_info_2->{'version'}, '20160401',      'Expected version: 20160401' );
-is ( $pkg_info_2->{'arch'},    'noarch',        'Expected arch:    noarch' );
-is ( $pkg_info_2->{'tag'},     '',              'Expected tag:     none' );
-is ( $pkg_info_2->{'build'},   1,               'Expected build:   1' );
+  my $pkg_info = Slackware::SlackMan::Package::package_info($pkg_data->{'package'});
 
-is ( $pkg_info_3->{'package'}, $pkg_3,          "Expected package: $pkg_3" );
-is ( $pkg_info_3->{'name'},    'komodo-ide',    'Expected name:    komodo-ide' );
-is ( $pkg_info_3->{'version'}, '10.2.0',        'Expected version: 10.2.0' );
-is ( $pkg_info_3->{'arch'},    'x86_64',        'Expected arch:    x86_64' );
-is ( $pkg_info_3->{'tag'},     'SBo',           'Expected tag:     SBo' );
-is ( $pkg_info_3->{'build'},   1,               'Expected build:   1' );
+  foreach my $key (keys %{$pkg_data->{'expected'}}) {
+    is ( $pkg_info->{$key},
+         $pkg_data->{'expected'}->{$key},
+         sprintf('[%s] Expected %s %s got %s', $pkg_data->{'package'}, $pkg_data->{'expected'}->{$key}, $key, $pkg_info->{$key}) );
+  }
+
+}
+
+done_testing();
