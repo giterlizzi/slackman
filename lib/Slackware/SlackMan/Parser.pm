@@ -5,7 +5,7 @@ use warnings;
 
 use 5.010;
 
-no warnings 'experimental';
+no if ($] >= 5.018), 'warnings' => 'experimental';
 use feature "switch";
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
