@@ -45,7 +45,6 @@ use Slackware::SlackMan::Repo qw(:all);
 use Slackware::SlackMan::DB qw(:all);
 use Slackware::SlackMan::Config qw(:all);
 
-
 sub package_info {
 
   my $package_name = shift;
@@ -89,6 +88,7 @@ sub package_info {
   }
 
 }
+
 
 sub package_metadata {
 
@@ -195,6 +195,7 @@ sub package_metadata {
 
 }
 
+
 sub package_version_compare {
 
   my ($old, $new) = @_;
@@ -218,6 +219,7 @@ sub package_version_compare {
 
 }
 
+
 sub package_install {
 
   my $package = shift;
@@ -228,6 +230,7 @@ sub package_install {
   unlink($package) or warn "Failed to delete file: $!";
 
 }
+
 
 sub package_update {
 
@@ -240,6 +243,7 @@ sub package_update {
 
 }
 
+
 sub package_remove {
 
   my $package = shift;
@@ -248,6 +252,7 @@ sub package_remove {
   system('/sbin/removepkg', $package);
 
 }
+
 
 sub package_is_installed {
 
@@ -333,6 +338,7 @@ sub package_available_update {
 
 }
 
+
 sub package_download {
 
   my ($pkg, $packages, $errors) = @_;
@@ -406,9 +412,11 @@ sub package_download {
 
 }
 
+
 sub package_list_installed {
   return $dbh->selectall_hashref(qq/SELECT * FROM history WHERE status = 'installed' ORDER BY name/, 'name', undef);
 }
+
 
 sub package_list_obsolete {
 
@@ -442,10 +450,86 @@ sub package_list_obsolete {
 
 }
 
-
-sub package_history {
-
-
-}
-
 1;
+__END__
+
+=head1 NAME
+
+Slackware::SlackMan::Package - SlackMan Package module
+
+=head1 SYNOPSIS
+
+  use Slackware::SlackMan::Package qw(:all);
+
+  my $pkg_info = package_info('aaa_base-14.2-x86_64-1.tgz');
+
+=head1 DESCRIPTION
+
+Package module for SlackMan.
+
+=head1 EXPORT
+
+No subs are exported by default.
+
+=head1 SUBROUTINES
+
+=head2 package_available_update
+
+=head2 package_dependency
+
+=head2 package_download
+
+=head2 package_info
+
+=head2 package_install
+
+=head2 package_list_installed
+
+=head2 package_list_obsolete
+
+=head2 package_metadata
+
+=head2 package_remove
+
+=head2 package_update
+
+=head2 package_version_compare
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi, C<< <giuseppe.diterlizzi at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<giuseppe.diterlizzi at gmail.com>, or through
+the web interface at L<https://github.com/LotarProject/slackman/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the C<perldoc> command.
+
+  perldoc Slackware::SlackMan::Package
+
+You can also look for information at:
+
+=over 4
+
+=item * GitHub issues (report bugs here)
+
+L<https://github.com/LotarProject/slackman/issues>
+
+=item * SlackMan documentation
+
+L<https://github.com/LotarProject/slackman/wiki>
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This module is free software, you may distribute it under the same terms
+as Perl.
+
+=cut

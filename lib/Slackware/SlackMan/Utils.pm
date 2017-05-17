@@ -372,5 +372,65 @@ sub delete_lock {
 
 }
 
-
 1;
+__END__
+
+=head1 NAME
+
+Slackware::SlackMan::Utils - SlackMan utility module
+
+=head1 SYNOPSIS
+
+  use Slackware::SlackMan::Utils qw(:all);
+
+  my $content = file_read('/etc/slackware-version');
+
+=head1 DESCRIPTION
+
+Config module for SlackMan.
+
+=head1 EXPORT
+
+No subs are exported by default.
+
+=head1 SUBROUTINES
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi, C<< <giuseppe.diterlizzi at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<giuseppe.diterlizzi at gmail.com>, or through
+the web interface at L<https://github.com/LotarProject/slackman/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the C<perldoc> command.
+
+  perldoc Slackware::SlackMan::Utils
+
+You can also look for information at:
+
+=over 4
+
+=item * GitHub issues (report bugs here)
+
+L<https://github.com/LotarProject/slackman/issues>
+
+=item * SlackMan documentation
+
+L<https://github.com/LotarProject/slackman/wiki>
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This module is free software, you may distribute it under the same terms
+as Perl.
+
+=cut
+

@@ -29,7 +29,6 @@ use Data::Dumper;
 
 use Slackware::SlackMan::Utils qw(:all);
 
-
 sub read_config {
 
   my $file = shift;
@@ -140,3 +139,72 @@ our $slackman_conf = {
 };
 
 1;
+__END__
+
+=head1 NAME
+
+Slackware::SlackMan::Config - SlackMan Config module
+
+=head1 SYNOPSIS
+
+  use Slackware::SlackMan::Config qw(:all);
+
+  my $config = read_config('foo.conf');
+
+=head1 DESCRIPTION
+
+Config module for SlackMan.
+
+=head1 EXPORT
+
+No subs are exported by default.
+
+=head1 SUBROUTINES
+
+=head2 read_config
+
+=head1 VARIABLES
+
+=head2 $slackman_conf
+
+  my $cache_directory = $slackman_conf->{'directory'}->{'cache'};
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi, C<< <giuseppe.diterlizzi at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<giuseppe.diterlizzi at gmail.com>, or through
+the web interface at L<https://github.com/LotarProject/slackman/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the C<perldoc> command.
+
+  perldoc Slackware::SlackMan::Config
+
+You can also look for information at:
+
+=over 4
+
+=item * GitHub issues (report bugs here)
+
+L<https://github.com/LotarProject/slackman/issues>
+
+=item * SlackMan documentation
+
+L<https://github.com/LotarProject/slackman/wiki>
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This module is free software, you may distribute it under the same terms
+as Perl.
+
+=cut
+

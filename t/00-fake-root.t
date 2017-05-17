@@ -22,15 +22,15 @@ my @directories = qw(
 );
 
 foreach (@directories) {
-  ok(make_path("$fakeroot_directory/$_"), "Create fakeroot directory $_");
+  ok(make_path("$fakeroot_directory/$_"), "Create fake-root directory $_");
 }
 
-ok(open(FH, '>', "$fakeroot_directory/etc/slackware-version"), 'Create slackware-version file');
+ok(open(FH, '>', "$fakeroot_directory/etc/slackware-version"), 'Create "slackware-version" file');
 
 print FH "Slackware 14.2\n";
 close (FH);
 
-ok(copy("$current_directory/../etc/slackman.conf", "$fakeroot_directory/etc/slackman/slackman.conf"), 'Copy default slackman.conf');
-ok(copy("$current_directory/../etc/repos.d/slackware.repo", "$fakeroot_directory/etc/slackman/repos.d/slackware.repo"), 'Copy slackware.repo configurations');
+ok(copy("$current_directory/../etc/slackman.conf", "$fakeroot_directory/etc/slackman/slackman.conf"), 'Copy default "slackman.conf"');
+ok(copy("$current_directory/../etc/repos.d/slackware.repo", "$fakeroot_directory/etc/slackman/repos.d/slackware.repo"), 'Copy "slackware.repo" configuration');
 
 done_testing();

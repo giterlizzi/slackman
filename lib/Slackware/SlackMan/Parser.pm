@@ -42,47 +42,6 @@ use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 
 
-=pod
-
-=encoding UTF-8
-
-=head1 NAME
-
-Slackware::SlackMan::Parser - SlackMan Parser module
-
-=head1 VERSION
-
-Version 1.00
-
-=head1 SYNOPSIS
-
-Parser module for SlackMan.
-
-    use Slackware::SlackMan::Parser qw(:all);
-
-    print parse_variables('Welcome to Slackware${release.suffix} $release');
-    ...
-
-=head1 EXPORT
-
-No subs are exported by default.
-
-=head1 SUBROUTINES
-
-=head2 parse_changelog
-
-    sub callback_status {
-      my $status = shift;
-      print "... $status";
-    }
-
-    parse_changelog($repo, &callback_status);
-
-C<parse_changelog> parse a standard Slackware ChangeLog.txt and save into slackman
-database.
-
-=cut
-
 sub parse_changelog {
 
   my ($repo, $callback_status) = @_;
@@ -229,15 +188,6 @@ sub parse_changelog {
 }
 
 
-=head2 parse_checksums
-
-    parse_checksums($repo);
-
-C<parse_checksums> parse a standard Slackware CHECHSUMS.md5 file and save into
-slackman database.
-
-=cut
-
 sub parse_checksums {
 
   my ($repo) = @_;
@@ -259,20 +209,6 @@ sub parse_checksums {
 
 }
 
-
-=head2 parse_packages
-
-    sub callback_status {
-      my $status = shift;
-      print "... $status";
-    }
-
-    parse_packages($repo, $callback_status);
-
-C<parse_packages> parse a standard Slackware PACKAGES.TXT file and save into
-slackman database.
-
-=cut
 
 sub parse_packages {
 
@@ -373,20 +309,6 @@ sub parse_packages {
 
 }
 
-
-=head2 parse_manifest
-
-    sub callback_status {
-      my $status = shift;
-      print "... $status";
-    }
-
-    parse_manifest($repo, $callback_status);
-
-C<parse_manifest> parse a standard Slackware MANIFEST.mb2 file and save into
-slackman database.
-
-=cut
 
 sub parse_manifest {
 
@@ -492,23 +414,6 @@ sub parse_manifest {
 
 }
 
-
-=head2 parse_history
-
-    sub callback_status {
-      my $status = shift;
-      print "... $status";
-    }
-
-    parse_history('installed, $callback_status);
-    ...
-    parse_history('removed, $callback_status);
-
-C<parse_history> parse a local Slackware database from C</var/log/packages>
-(installed packages) and C</var/log/removed_packages> (removed and upgraded packages)
-and save into slackman database.
-
-=cut
 
 sub parse_history {
 
@@ -622,31 +527,7 @@ sub parse_history {
 }
 
 
-=head2 parse_variables
-
-    print parse_variables('Welcome to Slackware${release.suffix} $release');
-
-C<parse_variables> parse all special variables used in slackman & repos.d configuration.
-
-=over 4
-
-=item  * $arch (eg. x86_64)
-
-=item  * $arch.bit (eg. 64)
-
-=item  * $arch.family (eg. x86)
-
-=item  * $release (eg. 14.2  - from C</etc/slackware-release> or "current" if is configured in C</etc/slackman/slackman.conf>)
-
-=item  * $release.real (eg. 14.2 - from C</etc/slackware-release>)
-
-=item  * $release.suffix (eg. 64 for Slackware64, arm for Slackwarearm)
-
-=back
-
-=cut
-
- sub parse_variables {
+sub parse_variables {
 
   my $string = shift;
 
@@ -682,14 +563,6 @@ C<parse_variables> parse all special variables used in slackman & repos.d config
 }
 
 
-=head2 parse_module_name
-
-    parse_module_name('perl(Acme::Foo::Bar)'); # perl-Acme-Foo-Bar
-
-C<parse_module_name> parse module name into package name.
-
-=cut
-
 sub parse_module_name {
 
   my $module = shift;
@@ -709,6 +582,123 @@ sub _parse_perl_module_name {
 
 }
 
+1;
+__END__
+
+=head1 NAME
+
+Slackware::SlackMan::Parser - SlackMan Parser module
+
+=head1 SYNOPSIS
+
+  use Slackware::SlackMan::Parser qw(:all);
+
+  print parse_variables('Welcome to Slackware${release.suffix} $release');
+  ...
+
+=head1 DESCRIPTION
+
+Parser module for SlackMan.
+
+=head1 EXPORT
+
+No subs are exported by default.
+
+=head1 SUBROUTINES
+
+=head2 parse_changelog
+
+  sub callback_status {
+    my $status = shift;
+    print "... $status";
+  }
+
+  parse_changelog($repo, &callback_status);
+
+C<parse_changelog> parse a standard Slackware ChangeLog.txt and save into slackman
+database.
+
+
+=head2 parse_checksums
+
+  parse_checksums($repo);
+
+C<parse_checksums> parse a standard Slackware CHECHSUMS.md5 file and save into
+slackman database.
+
+
+=head2 parse_history
+
+  sub callback_status {
+    my $status = shift;
+    print "... $status";
+  }
+
+  parse_history('installed, $callback_status);
+  ...
+  parse_history('removed, $callback_status);
+
+C<parse_history> parse a local Slackware database from C</var/log/packages>
+(installed packages) and C</var/log/removed_packages> (removed and upgraded packages)
+and save into slackman database.
+
+
+=head2 parse_manifest
+
+  sub callback_status {
+    my $status = shift;
+    print "... $status";
+  }
+
+  parse_manifest($repo, $callback_status);
+
+C<parse_manifest> parse a standard Slackware MANIFEST.mb2 file and save into
+slackman database.
+
+
+=head2 parse_module_name
+
+  parse_module_name('perl(Acme::Foo::Bar)'); # perl-Acme-Foo-Bar
+
+C<parse_module_name> parse module name into package name.
+
+
+=head2 parse_packages
+
+  sub callback_status {
+    my $status = shift;
+    print "... $status";
+  }
+
+  parse_packages($repo, $callback_status);
+
+C<parse_packages> parse a standard Slackware PACKAGES.TXT file and save into
+slackman database.
+
+
+=head2 parse_variables
+
+  print parse_variables('Welcome to Slackware${release.suffix} $release');
+
+C<parse_variables> parse all special variables used in slackman & repos.d configuration.
+
+=over 4
+
+=item  * C<$arch> (eg. x86_64)
+
+=item  * C<$arch.bit> (eg. 64)
+
+=item  * C<$arch.family> (eg. x86)
+
+=item  * C<$release> (eg. 14.2  - from C</etc/slackware-release> or "current" if is configured in C</etc/slackman/slackman.conf>)
+
+=item  * C<$release.real> (eg. 14.2 - from C</etc/slackware-release>)
+
+=item  * C<$release.suffix> (eg. 64 for Slackware64, arm for Slackwarearm)
+
+=back
+
+
 =head1 AUTHOR
 
 Giuseppe Di Terlizzi, C<< <giuseppe.diterlizzi at gmail.com> >>
@@ -716,16 +706,14 @@ Giuseppe Di Terlizzi, C<< <giuseppe.diterlizzi at gmail.com> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to C<giuseppe.diterlizzi at gmail.com>, or through
-the web interface at L<https://github.com/LotarProject/slackman/issues>.  I will be notified, and then you'll
+the web interface at L<https://github.com/LotarProject/slackman/issues>. I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
 
 =head1 SUPPORT
 
-You can find documentation for this module with the perldoc command.
+You can find documentation for this module with the C<perldoc> command.
 
-    perldoc Slackware::Slackman::Parser
-
+  perldoc Slackware::SlackMan::Parser
 
 You can also look for information at:
 
@@ -741,51 +729,11 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =back
 
-
-=head1 ACKNOWLEDGEMENTS
-
-
 =head1 LICENSE AND COPYRIGHT
 
 Copyright 2016-2017 Giuseppe Di Terlizzi.
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-L<http://www.perlfoundation.org/artistic_license_2_0>
-
-Any use, modification, and distribution of the Standard or Modified
-Versions is governed by this Artistic License. By using, modifying or
-distributing the Package, you accept this license. Do not use, modify,
-or distribute the Package, if you do not accept this license.
-
-If your Modified Version has been derived from a Modified Version made
-by someone other than you, you are nevertheless required to ensure that
-your Modified Version complies with the requirements of this license.
-
-This license does not grant you the right to use any trademark, service
-mark, tradename, or logo of the Copyright Holder.
-
-This license includes the non-exclusive, worldwide, free-of-charge
-patent license to make, have made, use, offer to sell, sell, import and
-otherwise transfer the Package with respect to any patent claims
-licensable by the Copyright Holder that are necessarily infringed by the
-Package. If you institute patent litigation (including a cross-claim or
-counterclaim) against any party alleging that the Package constitutes
-direct or contributory patent infringement, then this Artistic License
-to you shall terminate on the date that such litigation is filed.
-
-Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
-AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
-THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
-YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
-CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
-CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+This module is free software, you may distribute it under the same terms
+as Perl.
 
 =cut
-
-1; # End of Slackware::Slackman::Parser
