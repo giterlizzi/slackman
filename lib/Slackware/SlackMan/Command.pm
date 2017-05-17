@@ -60,7 +60,7 @@ pod2usage(-exitval => 0, -verbose => 2) if $opts->{'man'};
 
 sub run {
 
-  db_init;
+  db_init();
 
   # Force exit on CTRL-C
   $SIG{INT}  = sub {
@@ -985,6 +985,14 @@ sub _call_changelog {
   my @repositories = get_enabled_repositories();
   my @filters      = ();
 
+  # Get only machine arch and noarch changelogs
+  my $arch = get_arch();
+
+     if ($arch eq 'x86_64')        { push(@filters, 'arch IN ("x86_64", "noarch")') }
+  elsif ($arch =~ /x86|i[3456]86/) { push(@filters, '(arch = "noarch" OR arch = "x86" OR arch LIKE "i%86")') }
+  elsif ($arch =~ /arm(.*)/)       { push(@filters, '(arch = "noarch" OR arch LIKE "arm%")')}
+
+  # Filter repository
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
     push(@filters, qq/repository LIKE "$option_repo"/);
@@ -992,7 +1000,7 @@ sub _call_changelog {
     push(@filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
-
+  # Filter disabled repository
   push(@filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
 
   my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $opts->{'limit'}));

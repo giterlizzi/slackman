@@ -347,7 +347,7 @@ sub package_download {
   my $save_path    = sprintf('%s/%s/%s', $slackman_conf->{directory}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
   my $package_path = sprintf('%s/%s', $save_path, $pkg->{'package'});
 
-  make_path($save_path);
+  make_path($save_path) unless (-d $save_path);
 
   unless (-e $package_path) {
 

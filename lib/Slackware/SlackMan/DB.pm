@@ -156,8 +156,15 @@ sub dbh {
 sub db_init {
 
   foreach (SLACKMAN_TABLES) {
+    logger->debug(qq/Init table "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
+
+  foreach (SLACKMAN_INDEXES) {
+    logger->debug(qq/Init index "$_"/);
+    $dbh->do(SLACKMAN_SCHEMA->{$_});
+  }
+
 
 }
 
