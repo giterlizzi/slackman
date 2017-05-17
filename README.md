@@ -1,4 +1,5 @@
-# slackman
+# slackman [![Build Status](https://travis-ci.org/LotarProject/slackman.svg)](https://travis-ci.org/LotarProject/slackman)
+
 SlackMan - Slackware Package Manager
 
 SlackMan is easy-to-use wrapper for Slackware ``pkgtools`` can help to install,

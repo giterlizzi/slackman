@@ -150,7 +150,7 @@ sub package_metadata {
   my $package_info     = package_info($package_name);
   my $package_basename = $package_info->{name};
 
-  return unless $package_basename;
+  return undef unless($package_basename);
 
   # SlackBuilds categor*y
   {
@@ -333,7 +333,7 @@ sub package_available_update {
 
   my $row = $sth->fetchrow_hashref();
 
-  return unless($row);
+  return undef unless($row);
   return $row;
 
 }

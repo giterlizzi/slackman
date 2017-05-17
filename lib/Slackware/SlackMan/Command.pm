@@ -99,82 +99,82 @@ sub run {
 
   given($command) {
 
-    when('install')      { &_call_package_install(@arguments) }
-    when('reinstall')    { &_call_package_reinstall(@arguments) }
-    when('remove')       { &_call_package_remove(@arguments) }
-    when('upgrade')      { &_call_package_update(@arguments)  }
-    when('check-update') { $opts->{'no'} = 1 ; &_call_package_update(@arguments) }
-    when('info')         { &_call_package_info($ARGV[1]) }
-    when('history')      { &_call_package_history($ARGV[1]) }
+    when('install')      { _call_package_install(@arguments) }
+    when('reinstall')    { _call_package_reinstall(@arguments) }
+    when('remove')       { _call_package_remove(@arguments) }
+    when('upgrade')      { _call_package_update(@arguments)  }
+    when('check-update') { $opts->{'no'} = 1 ; _call_package_update(@arguments) }
+    when('info')         { _call_package_info($ARGV[1]) }
+    when('history')      { _call_package_history($ARGV[1]) }
 
-    when('changelog')    { &_call_changelog }
-    when('config')       { &_call_config }
-    when('search')       { &_call_package_search($ARGV[1]) }
-    when('file-search')  { &_call_file_search($ARGV[1]) }
+    when('changelog')    { _call_changelog() }
+    when('config')       { _call_config() }
+    when('search')       { _call_package_search($ARGV[1]) }
+    when('file-search')  { _call_file_search($ARGV[1]) }
 
     when('db') {
       given($ARGV[1]) {
-        when('optimize') { &_call_db_optimize }
-        when('info')     { &_call_db_info }
-        default          { &_show_db_help }
+        when('optimize') { _call_db_optimize() }
+        when('info')     { _call_db_info() }
+        default          { _show_db_help() }
       }
     }
 
     when('clean') {
       given($ARGV[1]) {
-        when('metadata') { &_call_clean_metadata; exit(0); }
-        when('manifest') { &_call_clean_metadata('manifest'); exit(0); }
-        when('cache')    { &_call_clean_cache;    exit(0); }
-        default          { &_call_clean }
+        when('metadata') { _call_clean_metadata(); exit(0); }
+        when('manifest') { _call_clean_metadata('manifest'); exit(0); }
+        when('cache')    { _call_clean_cache();    exit(0); }
+        default          { _call_clean() }
       }
     }
 
     when('repo') {
       given($ARGV[1]) {
-        when('list')      { &_call_list_repo }
+        when('list')      { _call_list_repo() }
         when('add')       {}
         when('disable')   {}
         when('enable')    {}
-        when('info')      { &_call_repo_info($ARGV[2]) }
-        default           { &_show_repo_help }
+        when('info')      { _call_repo_info($ARGV[2]) }
+        default           { _show_repo_help() }
       }
     }
 
     when('list') {
       given($ARGV[1]) {
-        when('installed') { &_call_list_installed }
-        when('obsolete')  { &_call_list_obsolete }
-        when('repo')      { &_call_list_repo }
-        when('orphan')    { &_call_list_orphan }
-        when('variables') { &_call_list_variables }
-        when('packages')  { &_call_list_packages }
-        default           { &_show_list_help }
+        when('installed') { _call_list_installed() }
+        when('obsolete')  { _call_list_obsolete() }
+        when('repo')      { _call_list_repo() }
+        when('orphan')    { _call_list_orphan() }
+        when('variables') { _call_list_variables() }
+        when('packages')  { _call_list_packages() }
+        default           { _show_list_help() }
       }
     }
 
     when('update') {
       given($ARGV[1]) {
-        when('packages')  { &_call_update_repo_packages;  exit(0); }
-        when('history')   { &_call_update_history;        exit(0); }
-        when('changelog') { &_call_update_repo_changelog; exit(0); }
-        when('manifest')  { &_call_update_repo_manifest;  exit(0); }
-        when('gpg-key')   { &_call_update_repo_gpg_key;   exit(0); }
-        when('all')       { &_call_update_all_metadata }
-        default           { &_call_update_metadata }
+        when('packages')  { _call_update_repo_packages();  exit(0); }
+        when('history')   { _call_update_history();        exit(0); }
+        when('changelog') { _call_update_repo_changelog(); exit(0); }
+        when('manifest')  { _call_update_repo_manifest();  exit(0); }
+        when('gpg-key')   { _call_update_repo_gpg_key();   exit(0); }
+        when('all')       { _call_update_all_metadata() }
+        default           { _call_update_metadata() }
       }
     }
 
     when('help') {
       given($ARGV[1]) {
-        when ('list')   { &_show_list_help }
-        when ('update') { &_show_update_help }
-        when ('repo')   { &_show_repo_help }
-        when ('db')     { &_show_db_help }
-        default         { &_show_help }
+        when ('list')   { _show_list_help() }
+        when ('update') { _show_update_help() }
+        when ('repo')   { _show_repo_help() }
+        when ('db')     { _show_db_help() }
+        default         { _show_help() }
       }
     }
 
-    default { &_show_help }
+    default { _show_help() }
 
   }
 

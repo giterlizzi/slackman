@@ -48,13 +48,12 @@ BEGIN {
 }
 
 use Term::ReadLine;
-use POSIX;
+use POSIX ();
 use Time::Local;
 use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
-use POSIX;
 
 use Slackware::SlackMan::Logger;
 
@@ -322,7 +321,8 @@ sub md5_check {
 
   my ($file, $checksum) = @_;
 
-  my $file_checksum = Digest::MD5->new->addfile(new IO::File("$file", "r"))->hexdigest;
+  my $md5 = Digest::MD5->new;
+  my $file_checksum = $md5->addfile(new IO::File("$file", "r"))->hexdigest;
 
   return 1 if ($checksum eq $file_checksum);
   return 0;
@@ -352,13 +352,13 @@ sub get_lock_pid {
 
   my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
 
-  open(my $fh, '<', $lock_file) or return;
+  open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
   close($fh);
 
   # Verify slackman PID process
   unless (qx/ps aux | grep -v grep | grep slackman | grep $pid/) {
-    return;
+    return undef;
   }
 
   return $pid;
