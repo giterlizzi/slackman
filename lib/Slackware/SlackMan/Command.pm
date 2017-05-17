@@ -1086,7 +1086,7 @@ sub _call_package_reinstall {
     my $pkg = package_is_installed($_);
 
     if ($pkg) {
-      push(@is_installed, $_);
+      push(@is_installed, $pkg);
       print sprintf("%-20s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{tag}, $pkg->{timestamp});
     } else {
       print sprintf("%-20s not installed\n", $_);
@@ -1104,7 +1104,9 @@ sub _call_package_reinstall {
 
   my @filters = ();
 
-  push(@filters, sprintf('name IN (%s)', '"' . join('","', @is_installed) . '"'));
+  foreach (@is_installed) {
+    push(@filters, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
+  }
 
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
@@ -1115,7 +1117,7 @@ sub _call_package_reinstall {
 
   push(@filters, 'repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
-  my $query = 'SELECT *, MAX(priority) FROM packages WHERE ' . join(' AND ', @filters);
+  my $query = 'SELECT * FROM packages WHERE ' . join(' AND ', @filters);
   my $rows  = $dbh->selectall_hashref($query, 'id', undef);
 
   my $i = 0;
@@ -1141,7 +1143,7 @@ sub _call_package_reinstall {
   exit(0) if ($opts->{'download-only'});
 
   unless ($< == 0) {
-    warn "\nPackage update requires root privileges!\n";
+    warn "\nPackage reinstall requires root privileges!\n";
     exit(1);
   }
 
