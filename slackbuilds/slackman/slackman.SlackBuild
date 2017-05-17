@@ -71,6 +71,12 @@ find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs" | xargs rm -f
 
 find $PKG -depth -type d -empty -delete || true
 
+# Create bash_completion directory
+mkdir -p $PKG/etc/bash_completion.d
+
+# Copy bash_completion facility
+cp -a etc/slackman.bash $PKG/etc/bash_completion.d
+
 # Create slackman config directory
 mkdir -p $PKG/etc/slackman/repos.d
 
