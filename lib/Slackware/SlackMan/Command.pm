@@ -729,9 +729,16 @@ sub _call_package_update {
   STDOUT->printflush('Search packages update... ');
 
   my $arch = get_arch();
-  my $option_repo = $opts->{'repo'};
+
+  my $option_repo    = $opts->{'repo'};
+  my $option_exclude = $opts->{'exclude'};
 
   my @filters;
+
+  if ($option_exclude) {
+    $option_exclude =~ s/\*/%/g;
+    push(@filters, qq/packages.name NOT LIKE "$option_exclude"/);
+  }
 
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
@@ -740,8 +747,8 @@ sub _call_package_update {
     push(@filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
-  push(@filters, 'AND packages.excluded = 0') unless ($opts->{'no-excludes'});
-  push(@filters, 'AND packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
+  push(@filters, 'packages.excluded = 0') unless ($opts->{'no-excludes'});
+  push(@filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
   @update_package = map { parse_module_name($_) } @update_package if (@update_package);
 
@@ -760,7 +767,7 @@ sub _call_package_update {
       }
     }
 
-    $packages_filter .= 'AND (';
+    $packages_filter .= '(';
 
     $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
     $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
@@ -772,7 +779,7 @@ sub _call_package_update {
 
   }
 
-  $updatable_packages_query = sprintf($updatable_packages_query, join(' ', @filters));
+  $updatable_packages_query = sprintf($updatable_packages_query, join(' AND ', @filters));
 
   my $sth = $dbh->prepare($updatable_packages_query);
   $sth->execute();
