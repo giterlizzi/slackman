@@ -65,6 +65,13 @@ update Slackware packages from a standard Slackware repository (official and 3th
   update gpg-key            Update repository GPG-KEY
   update all                Update all metadata (packages, gpg-key, changelog, etc.)
 
+=head2 CLEAN COMMANDS
+
+  clean cache               Clean cache package download directory
+  clean metadata            Clean database metadata
+  clean manifest            Clean manifest data
+  clean all                 Clean metadata and cache directory
+
 =head2 OPTIONS
 
   -h, --help                Display help and exit

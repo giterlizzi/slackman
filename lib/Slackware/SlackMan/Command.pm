@@ -124,8 +124,9 @@ sub run {
       given($ARGV[1]) {
         when('metadata') { _call_clean_metadata(); exit(0); }
         when('manifest') { _call_clean_metadata('manifest'); exit(0); }
-        when('cache')    { _call_clean_cache();    exit(0); }
-        default          { _call_clean() }
+        when('cache')    { _call_clean_cache(); exit(0); }
+        when('all')      { _call_clean_all(); }
+        default          { _show_clean_help(); }
       }
     }
 
@@ -232,6 +233,16 @@ sub _show_list_help {
 
 }
 
+sub _show_clean_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/CLEAN COMMANDS' ]
+  );
+
+}
+
 sub _show_update_help {
 
   pod2usage(
@@ -311,7 +322,7 @@ sub _call_config {
   exit(0);
 }
 
-sub _call_clean {
+sub _call_clean_all {
 
   _call_clean_metadata();
   _call_clean_cache();
