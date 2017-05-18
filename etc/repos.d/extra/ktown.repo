@@ -1,0 +1,7 @@
+[latest]
+name=ktown latest
+enabled=false
+mirror=http://bear.alienbase.nl/mirrors/alien-kde/$release/latest/$arch.family/
+changelog=http://bear.alienbase.nl/mirrors/alien-kde/ChangeLog.txt
+priority=1
+exclude=kde-l10n-*,calligra-l10n-*

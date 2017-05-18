@@ -1,0 +1,4 @@
+[slackbuilds]
+name=SlackOnly SlackBuilds
+enabled=false
+mirror=https://packages.slackonly.com/pub/packages/$release-$arch/

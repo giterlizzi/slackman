@@ -1,0 +1,14 @@
+[desktop]
+name=Microlinux Enterprise - Desktop
+enabled=false
+mirror=http://www.microlinux.fr/microlinux/desktop-$release.real-${arch.bit}bit/
+
+[extras]
+name=Microlinux Enterprise - Extras
+enabled=false
+mirror=http://www.microlinux.fr/microlinux/extras-$release.real-${arch.bit}bit/
+
+[server]
+name=Microlinux Enterprise - Server
+enabled=false
+mirror=http://www.microlinux.fr/microlinux/server-$release.real-${arch.bit}bit/

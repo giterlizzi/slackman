@@ -1,0 +1,12 @@
+PRGNAM="slackman"
+VERSION="@VERSION@"
+HOMEPAGE="https://github.com/LotarProject/slackman/wiki"
+DOWNLOAD="https://codeload.github.com/LotarProject/slackman/tar.gz/v@VERSION@"
+MD5SUM="@MD5@"
+DOWNLOAD_x86_64=""
+MD5SUM_x86_64=""
+REQUIRES="perl-DBD-SQLite perl-Sort-Versions perl-Test-Trap"
+MAINTAINER="Giuseppe Di Terlizzi"
+EMAIL="giuseppe.diterlizzi@gmail.com"
+
+
