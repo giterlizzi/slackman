@@ -143,7 +143,7 @@ sub run {
     when('list') {
       given($ARGV[1]) {
         when('installed') { _call_list_installed() }
-        when('obsolete')  { _call_list_obsolete() }
+        when('obsoletes') { _call_list_obsoletes() }
         when('repo')      { _call_list_repo() }
         when('orphan')    { _call_list_orphan() }
         when('variables') { _call_list_variables() }
@@ -1076,14 +1076,20 @@ sub _call_repo_info {
 
 }
 
-sub _call_list_obsolete {
+sub _call_list_obsoletes {
+
+  my $obsolete_rows = package_list_obsoletes($opts->{'repo'});
+  my $num_rows      = scalar keys %$obsolete_rows;
 
   print "Obsolete package(s)\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-30s %-25s %-15s %-25s %-15s %-25s\n", "Package", "ChangeLog Repository", "Version", "Obsolete from", "Actual Version", "Installed at");
   print sprintf("%s\n", "-"x132);
 
-  my $obsolete_rows = package_list_obsolete($opts->{'repo'});
+  unless ($num_rows) {
+    print "\nNo obsolete packages found!\n\n";
+    exit(0);
+  }
 
   my @obsolete = ();
 
@@ -1223,7 +1229,7 @@ sub _call_package_remove {
 
     # Get list from "slackman list obsolete"
     print "Remove ";
-    @is_installed = _call_list_obsolete();
+    @is_installed = _call_list_obsoletes();
 
   } else {
 
@@ -1610,7 +1616,7 @@ sub _fork_update_history {
 
   logger->debug("Call update history command in background ($update_history_cmd)");
 
-  qx/$update_history_cmd/;
+  qx{ $update_history_cmd };
 
 }
 

@@ -26,7 +26,7 @@ BEGIN {
     package_available_update
     package_download
     package_list_installed
-    package_list_obsolete
+    package_list_obsoletes
   };
 
   %EXPORT_TAGS = (
@@ -418,9 +418,9 @@ sub package_list_installed {
 }
 
 
-sub package_list_obsolete {
+sub package_list_obsoletes {
 
-  my $repo = shift;
+  my ($repo) = @_;
 
   my $query = qq/SELECT DISTINCT(changelogs.name) AS changelog_name,
                         changelogs.repository     AS changelog_repository,
@@ -432,19 +432,22 @@ sub package_list_obsolete {
                   WHERE changelogs.name   = history.name
                     AND changelogs.status = "removed"
                     AND history.status    = "installed"
-                    AND %s
+                    AND changelogs.repository %s
                     AND changelogs.repository NOT IN (%s)
-                    AND EXISTS (SELECT 1
-                                  FROM changelogs clog
-                                 WHERE clog.name = changelogs.name
-                                   AND changelogs.timestamp >= clog.timestamp)/;
+                    AND NOT EXISTS (SELECT 1
+                                      FROM changelogs clog
+                                     WHERE clog.name = changelogs.name
+                                       AND clog.timestamp >= changelogs.timestamp)/;
 
-  my $enabled_repository  = 'changelogs.repository IN (%s)"' . join('", "', get_enabled_repositories())  . '"';
-  my $disabled_repository = '"' . join('", "', get_disabled_repositories()) . '"';
+  my $enabled_repositories  = 'IN ("' . join('", "', get_enabled_repositories())  . '")';
+  my $disabled_repositories = '"' . join('", "', get_disabled_repositories()) . '"';
 
-  $enabled_repository = sprintf('changelogs.repository LIKE "%s"', $repo) if ($repo);
+  if ($repo) {
+    $repo =~ s/\*/\%/;
+    $enabled_repositories = sprintf('LIKE "%s"', $repo);
+  }
 
-  $query = sprintf($query, $enabled_repository, $disabled_repository);
+  $query = sprintf($query, $enabled_repositories, $disabled_repositories);
 
   return $dbh->selectall_hashref($query, 'changelog_name', undef);
 

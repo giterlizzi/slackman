@@ -357,7 +357,7 @@ sub get_lock_pid {
   close($fh);
 
   # Verify slackman PID process
-  unless (qx/ps aux | grep -v grep | grep slackman | grep $pid/) {
+  unless (qx{ ps aux | grep -v grep | grep slackman | grep $pid }) {
     return undef;
   }
 
