@@ -604,42 +604,55 @@ sub _call_file_search {
 
 sub _call_package_search {
 
-  my $search  = shift;
-  my $repo_id = undef;
+  my $search = shift;
 
-  if ($search =~ /:/) {
-    my $tmp = undef;
-    ($repo_id, $tmp) = split(/:/, $search);
-    $search = $tmp;
+  unless ($search) {
+    warn "Specify package!\n";
+    exit(255);
   }
 
-  my $filter = $search;
-     $filter =~ s/\*/%/g;
-     $search =~ s/\*//g;
+  $search =~ s/\*/%/g;
 
-  my $query = 'SELECT name, arch, summary
-                 FROM packages
-                WHERE (    name    LIKE ?
-                        OR summary LIKE ? )
+  my $query = 'SELECT p1.name,
+                      p1.version,
+                      p1.arch,
+                      p1.summary,
+                      p1.repository,
+                      (SELECT "installed"
+                         FROM history h1
+                        WHERE h1.name = p1.name
+                          AND h1.version = p1.version
+                          AND h1.status = "installed") AS status
+                 FROM packages p1
+                WHERE (    p1.name    LIKE ?
+                        OR p1.summary LIKE ? )
                 UNION
-               SELECT name, arch, summary
-                 FROM history
-                WHERE (    name    LIKE ?
-                        OR summary LIKE ? )
-                  AND status = "installed"';
+               SELECT h2.name,
+                      h2.version,
+                      h2.arch,
+                      h2.summary,
+                      ""          AS repository,
+                      "installed" AS status
+                 FROM history h2
+                WHERE h2.status = "installed"
+                  AND (    h2.name    LIKE ?
+                        OR h2.summary LIKE ?)
+                  AND NOT EXISTS (SELECT 1
+                                    FROM packages p2
+                                   WHERE p2.name = h2.name
+                                     AND p2.version = h2.version)';
 
   my $sth = $dbh->prepare($query);
-  $sth->execute($filter, $filter, $filter, $filter);
+  $sth->execute($search, $search, $search, $search);
+
+  #print sprintf("%-40s %-10s %-8s %-75s %-10s %s\n", "Package", "Version", "Arch", "Summary", "Status", "Repository");
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    my $name = sprintf('%s.%s', $row->{name}, $row->{arch});
-       $name =~ s/($search)/@{[ BOLD ]}$1@{[ RESET ]}/gi;
+    my $name    = $row->{'name'};
+    my $summary = $row->{'summary'};
 
-    my $summary = $row->{summary};
-       $summary =~ s/($search)/@{[ BOLD ]}$1@{[ RESET ]}/gi;
-
-    print sprintf("%s : %s\n", $name, $summary);
+    print sprintf("%-40s %-10s %-8s %-75s %-10s %s\n", $name, $row->{'version'}, $row->{'arch'}, $summary, ($row->{'status'}||' '), $row->{'repository'});
 
   }
 
