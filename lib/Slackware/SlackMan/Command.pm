@@ -1060,24 +1060,33 @@ sub _call_repo_enable {
 
 sub _call_repo_info {
 
-  my $repo_id      = shift;
-  my $repo_data    = get_repository($repo_id);
+  my ($repo_id) = @_;
+
+  unless($repo_id) {
+    warn "Specicy repository!\n";
+    exit(255);
+  }
+
+  my $repo_data = get_repository($repo_id);
 
   unless($repo_data) {
-    print "Repository not found!\n";
-    exit(1);
+    warn "Repository not found!\n";
+    exit(255);
   }
 
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
+  my $last_update  = time_to_timestamp(db_meta_get("packages-last-update.$repo_id"));
 
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
-  print sprintf("%-20s %s\n", "Name:",     $repo_data->{name});
-  print sprintf("%-20s %s\n", "ID:",       $repo_data->{id});
-  print sprintf("%-20s %s\n", "Mirror:",   $repo_data->{mirror});
-  print sprintf("%-20s %s\n", "Status:",   (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-20s %s\n", "Priority:", $repo_data->{priority});
-  print sprintf("%-20s %s\n", "Packages:", $package_nums);
+  print "\n";
+  print sprintf("%-20s %s\n", "Name:",        $repo_data->{name});
+  print sprintf("%-20s %s\n", "ID:",          $repo_data->{id});
+  print sprintf("%-20s %s\n", "Mirror:",      $repo_data->{mirror});
+  print sprintf("%-20s %s\n", "Status:",      (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
+  print sprintf("%-20s %s\n", "Last Update:", $last_update);
+  print sprintf("%-20s %s\n", "Priority:",    $repo_data->{priority});
+  print sprintf("%-20s %s\n", "Packages:",    $package_nums);
 
   print "\nRepository URLs:\n";
 
