@@ -485,10 +485,16 @@ sub _call_update_all_metadata {
 
 sub _call_package_info {
 
-  my $info = shift;
-     $info =~ s/\*/%/g;
+  my $package = shift;
 
-  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($info));
+  unless ($package) {
+    warn("Specify package!\n");
+    exit(255);
+  }
+
+  $package =~ s/\*/%/g;
+
+  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($package));
 
   my @installed;
 
@@ -512,7 +518,7 @@ sub _call_package_info {
 
       print sprintf("\n%-10s :\n", 'File lists');
 
-      my $package_meta = package_metadata(file_read("/var/log/packages/".$row->{package}));
+      my $package_meta = package_metadata(file_read("/var/log/packages/".$row->{'package'}));
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
@@ -530,7 +536,7 @@ sub _call_package_info {
   my $available_query = sprintf('SELECT * FROM packages WHERE name LIKE ? AND name NOT IN (%s) AND repository NOT IN (%s)',
     '"' . join('","', @installed) . '"',
     '"' . join('","', get_disabled_repositories()) . '"');
-  my $available_rows  = $dbh->selectall_hashref($available_query, 'id', undef, $info);
+  my $available_rows  = $dbh->selectall_hashref($available_query, 'id', undef, $package);
 
   print "\n\n";
 
@@ -643,7 +649,13 @@ sub _call_package_search {
 
 sub _call_package_history {
 
-  my $package  = shift;
+  my ($package) = @_;
+
+  unless ($package) {
+    warn("Specify package!\n");
+    exit(255);
+  }
+
   my $rows_ref = $dbh->selectall_hashref('SELECT * FROM history WHERE name = ? ORDER BY timestamp', 'timestamp', undef, $package);
   my $row_nums = scalar keys %$rows_ref;
 
@@ -842,7 +854,7 @@ sub _call_package_update {
 
   if (scalar keys %$update_pkgs) {
 
-    print "Package(s) to update\n";
+    print "Package(s) to update\n\n";
     print sprintf("%s\n", "-"x132);
     print sprintf("%-30s %-8s %-35s %-40s %s\n", 'Name', 'Arch', 'Version', 'Repository', 'Size');
     print sprintf("%s\n", "-"x132);
@@ -869,7 +881,7 @@ sub _call_package_update {
   if (scalar keys %$install_pkgs) {
 
     print "\n\n";
-    print "Required package(s) to install\n";
+    print "Required package(s) to install\n\n";
     print sprintf("%s\n", "-"x132);
     print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n", 'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
     print sprintf("%s\n", "-"x132);
@@ -894,7 +906,7 @@ sub _call_package_update {
 
   print "\n\n";
   print "Update summary\n";
-  print sprintf("%s\n", "-"x132);
+  print sprintf("%s\n", "-"x40);
   print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$install_pkgs);
   print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$update_pkgs);
 
@@ -911,7 +923,7 @@ sub _call_package_update {
     }
 
     print "\n\n";
-    print "Download package(s)\n";
+    print "Download package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
     my $num_downloads   = scalar @downloads;
@@ -935,7 +947,7 @@ sub _call_package_update {
     if (@packages) {
 
       print "\n\n";
-      print "Update package(s)\n";
+      print "Update package(s)\n\n";
       print sprintf("%s\n", "-"x132);
 
       foreach my $package_path (@packages) {
@@ -949,7 +961,7 @@ sub _call_package_update {
     if (@errors) {
 
       print "\n\n";
-      print "Error(s) during package integrity check or download\n";
+      print "Error(s) during package integrity check or download\n\n";
       print sprintf("%s\n", "-"x132);
 
       foreach (@errors) {
@@ -973,6 +985,8 @@ sub _call_list_repo {
 
   my @repositories = get_repositories();
 
+  print "\nAvailable repository\n\n";
+  print sprintf("%s\n", "-"x132);
   print sprintf("%-30s %-70s %-10s %-10s %-4s\n", "Repository ID",  "Description", "Status", "Priority", "Packages");
   print sprintf("%s\n", "-"x132);
 
@@ -1081,7 +1095,7 @@ sub _call_list_obsoletes {
   my $obsolete_rows = package_list_obsoletes($opts->{'repo'});
   my $num_rows      = scalar keys %$obsolete_rows;
 
-  print "Obsolete package(s)\n\n";
+  print "\nObsolete package(s)\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-30s %-25s %-15s %-25s %-15s %-25s\n", "Package", "ChangeLog Repository", "Version", "Obsolete from", "Actual Version", "Installed at");
   print sprintf("%s\n", "-"x132);
@@ -1118,7 +1132,12 @@ sub _call_package_reinstall {
   my @is_installed = ();
   my $option_repo  = $opts->{'repo'};
 
-  print "Reinstall package(s)\n";
+  unless (@packages) {
+    warn "Specify package!\n";
+    exit(255);
+  }
+
+  print "\nReinstall package(s)\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-20s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
   print sprintf("%s\n", "-"x132);
@@ -1192,7 +1211,7 @@ sub _call_package_reinstall {
   if (@pkg_reinstall) {
 
     print "\n\n";
-    print "Reinstall package(s)\n";
+    print "Reinstall package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
     foreach my $package_path (@pkg_reinstall) {
@@ -1206,7 +1225,7 @@ sub _call_package_reinstall {
   if (@pkg_errors) {
 
     print "\n\n";
-    print "Error(s) during package integrity check or download\n";
+    print "Error(s) during package integrity check or download\n\n";
     print sprintf("%s\n", "-"x132);
 
     foreach (@pkg_errors) {
@@ -1227,13 +1246,12 @@ sub _call_package_remove {
 
   if ($opts->{'obsolete-packages'}) {
 
-    # Get list from "slackman list obsolete"
-    print "Remove ";
+    # Get list from "slackman list obsoletes"
     @is_installed = _call_list_obsoletes();
 
   } else {
 
-    print "Remove package(s)\n";
+    print "Remove package(s)\n\n";
     print sprintf("%s\n", "-"x132);
     print sprintf("%-20s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
     print sprintf("%s\n", "-"x132);
@@ -1391,6 +1409,8 @@ sub _call_package_install {
   my $sth_packages = $dbh->prepare($query_packages);
   $sth_packages->execute();
 
+  print "\nPackage(s) install\n\n";
+  print sprintf("%s\n", "-"x132);
   print sprintf("%-30s %-8s %-30s %-40s %s\n", 'Name', 'Arch', 'Version', 'Repository', 'Size');
   print sprintf("%s\n", "-"x132);
 
@@ -1421,9 +1441,10 @@ sub _call_package_install {
 
   }
 
-  if ($dependency_pkgs) {
+  if (scalar keys %$dependency_pkgs) {
 
     print "\n\n";
+    print sprintf("%s\n", "-"x132);
     print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n", 'Dependency Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
     print sprintf("%s\n", "-"x132);
 
@@ -1456,7 +1477,7 @@ sub _call_package_install {
   my @errors        = ();
 
   print "\n\n";
-  print "Download package(s)\n";
+  print "Download package(s)\n\n";
   print sprintf("%s\n", "-"x132);
 
   foreach my $install (@install) {
@@ -1477,7 +1498,7 @@ sub _call_package_install {
   if (@pkg_install) {
 
     print "\n\n";
-    print "Install package(s)\n";
+    print "Install package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
     foreach (@pkg_install) {
@@ -1491,7 +1512,7 @@ sub _call_package_install {
   if (@errors) {
 
     print "\n\n";
-    print "Error(s) during package integrity check or download\n";
+    print "Error(s) during package integrity check or download\n\n";
     print sprintf("%s\n", "-"x132);
 
     foreach (@errors) {
@@ -1526,7 +1547,7 @@ sub _call_list_variables {
 
 sub _call_list_orphan {
 
-  print "Orphan packages\n\n";
+  print "\nOrphan packages\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
   print sprintf("%s\n", "-"x132);
@@ -1552,7 +1573,7 @@ sub _call_list_orphan {
 
 sub _call_list_installed {
 
-  print "Installed packages\n\n";
+  print "\nInstalled packages\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
   print sprintf("%s\n", "-"x132);
@@ -1578,7 +1599,7 @@ sub _call_list_installed {
 
 sub _call_list_packages {
 
-  print "Available packages\n\n";
+  print "\nAvailable packages\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Repository");
   print sprintf("%s\n", "-"x132);

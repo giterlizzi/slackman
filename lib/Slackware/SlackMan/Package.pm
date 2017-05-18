@@ -488,7 +488,7 @@ No subs are exported by default.
 
 =head2 package_list_installed
 
-=head2 package_list_obsolete
+=head2 package_list_obsoletes
 
 =head2 package_metadata
 
