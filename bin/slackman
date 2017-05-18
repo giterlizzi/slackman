@@ -31,13 +31,15 @@ update Slackware packages from a standard Slackware repository (official and 3th
   upgrade [PACKAGE [...]]   Update installed packages
   reinstall PACKAGE [...]   Reinstall one or more packages
   remove PACKAGE [...]      Remove one or more packages
+  history PACKAGE           Display package history information
+  info PACKAGE              Display information about installed or available packages
 
   check-update              Check packages updates
   changelog                 Display repository ChangeLogs
+
   search PATTERN            Search packages using PATTERN
   file-search PATTERN       Search files into packages using PATTERN
-  info PACKAGE              Display information about installed or available packages
-  history PACKAGE           Display package history information
+
   config                    Display configuration
   help COMMAND              Display command usage
 
@@ -55,15 +57,15 @@ update Slackware packages from a standard Slackware repository (official and 3th
   list packages             List available packages
   list repo                 List available repositories
   list orphan               List orphan packages installed from unknown repository
-  list variables            List variables for repos.d/* configurations
+  list variables            List variables for ".repo" configurations
 
 =head2 UPDATE COMMANDS
 
   update                    Update repository and local history packages metadata
   update history            Update local packages history metadata
-  update packages           Update repository metadata
-  update changelog          Update repository ChangeLog
-  update manifest           Update repository Manifest
+  update packages           Update repository metadata (using PACKAGES.TXT file)
+  update changelog          Update repository ChangeLog (using ChangeLog.txt)
+  update manifest           Update repository Manifest (using MANIFEST.bz2)
   update gpg-key            Update repository GPG-KEY
   update all                Update all metadata (packages, gpg-key, changelog, etc.)
 
@@ -73,6 +75,12 @@ update Slackware packages from a standard Slackware repository (official and 3th
   clean metadata            Clean database metadata
   clean manifest            Clean manifest data
   clean all                 Clean metadata and cache directory
+
+=head2 DATABASE COMMANDS
+
+  db optimize               Optimize slackman database
+  db info                   Display information about slackman database
+
 
 =head2 OPTIONS
 

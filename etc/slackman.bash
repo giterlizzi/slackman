@@ -43,7 +43,7 @@ _slackman() {
                     --download-only --new-packages --obsolete-packages -x --exclude
                     --show-files --no-priority --no-excludes -y --yes -n --no"
 
-  slackman_commands="update upgrade install reinstall check-update remove repo
+  slackman_commands="update upgrade install reinstall check-update remove repo db
                      changelog search file-search history config help clean list"
 
   if [[ "$cur" == -* ]]; then
@@ -55,6 +55,11 @@ _slackman() {
 
     list)
       COMPREPLY=( $( compgen -W 'installed obsoletes packages repo orphan variables' -- "$cur" ) )
+      return 0
+    ;;
+
+    db)
+      COMPREPLY=( $( compgen -W 'info optimize' -- "$cur" ) )
       return 0
     ;;
 
