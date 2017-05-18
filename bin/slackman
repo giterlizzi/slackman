@@ -18,7 +18,7 @@ slackman - Slackware Package Manager wrapper for pkgtools
 
 =head1 SYNOPSIS
 
-  slackman [options] [commands] [package ...]
+  slackman [options] [commands] [...]
 
 =head1 DESCRIPTION
 
@@ -44,6 +44,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
 =head2 REPOSITORY COMMANDS
 
   repo list                 List available repositories
+  repo enable REPOSITORY    Enable repository
+  repo disable REPOSITORY   Disable repository
   repo info REPOSITORY      Display repository information
 
 =head2 LIST COMMANDS
@@ -87,8 +89,6 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --show-files              Show file lists
   --no-priority             Disable repository priority check
   --no-excludes             Disable exclude repo configuration
-  --no-md5-check            Disable MD5 check
-  --no-gpg-check            Disable GPG check
   -y, --yes                 Assume yes
   -n, --no                  Assume no
   --quiet                   Quiet
@@ -117,6 +117,10 @@ Search package:
 Search file using MANIFEST.bz2 repository file (C<slackman update manifest>):
 
   slackman file-search firefox
+
+Enable a repository:
+
+  slackman repo enable slackware:multilib
 
 =head1 FILES
 

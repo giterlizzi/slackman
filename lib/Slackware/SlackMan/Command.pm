@@ -47,8 +47,7 @@ my $opts = {};
 GetOptions( $opts,
             'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
             'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s',
-            'no-md5-check', 'no-gpg-check', 'download-only', 'new-packages',
-            'obsolete-packages', 'summary', 'show-files',
+            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
           );
 
 $opts->{'limit'} ||= 50;
@@ -58,25 +57,26 @@ exit _show_version() if $opts->{'version'};
 
 pod2usage(-exitval => 0, -verbose => 2) if $opts->{'man'};
 
+# Force exit on CTRL-C
+$SIG{INT} = sub {
+  exit(1);
+};
+
+# Write all die to log
+$SIG{__DIE__} = sub {
+  logger->critical(trim($_[0]));
+  die @_;
+};
+
+# Write all warn to log
+$SIG{__WARN__} = sub {
+  logger->warning(trim($_[0]));
+  warn @_;
+};
+
 sub run {
 
   db_init();
-
-  # Force exit on CTRL-C
-  $SIG{INT}  = sub {
-    exit(1);
-  };
-
-  # Write all die to log
-  $SIG{__DIE__} = sub {
-    logger->critical(shift);
-  };
-
-  # Write all warn to log
-  $SIG{__WARN__} = sub {
-    logger->warning(shift);
-  };
-
 
   my $command   = $ARGV[0] || undef;
   my @arguments = @ARGV[ 1 .. $#ARGV ];
@@ -133,9 +133,8 @@ sub run {
     when('repo') {
       given($ARGV[1]) {
         when('list')      { _call_list_repo() }
-        when('add')       {}
-        when('disable')   {}
-        when('enable')    {}
+        when('disable')   { _call_repo_disable($ARGV[2]) }
+        when('enable')    { _call_repo_enable($ARGV[2]) }
         when('info')      { _call_repo_info($ARGV[2]) }
         default           { _show_repo_help() }
       }
@@ -1023,6 +1022,24 @@ sub _call_changelog {
   while (my $row = $sth->fetchrow_hashref()) {
     print sprintf("%-60s %-10s %-25s %s\n", $row->{'package'}, $row->{'status'}, $row->{'timestamp'}, $row->{'repository'});
   }
+
+}
+
+sub _call_repo_disable {
+
+  my ($repo_id) = @_;
+
+  disable_repository($repo_id);
+  print qq/Repository "$repo_id" disabled\n/;
+
+}
+
+sub _call_repo_enable {
+
+  my ($repo_id) = @_;
+
+  enable_repository($repo_id);
+  print qq/Repository "$repo_id" enabled\n/;
 
 }
 

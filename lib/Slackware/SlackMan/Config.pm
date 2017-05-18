@@ -16,6 +16,7 @@ BEGIN {
 
   @EXPORT_OK   = qw{
     read_config
+    set_config
     $slackman_conf
   };
 
@@ -26,7 +27,6 @@ BEGIN {
 }
 
 use Data::Dumper;
-
 use Slackware::SlackMan::Utils qw(:all);
 
 sub read_config {
@@ -78,6 +78,37 @@ sub read_config {
 
 }
 
+sub set_config {
+
+  my ( $input, $section, $keyname, $new_value ) = @_;
+
+  my $current_section = '';
+  my @lines  = split(/\n/, $input);
+  my $output = '';
+
+  foreach (@lines) { 
+
+    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
+      $current_section = $1;
+
+    } elsif ( $current_section eq $section )  {
+
+      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
+
+      if ( $key and $key eq $keyname  ) { 
+        $output .= "$keyname=$new_value\n";
+        next;
+      }
+
+    }
+
+    $output .= "$_\n";
+
+  }
+
+  return $output;
+
+}
 
 my $option_root   = undef;
 my $option_config = undef;
@@ -162,6 +193,8 @@ No subs are exported by default.
 =head1 SUBROUTINES
 
 =head2 read_config
+
+=head2 set_config
 
 =head1 VARIABLES
 

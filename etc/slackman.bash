@@ -1,5 +1,14 @@
 # Bash Completion for SlackMan
 
+_slackman_list_repos() {
+
+  local repos=$(slackman list repo | grep ":" | awk '{ print $1 }')
+  local repos_short=$(echo $repos | awk -F ":" '{ print $1 }' | sort -u)
+
+  echo "$repos_short $repos"
+
+}
+
 _slackman_complete_options() {
 
   case "$2" in
@@ -30,10 +39,9 @@ _slackman() {
   local prev="${COMP_WORDS[COMP_CWORD-1]}"
   local command="${COMP_WORDS[COMP_CWORD-2]}"
 
-  slackman_options="-h,--help --man --version -c,--config --root --repo 
-                    --download-only --new-packages --obsolete-packages
-                    -x --exclude --show-files --no-priority --no-excludes
-                    --no-md5-check --no-gpg-check -y --yes -n --no --quiet"
+  slackman_options="-h --help --man --version -c --config --root --repo --quiet
+                    --download-only --new-packages --obsolete-packages -x --exclude
+                    --show-files --no-priority --no-excludes -y --yes -n --no"
 
   slackman_commands="update upgrade install reinstall check-update remove repo
                      changelog search file-search history config help clean list"
@@ -46,10 +54,8 @@ _slackman() {
   case "${prev}" in
 
     list)
-      if [[ "$2" == "$prev" ]]; then
-        COMPREPLY=( $( compgen -W 'installed obsoletes packages repo orphan variables' -- "$cur" ) )
-        return 0
-      fi
+      COMPREPLY=( $( compgen -W 'installed obsoletes packages repo orphan variables' -- "$cur" ) )
+      return 0
     ;;
 
     update)
@@ -58,7 +64,7 @@ _slackman() {
     ;;
 
     repo)
-      COMPREPLY=( $( compgen -W 'list info' -- "$cur" ) )
+      COMPREPLY=( $( compgen -W 'list info enable disable' -- "$cur" ) )
       return 0
     ;;
 
@@ -67,12 +73,11 @@ _slackman() {
       return 0
     ;;
 
-    info)
+    info|disable|enable)
 
       if [[ "$command" == "repo" ]]; then
-        local repos=$(slackman list repo | grep ":" | awk '{ print $1 }')
-        local repos_short=$(echo $repos | awk -F ":" '{ print $1 }' | sort -u)
-        COMPREPLY=( $(compgen -W "$repos_short $repos" -- ${cur}) )
+        repos=$(_slackman_list_repos)
+        COMPREPLY=( $(compgen -W "$repos" -- ${cur}) )
         return 0
       fi
 

@@ -19,6 +19,8 @@ BEGIN {
     get_repository
     get_enabled_repositories
     get_disabled_repositories
+    disable_repository
+    enable_repository
   };
 
   %EXPORT_TAGS = (
@@ -79,6 +81,45 @@ foreach my $file (@files) {
     $repository->{"$config_name:$repo"} = $repo_cfg;
 
   }
+
+}
+
+sub _write_repository_config {
+
+  my ($repo_id, $key, $value) = @_;
+
+  my ($repo_conf, $repo_section) = split(/:/, $repo_id);
+  my $repo_file = sprintf('%s/repos.d/%s.repo', $slackman_conf->{directory}->{conf}, $repo_conf);
+
+  unless (-f $repo_file) {
+    warn qq/Repository configuration file ($repo_conf.repo) not found!\n/;
+    exit(255);
+  }
+
+  unless ($repository->{$repo_id}) {
+    warn qq/Repository "$repo_id" not found!\n/;
+    exit(255);
+  }
+
+  file_write($repo_file, set_config(file_read($repo_file), "[$repo_section]", $key, $value));
+
+}
+
+sub disable_repository {
+
+  my ($repo_id) = @_;
+
+  _write_repository_config($repo_id, 'enabled', 'false');
+  return 1;
+
+}
+
+sub enable_repository {
+
+  my ($repo_id) = @_;
+
+  _write_repository_config($repo_id, 'enabled', 'true');
+  return 1;
 
 }
 
