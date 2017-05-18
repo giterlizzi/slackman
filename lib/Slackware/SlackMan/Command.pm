@@ -335,7 +335,7 @@ sub _call_clean_cache {
   my $cache_dir = $slackman_conf->{'directory'}->{'cache'};
   logger->debug(qq/Clear packages cache directory "$cache_dir"/);
 
-  STDOUT->printflush("Clean packages download cache... ");
+  STDOUT->printflush("\nClean packages download cache... ");
   remove_tree($cache_dir, { keep_root => 1 });
   STDOUT->printflush("done\n");
 
@@ -346,7 +346,7 @@ sub _call_clean_metadata {
 
   my $table = shift;
 
-  STDOUT->printflush("Clean database metadata... ");
+  STDOUT->printflush("\nClean database metadata... ");
 
   db_wipe_tables()       unless ($table);
   db_wipe_table($table)      if ($table);
@@ -359,7 +359,7 @@ sub _call_clean_metadata {
 
 sub _call_update_repo_packages {
 
-  STDOUT->printflush("Update repository packages metadata:\n");
+  STDOUT->printflush("\nUpdate repository packages metadata:\n");
 
   foreach my $repo (get_enabled_repositories()) {
 
@@ -372,13 +372,11 @@ sub _call_update_repo_packages {
 
   }
 
-  print "\n";
-
 }
 
 sub _call_update_repo_gpg_key {
 
-  STDOUT->printflush("Update repository GPG key:\n");
+  STDOUT->printflush("\nUpdate repository GPG key:\n");
 
   foreach my $repo (get_enabled_repositories()) {
 
@@ -404,13 +402,11 @@ sub _call_update_repo_gpg_key {
 
   }
 
-  print "\n";
-
 }
 
 sub _call_update_repo_changelog {
 
-  STDOUT->printflush("Update repository ChangeLog:\n");
+  STDOUT->printflush("\nUpdate repository ChangeLog:\n");
 
   foreach my $repo (get_enabled_repositories()) {
 
@@ -423,13 +419,11 @@ sub _call_update_repo_changelog {
 
   }
 
-  print "\n";
-
 }
 
 sub _call_update_repo_manifest {
 
-  STDOUT->printflush("Update repository Manifest (very slow for big repository ... be patient):\n");
+  STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n");
 
   foreach my $repo (get_enabled_repositories()) {
 
@@ -441,13 +435,11 @@ sub _call_update_repo_manifest {
 
   }
 
-  print "\n";
-
 }
 
 sub _call_update_history {
 
-  STDOUT->printflush("Update local packages metadata:\n");
+  STDOUT->printflush("\nUpdate local packages metadata:\n");
 
   STDOUT->printflush("  * installed... ");
   parse_history('installed', \&callback_status);
@@ -456,8 +448,6 @@ sub _call_update_history {
   STDOUT->printflush("  * removed/updated... ");
   parse_history('removed', \&callback_status);
   STDOUT->printflush("done\n");
-
-  print "\n";
 
 }
 
@@ -595,7 +585,7 @@ sub _call_file_search {
 
   while (my $row = $sth->fetchrow_hashref()) {
     print sprintf("%s/@{[ BOLD ]}%s@{[ RESET ]}: %s (%s)\n",
-      $row->{directory}, $row->{file}, $row->{package}, $row->{repository});
+      $row->{'directory'}, $row->{'file'}, $row->{'package'}, $row->{'repository'});
   }
 
   exit(0);
@@ -645,14 +635,12 @@ sub _call_package_search {
   my $sth = $dbh->prepare($query);
   $sth->execute($search, $search, $search, $search);
 
-  #print sprintf("%-40s %-10s %-8s %-75s %-10s %s\n", "Package", "Version", "Arch", "Summary", "Status", "Repository");
-
   while (my $row = $sth->fetchrow_hashref()) {
 
     my $name    = $row->{'name'};
     my $summary = $row->{'summary'};
 
-    print sprintf("%-40s %-10s %-8s %-75s %-10s %s\n", $name, $row->{'version'}, $row->{'arch'}, $summary, ($row->{'status'}||' '), $row->{'repository'});
+    print sprintf("%-35s %-15s %-8s %-75s %-10s %s\n", $name, $row->{'version'}, $row->{'arch'}, $summary, ($row->{'status'}||' '), $row->{'repository'});
 
   }
 
