@@ -14,7 +14,8 @@ BEGIN {
   $VERSION     = 'v1.0.0';
   @ISA         = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK   = qw(
+
     callback_spinner
     callback_status
     changelog_date_to_time
@@ -39,7 +40,10 @@ BEGIN {
     create_lock
     get_lock_pid
     delete_lock
-  };
+
+    $slackman_opts
+
+  );
 
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -54,12 +58,14 @@ use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
+use Getopt::Long qw(:config );
 
 use Slackware::SlackMan::Logger;
 
 my $curl_useragent    = "SlackMan/$VERSION";
 my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --retry 5 --retry-max-time 0/;
 
+# Set proxy flags for cURL
 if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'enable'}) {
 
   my $proxy_conf = $Slackware::SlackMan::Config::slackman_conf->{'proxy'};
@@ -88,6 +94,18 @@ my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
+
+# Export cmd options
+our $slackman_opts = {};
+
+GetOptions( $slackman_opts,
+            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
+            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s',
+            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
+          );
+
+# Set default options
+$slackman_opts->{'limit'} ||= 50;
 
 sub file_read {
 
@@ -337,6 +355,7 @@ sub logger {
   $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_file,
                                                 'level' => $logger_level );
   return $logger;
+
 }
 
 sub create_lock {

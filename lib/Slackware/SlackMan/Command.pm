@@ -42,20 +42,10 @@ use Slackware::SlackMan::Config  qw(:all);
 
 my $lock_check = get_lock_pid();
 
-my $opts = {};
+exit _show_help()    if $slackman_opts->{'help'};
+exit _show_version() if $slackman_opts->{'version'};
 
-GetOptions( $opts,
-            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
-            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s',
-            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
-          );
-
-$opts->{'limit'} ||= 50;
-
-exit _show_help()    if $opts->{'help'};
-exit _show_version() if $opts->{'version'};
-
-pod2usage(-exitval => 0, -verbose => 2) if $opts->{'man'};
+pod2usage(-exitval => 0, -verbose => 2) if $slackman_opts->{'man'};
 
 # Force exit on CTRL-C
 $SIG{INT} = sub {
@@ -83,6 +73,8 @@ sub run {
 
   _show_help() unless ($command);
 
+  logger->debug(sprintf('Call %s command (cmd: slackman %s)', $command, join(' ', @ARGV)));
+
   if ($lock_check) {
 
     print "Another instance of slackman is running (pid: $lock_check) If this is not correct,\n" .
@@ -103,7 +95,7 @@ sub run {
     when('reinstall')    { _call_package_reinstall(@arguments) }
     when('remove')       { _call_package_remove(@arguments) }
     when('upgrade')      { _call_package_update(@arguments)  }
-    when('check-update') { $opts->{'no'} = 1 ; _call_package_update(@arguments) }
+    when('check-update') { $slackman_opts->{'no'} = 1 ; _call_package_update(@arguments) }
     when('info')         { _call_package_info($ARGV[1]) }
     when('history')      { _call_package_history($ARGV[1]) }
 
@@ -497,14 +489,17 @@ sub _call_package_info {
 
     push @installed, $row->{name};
 
+    my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
+
     print sprintf("%-10s : %s\n",     'Name',    $row->{name});
     print sprintf("%-10s : %s\n",     'Arch',    $row->{arch});
     print sprintf("%-10s : %s\n",     'Tag',     $row->{tag}) if ($row->{tag});
     print sprintf("%-10s : %s\n",     'Version', $row->{version});
     print sprintf("%-10s : %.1f M\n", 'Size',    ($row->{size_uncompressed}/1024));
+    print sprintf("%-10s : %s\n",     'Require', $pkg_dependency->{'required'}) if ($pkg_dependency);
     print sprintf("%-10s : %s\n",     'Summary', $row->{description});
 
-    if ($opts->{'show-files'}) {
+    if ($slackman_opts->{'show-files'}) {
 
       print sprintf("\n%-10s :\n", 'File lists');
 
@@ -543,10 +538,11 @@ sub _call_package_info {
     print sprintf("%-10s : %s\n",     'Category', $row->{category}) if ($row->{category});
     print sprintf("%-10s : %s\n",     'Version',  $row->{version});
     print sprintf("%-10s : %.1f M\n", 'Size',     ($row->{size_uncompressed}/1024));
+    print sprintf("%-10s : %s\n",     'Require',  $row->{required}) if ($row->{required});
     print sprintf("%-10s : %s\n",     'Repo',     $row->{repository});
     print sprintf("%-10s : %s\n",     'Summary',  $row->{description});
 
-    if ($opts->{'show-files'}) {
+    if ($slackman_opts->{'show-files'}) {
 
       print sprintf("\n%-10s :\n", 'File lists');
 
@@ -610,9 +606,10 @@ sub _call_package_search {
                       p1.repository,
                       (SELECT "installed"
                          FROM history h1
-                        WHERE h1.name = p1.name
+                        WHERE h1.name    = p1.name
                           AND h1.version = p1.version
-                          AND h1.status = "installed") AS status
+                          AND h1.tag     = p1.tag
+                          AND h1.status  = "installed") AS status
                  FROM packages p1
                 WHERE (    p1.name    LIKE ?
                         OR p1.summary LIKE ? )
@@ -629,8 +626,9 @@ sub _call_package_search {
                         OR h2.summary LIKE ?)
                   AND NOT EXISTS (SELECT 1
                                     FROM packages p2
-                                   WHERE p2.name = h2.name
-                                     AND p2.version = h2.version)';
+                                   WHERE p2.name    = h2.name
+                                     AND p2.version = h2.version
+                                     AND p2.tag     = h2.tag)';
 
   my $sth = $dbh->prepare($query);
   $sth->execute($search, $search, $search, $search);
@@ -753,8 +751,8 @@ sub _call_package_update {
 
   my $arch = get_arch();
 
-  my $option_repo    = $opts->{'repo'};
-  my $option_exclude = $opts->{'exclude'};
+  my $option_repo    = $slackman_opts->{'repo'};
+  my $option_exclude = $slackman_opts->{'exclude'};
 
   my @filters;
 
@@ -770,7 +768,7 @@ sub _call_package_update {
     push(@filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
-  push(@filters, 'packages.excluded = 0') unless ($opts->{'no-excludes'});
+  push(@filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
   push(@filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
   @update_package = map { parse_module_name($_) } @update_package if (@update_package);
@@ -822,7 +820,7 @@ sub _call_package_update {
     callback_spinner($spinner);
     $spinner++;
 
-    next if (($row->{old_priority} > $row->{new_priority}) && ! $opts->{'no-priority'});
+    next if (($row->{old_priority} > $row->{new_priority}) && ! $slackman_opts->{'no-priority'});
 
     $update_pkgs->{$row->{name}} = $row;
 
@@ -834,7 +832,7 @@ sub _call_package_update {
       my $updatable_pkg_required_row = package_available_update($pkg_required, $option_repo);
 
       next unless($updatable_pkg_required_row);
-      next if (($updatable_pkg_required_row->{old_priority} > $updatable_pkg_required_row->{new_priority}) && ! $opts->{'no-priority'});
+      next if (($updatable_pkg_required_row->{old_priority} > $updatable_pkg_required_row->{new_priority}) && ! $slackman_opts->{'no-priority'});
 
       $update_pkgs->{$updatable_pkg_required_row->{name}} = $updatable_pkg_required_row;
 
@@ -915,11 +913,11 @@ sub _call_package_update {
   print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size/1024);
   print "\n\n";
 
-  exit(0) if ($opts->{'no'});
+  exit(0) if ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
 
   if (@downloads) {
 
-    unless ($opts->{'yes'} || $opts->{'download-only'}) {
+    unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
       exit(0) unless(confirm("Perform update of selected packages? [Y/N] "));
     }
 
@@ -938,7 +936,7 @@ sub _call_package_update {
 
     }
 
-    exit(0) if ($opts->{'download-only'});
+    exit(0) if ($slackman_opts->{'download-only'});
 
     unless ($< == 0) {
       warn "\nPackage update requires root privileges!\n";
@@ -1005,7 +1003,7 @@ sub _call_list_repo {
 sub _call_changelog {
 
   my $query   = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
-  my $option_repo = $opts->{'repo'};
+  my $option_repo = $slackman_opts->{'repo'};
 
   my @repositories = get_enabled_repositories();
   my @filters      = ();
@@ -1028,7 +1026,7 @@ sub _call_changelog {
   # Filter disabled repository
   push(@filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
 
-  my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $opts->{'limit'}));
+  my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'}));
   $sth->execute();
 
   print sprintf("%-60s %-15s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
@@ -1102,7 +1100,7 @@ sub _call_repo_info {
 
 sub _call_list_obsoletes {
 
-  my $obsolete_rows = package_list_obsoletes($opts->{'repo'});
+  my $obsolete_rows = package_list_obsoletes($slackman_opts->{'repo'});
   my $num_rows      = scalar keys %$obsolete_rows;
 
   print "\nObsolete package(s)\n\n";
@@ -1140,7 +1138,7 @@ sub _call_package_reinstall {
 
   my @packages     = @_;
   my @is_installed = ();
-  my $option_repo  = $opts->{'repo'};
+  my $option_repo  = $slackman_opts->{'repo'};
 
   unless (@packages) {
     warn "Specify package!\n";
@@ -1169,7 +1167,7 @@ sub _call_package_reinstall {
 
   print "\n\n";
 
-  unless ($opts->{'yes'}) {
+  unless ($slackman_opts->{'yes'}) {
     exit(0) unless(confirm("Are you sure? [Y/N] "));
   }
 
@@ -1211,7 +1209,7 @@ sub _call_package_reinstall {
 
   }
 
-  exit(0) if ($opts->{'download-only'});
+  exit(0) if ($slackman_opts->{'download-only'});
 
   unless ($< == 0) {
     warn "\nPackage reinstall requires root privileges!\n";
@@ -1254,7 +1252,7 @@ sub _call_package_remove {
   my @packages = @_;
   my @is_installed = ();
 
-  if ($opts->{'obsolete-packages'}) {
+  if ($slackman_opts->{'obsolete-packages'}) {
 
     # Get list from "slackman list obsoletes"
     @is_installed = _call_list_obsoletes();
@@ -1290,9 +1288,9 @@ sub _call_package_remove {
   }
 
   exit(0) unless(@is_installed);
-  exit(0) if ($opts->{'no'});
+  exit(0) if ($slackman_opts->{'no'});
 
-  unless ($opts->{'yes'}) {
+  unless ($slackman_opts->{'yes'}) {
     exit(0) unless(confirm("Are you sure? [Y/N] "));
   }
 
@@ -1314,8 +1312,8 @@ sub _call_package_install {
 
   my @packages       = @_;
   my $arch           = get_arch();
-  my $option_repo    = $opts->{'repo'};
-  my $option_exclude = $opts->{'exclude'};
+  my $option_repo    = $slackman_opts->{'repo'};
+  my $option_exclude = $slackman_opts->{'exclude'};
 
   my $check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"', '"' . join('","', @packages) . '"'), undef);
 
@@ -1375,7 +1373,7 @@ sub _call_package_install {
     push(@filters, qq/( packages.repository != "$repository" )/);
   }
 
-  push(@filters, 'packages.excluded = 0') unless ($opts->{'no-excludes'});
+  push(@filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
 
   my $query_packages = qq/SELECT *
                             FROM packages
@@ -1410,7 +1408,7 @@ sub _call_package_install {
                                AND repository = ?
                                AND arch IN (?, "noarch")/;
 
-  if ($opts->{'new-packages'}) {
+  if ($slackman_opts->{'new-packages'}) {
     $query_packages = $query_new_packages;
   }
 
@@ -1473,10 +1471,10 @@ sub _call_package_install {
 
   print "\n\n";
 
-  exit(0)     if ($opts->{'no'});
+  exit(0)     if ($slackman_opts->{'no'});
   exit(0) unless (@install);
 
-  unless ($opts->{'yes'} || $opts->{'download-only'}) {
+  unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
     exit(0) unless(confirm("Install selected packages? [Y/N] "));
   }
 
@@ -1498,7 +1496,7 @@ sub _call_package_install {
     package_download($install, \@pkg_install, \@errors);
   }
 
-  exit(0) if ($opts->{'download-only'});
+  exit(0) if ($slackman_opts->{'download-only'});
 
   unless ($< == 0) {
     warn "\nPackage update requires root privileges!\n";
@@ -1641,7 +1639,7 @@ sub _fork_update_history {
   delete_lock();
 
   # Call update history command in background and set ROOT environment
-  my $update_history_cmd  = "perl $0 update history";
+  my $update_history_cmd  = "slackman update history";
      $update_history_cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
      $update_history_cmd .= " > /dev/null &";
 

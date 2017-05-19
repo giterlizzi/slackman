@@ -227,7 +227,7 @@ sub package_install {
   logger->debug(qq/Install $package/);
 
   system('/sbin/installpkg', '--terse', $package);
-  unlink($package) or warn "Failed to delete file: $!";
+  unlink($package) or warn "Failed to delete file $package: $!";
 
 }
 
