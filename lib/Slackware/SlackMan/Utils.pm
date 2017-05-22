@@ -40,6 +40,8 @@ BEGIN {
     create_lock
     get_lock_pid
     delete_lock
+    read_config
+    set_config
 
     $slackman_opts
 
@@ -388,6 +390,87 @@ sub delete_lock {
 
   my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
+
+}
+
+sub read_config {
+
+  my $file = shift;
+  my $fh   = file_handler($file, '<');
+
+  my $section;
+  my %config;
+
+  while (my $line = <$fh>) {
+
+    chomp($line);
+
+    # skip comments
+    next if ($line =~ /^\s*#/);
+
+    # skip empty lines
+    next if ($line =~ /^\s*$/);
+
+    if ($line =~ /^\[(.*)\]\s*$/) {
+      $section = $1;
+      next;
+    }
+
+    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
+
+      my ($field, $value) = ($1, $2);
+
+      if (not defined $section) {
+
+        $value = 1 if ($value =~ /^(yes|true)$/);
+        $value = 0 if ($value =~ /^(no|false)$/);
+
+        $config{$field} = $value;
+        next;
+
+      }
+
+      $value = 1 if ($value =~ /^(yes|true)$/);
+      $value = 0 if ($value =~ /^(no|false)$/);
+
+      $config{$section}{$field} = $value;
+
+    }
+  }
+
+  return %config;
+
+}
+
+sub set_config {
+
+  my ( $input, $section, $keyname, $new_value ) = @_;
+
+  my $current_section = '';
+  my @lines  = split(/\n/, $input);
+  my $output = '';
+
+  foreach (@lines) { 
+
+    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
+      $current_section = $1;
+
+    } elsif ( $current_section eq $section )  {
+
+      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
+
+      if ( $key and $key eq $keyname  ) { 
+        $output .= "$keyname=$new_value\n";
+        next;
+      }
+
+    }
+
+    $output .= "$_\n";
+
+  }
+
+  return $output;
 
 }
 

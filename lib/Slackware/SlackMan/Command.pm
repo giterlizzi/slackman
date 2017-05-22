@@ -264,7 +264,6 @@ sub _show_db_help {
 
 }
 
-
 sub _show_version {
   print sprintf("SlackMan - Slackware Package Manager %s\n\n", $VERSION);
   exit(0);
@@ -1612,8 +1611,17 @@ sub _call_list_packages {
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Repository");
   print sprintf("%s\n", "-"x132);
 
-  my $query = 'SELECT * FROM packages WHERE repository IN (%s) ORDER BY name';
-  $query = sprintf($query, '"' . join('", "', get_enabled_repositories()) . '"');
+  my $option_repo = $slackman_opts->{'repo'};
+
+  if ($option_repo) {
+    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
+  }
+
+  my $active_repositories = sprintf('IN ("%s")', join('", "', get_enabled_repositories()));
+     $active_repositories = sprintf('LIKE "%s"', $option_repo) if ($option_repo);
+
+  my $query = 'SELECT * FROM packages WHERE repository %s ORDER BY name';
+     $query = sprintf($query, $active_repositories);
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
