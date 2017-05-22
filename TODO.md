@@ -6,5 +6,5 @@
  - [x] Makefile for automate build of package
  - [ ] Speedup slackman bootstrap
  - [ ] Installed packages by repo `slackman list installed --repo REPOSITORY`
- - [ ] List packages by repo `slackman list packages --repo REPOSITORY`
- 
+ - [x] List packages by repo `slackman list packages --repo REPOSITORY`
+
