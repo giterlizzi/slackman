@@ -11,12 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.0';
+  $VERSION     = 'v1.0.1';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
-    read_config
-    set_config
     $slackman_conf
   };
 
@@ -28,87 +26,6 @@ BEGIN {
 
 use Data::Dumper;
 use Slackware::SlackMan::Utils qw(:all);
-
-sub read_config {
-
-  my $file = shift;
-  my $fh   = file_handler($file, '<');
-
-  my $section;
-  my %config;
-
-  while (my $line = <$fh>) {
-
-    chomp($line);
-
-    # skip comments
-    next if ($line =~ /^\s*#/);
-
-    # skip empty lines
-    next if ($line =~ /^\s*$/);
-
-    if ($line =~ /^\[(.*)\]\s*$/) {
-      $section = $1;
-      next;
-    }
-
-    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
-
-      my ($field, $value) = ($1, $2);
-
-      if (not defined $section) {
-
-        $value = 1 if ($value =~ /^(yes|true)$/);
-        $value = 0 if ($value =~ /^(no|false)$/);
-
-        $config{$field} = $value;
-        next;
-
-      }
-
-      $value = 1 if ($value =~ /^(yes|true)$/);
-      $value = 0 if ($value =~ /^(no|false)$/);
-
-      $config{$section}{$field} = $value;
-
-    }
-  }
-
-  return %config;
-
-}
-
-sub set_config {
-
-  my ( $input, $section, $keyname, $new_value ) = @_;
-
-  my $current_section = '';
-  my @lines  = split(/\n/, $input);
-  my $output = '';
-
-  foreach (@lines) { 
-
-    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
-      $current_section = $1;
-
-    } elsif ( $current_section eq $section )  {
-
-      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
-
-      if ( $key and $key eq $keyname  ) { 
-        $output .= "$keyname=$new_value\n";
-        next;
-      }
-
-    }
-
-    $output .= "$_\n";
-
-  }
-
-  return $output;
-
-}
 
 my $option_root   = undef;
 my $option_config = undef;
@@ -130,9 +47,9 @@ $ENV{ROOT} = $option_root if ($option_root);
 my $root = '';
    $root = $ENV{ROOT} if($ENV{ROOT});
 
-my $config_file    = "$root/etc/slackman/slackman.conf";
-   $config_file    = $option_config if ($option_config);
-   $config_file    =~ s|^//|/|;
+my $config_file = "$root/etc/slackman/slackman.conf";
+   $config_file = $option_config if ($option_config);
+   $config_file =~ s|^//|/|;
 
 if ($root ne '' && ! -d $root) {
   print "Slackware root directory $root not exists!\n";

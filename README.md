@@ -18,7 +18,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 ## Installation
 
-**INSTALL.md** file provide instructions on how to install SlackMan.
+**[INSTALL.md](INSTALL.md)** file provide instructions on how to install SlackMan.
 
 ## Supported Repository
 
@@ -136,7 +136,7 @@ Enable a repository:
 
 Bash Completion:
 
-    # slackman repo info sla<TAB> <TAB>
+    # slackman repo info sla<TAB><TAB>
     slackware:extra        slackware:multilib     slackware:packages
     slackware:pasture      slackware:patches      slackware:testing
 

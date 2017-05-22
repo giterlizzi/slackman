@@ -11,10 +11,11 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.0';
+  $VERSION     = 'v1.0.1';
   @ISA         = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK   = qw(
+
     callback_spinner
     callback_status
     changelog_date_to_time
@@ -39,7 +40,12 @@ BEGIN {
     create_lock
     get_lock_pid
     delete_lock
-  };
+    read_config
+    set_config
+
+    $slackman_opts
+
+  );
 
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
@@ -54,12 +60,14 @@ use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
+use Getopt::Long qw(:config );
 
 use Slackware::SlackMan::Logger;
 
 my $curl_useragent    = "SlackMan/$VERSION";
 my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --retry 5 --retry-max-time 0/;
 
+# Set proxy flags for cURL
 if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'enable'}) {
 
   my $proxy_conf = $Slackware::SlackMan::Config::slackman_conf->{'proxy'};
@@ -88,6 +96,18 @@ my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
+
+# Export cmd options
+our $slackman_opts = {};
+
+GetOptions( $slackman_opts,
+            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
+            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s',
+            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
+          );
+
+# Set default options
+$slackman_opts->{'limit'} ||= 50;
 
 sub file_read {
 
@@ -337,6 +357,7 @@ sub logger {
   $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_file,
                                                 'level' => $logger_level );
   return $logger;
+
 }
 
 sub create_lock {
@@ -369,6 +390,87 @@ sub delete_lock {
 
   my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
+
+}
+
+sub read_config {
+
+  my $file = shift;
+  my $fh   = file_handler($file, '<');
+
+  my $section;
+  my %config;
+
+  while (my $line = <$fh>) {
+
+    chomp($line);
+
+    # skip comments
+    next if ($line =~ /^\s*#/);
+
+    # skip empty lines
+    next if ($line =~ /^\s*$/);
+
+    if ($line =~ /^\[(.*)\]\s*$/) {
+      $section = $1;
+      next;
+    }
+
+    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
+
+      my ($field, $value) = ($1, $2);
+
+      if (not defined $section) {
+
+        $value = 1 if ($value =~ /^(yes|true)$/);
+        $value = 0 if ($value =~ /^(no|false)$/);
+
+        $config{$field} = $value;
+        next;
+
+      }
+
+      $value = 1 if ($value =~ /^(yes|true)$/);
+      $value = 0 if ($value =~ /^(no|false)$/);
+
+      $config{$section}{$field} = $value;
+
+    }
+  }
+
+  return %config;
+
+}
+
+sub set_config {
+
+  my ( $input, $section, $keyname, $new_value ) = @_;
+
+  my $current_section = '';
+  my @lines  = split(/\n/, $input);
+  my $output = '';
+
+  foreach (@lines) { 
+
+    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
+      $current_section = $1;
+
+    } elsif ( $current_section eq $section )  {
+
+      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
+
+      if ( $key and $key eq $keyname  ) { 
+        $output .= "$keyname=$new_value\n";
+        next;
+      }
+
+    }
+
+    $output .= "$_\n";
+
+  }
+
+  return $output;
 
 }
 

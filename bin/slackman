@@ -5,9 +5,6 @@ use warnings;
 
 use 5.010;
 
-use File::Basename;
-use lib dirname(__FILE__)."/../lib";
-
 use Slackware::SlackMan::Command qw(run);
 exit run;
 

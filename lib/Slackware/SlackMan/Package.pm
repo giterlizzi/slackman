@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.0';
+  $VERSION     = 'v1.0.1';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -227,7 +227,7 @@ sub package_install {
   logger->debug(qq/Install $package/);
 
   system('/sbin/installpkg', '--terse', $package);
-  unlink($package) or warn "Failed to delete file: $!";
+  unlink($package) or warn "Failed to delete file $package: $!";
 
 }
 
