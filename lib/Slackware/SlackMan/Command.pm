@@ -754,7 +754,6 @@ sub _call_package_update {
                                            packages.checksum
                                       FROM packages, history
                                      WHERE history.name   = packages.name
-                                       AND packages.arch  = history.arch
                                        AND history.status = "installed"
                                        AND old_version_build != new_version_build
                                        AND version_compare(old_version_build, new_version_build) < 0
