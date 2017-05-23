@@ -59,6 +59,12 @@ sub parse_changelog {
   my $meta_last_modified = db_meta_get("changelog-last-update.$repository");
      $meta_last_modified = 0 unless($meta_last_modified);
 
+  # Force update
+  if ($slackman_opts->{'force'}) {
+    $meta_last_modified = 0;
+    logger->info('Force changelog update');
+  }
+
   if ($meta_last_modified >= $changelog_last_modified) {
     &$callback_status('skip') if ($callback_status);
     return(0);
@@ -228,6 +234,12 @@ sub parse_packages {
   my $meta_last_modified     = db_meta_get("packages-last-update.$repository");
      $meta_last_modified     = 0 unless($meta_last_modified);
 
+  # Force update
+  if ($slackman_opts->{'force'}) {
+    $meta_last_modified = 0;
+    logger->info('Force packages update');
+  }
+
   if ($meta_last_modified >= $packages_last_modified) {
     &$callback_status('skip') if ($callback_status);
     return(0);
@@ -327,6 +339,12 @@ sub parse_manifest {
 
   my $meta_last_modified = db_meta_get("manifest-last-update.$repository");
      $meta_last_modified = 0 unless($meta_last_modified);
+
+  # Force update
+  if ($slackman_opts->{'force'}) {
+    $meta_last_modified = 0;
+    logger->info('Force manifest update');
+  }
 
   if ($meta_last_modified >= $manifest_last_modified) {
     &$callback_status('skip') if ($callback_status);

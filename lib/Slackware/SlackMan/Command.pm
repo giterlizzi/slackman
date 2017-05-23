@@ -352,7 +352,10 @@ sub _call_update_repo_packages {
 
   STDOUT->printflush("\nUpdate repository packages metadata:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos = get_enabled_repositories();
+     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository packages/);
     my $repo_data = get_repository($repo);
@@ -369,7 +372,10 @@ sub _call_update_repo_gpg_key {
 
   STDOUT->printflush("\nUpdate repository GPG key:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos = get_enabled_repositories();
+     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository GPG-KEY/);
     my $repo_data = get_repository($repo);
@@ -399,7 +405,10 @@ sub _call_update_repo_changelog {
 
   STDOUT->printflush("\nUpdate repository ChangeLog:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos = get_enabled_repositories();
+     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository ChangeLog/);
     my $repo_data = get_repository($repo);
@@ -416,7 +425,10 @@ sub _call_update_repo_manifest {
 
   STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos = get_enabled_repositories();
+     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+
+  foreach my $repo (@repos) {
 
     my $repo_data = get_repository($repo);
 
@@ -1028,7 +1040,7 @@ sub _call_changelog {
   my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'}));
   $sth->execute();
 
-  print sprintf("%-60s %-15s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
+  print sprintf("%-60s %-10s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
 
   while (my $row = $sth->fetchrow_hashref()) {
