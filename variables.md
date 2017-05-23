@@ -1,74 +1,40 @@
-# Repository Configuration
+# SlackMan variables
 
-## Sample
-
-This is a sample .repo configuration
-
-    [repository]
-
-    # Short description of repository
-    #
-    name=My local repository
+A short description of all variables for SlackMan repositories configuration.
 
 
-    # Enable or disable repository
-    #   true  - enabled
-    #   false - disabeld
-    #
-    enabled=true
+Variable         | Description
+-----------------|--------------------------------------------------------------
+`arch`           | Machine architeture (eg. x86_64, i686)
+`arch.bit`       | Machine bit architeture (eg. 64, 32)
+`arch.family`    | Machine architeture family (eg. x86_64, x86)
+`release`        | Slackware version from `/etc/slackware-release` (eg. 14.2) or current (follow `slackware.version` option in `slackman.conf` file)
+`release.real`   | Slackware "real" release version from  `/etc/slackware-release` file (eg. 14.2)
+`release.suffix` | Slackware release suffix (eg. 64 - for Slackware64,  arm - for Slackwarearm)
 
+# Display variables value from slackman
 
-    # Mirror URL
-    #
-    # This is the root of repository. slackman automatically detect all metadata
-    # file URLs (GPG-KEY, PACKAGES.TXT, MANIFEST.bz2, etc).
-    #
-    # Support local (via "file" protocol) and remote url (http, https, ftp, etc.)
-    #
-    # Example:
-    #
-    #   Remote URL: https://example.org/slackware/
-    #        Local: file:///srv/slackware/
-    #
-    mirror=http://example.org/slackware/
+    # slackman list variables
 
+    Variable             Value
+    ----------------------------------------
+    arch                 x86_64
+    arch.bit             64
+    arch.family          x86_64
+    release              current
+    release.real         14.2
+    release.suffix       64
 
-    # Priority (optional)
-    #
-    # Specify repository priority (default is 0 - "zero")
-    #
-    priority=1
+## Examples
 
+Slackware-14.2
+--------------
 
-    # Exclude packages (optional)
-    #
-    # Specify excluded packages for update or install (default "none")
-    #
-    exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+    name=Slackware{$release.suffix}-{$release} repository
+    mirror=http://example.org/slackware{$release.suffix}-{$release}/
 
+      release.suffix => 64
+      release        => current
 
-    # Override metadata URLs if the file is in another location
-
-    # Packages file URL
-    #
-    gpgkey=http://example.org/slackware/GPG-KEY
-
-    # Packages file URL
-    #
-    packages=http://example.org/slackware/PACKAGES.TXT
-
-    # Filelist file URL
-    #
-    filelist=http://example.org/slackware/FILELIST.TXT
-
-    # Changelog file URL
-    #
-    changelog=http://example.org/slackware/ChangeLog.txt
-
-    # Manifest file URL
-    #
-    manifest=http://example.org/slackware/MANIFEST.bz2
-
-    # Checksums file URL
-    #
-    chechsums=http://example.org/slackware/CHECHSUMS.md5
+    name=Slackware64-14.2
+    mirror=http://example.org/slackware64-14.2
