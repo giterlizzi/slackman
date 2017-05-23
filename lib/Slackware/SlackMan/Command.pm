@@ -344,6 +344,7 @@ sub _call_clean_metadata {
 
   db_reindex();
   db_compact();
+
   STDOUT->printflush("done\n");
 
 }
@@ -352,8 +353,12 @@ sub _call_update_repo_packages {
 
   STDOUT->printflush("\nUpdate repository packages metadata:\n");
 
-  my @repos = get_enabled_repositories();
-     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
 
   foreach my $repo (@repos) {
 
@@ -372,8 +377,12 @@ sub _call_update_repo_gpg_key {
 
   STDOUT->printflush("\nUpdate repository GPG key:\n");
 
-  my @repos = get_enabled_repositories();
-     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
 
   foreach my $repo (@repos) {
 
@@ -405,8 +414,12 @@ sub _call_update_repo_changelog {
 
   STDOUT->printflush("\nUpdate repository ChangeLog:\n");
 
-  my @repos = get_enabled_repositories();
-     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
 
   foreach my $repo (@repos) {
 
@@ -425,8 +438,12 @@ sub _call_update_repo_manifest {
 
   STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n");
 
-  my @repos = get_enabled_repositories();
-     @repos = ( $slackman_opts->{'repo'} ) if ($slackman_opts->{'repo'});
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
 
   foreach my $repo (@repos) {
 

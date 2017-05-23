@@ -105,6 +105,10 @@ Update repository packages and upgrade all packages:
 
   slackman update && slackman upgrade -y
 
+Force update of specific repository:
+
+  slackman update packages --repo slackware:packages --force
+
 Install, update and remove obsolete packages from specific repository:
 
   slackman update
