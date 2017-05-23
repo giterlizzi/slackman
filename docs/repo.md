@@ -1,6 +1,20 @@
-# Repository Configuration
+# SlackMan Repository
 
-## Sample
+## Supported Repository
+
+ - Slackware stable and **-current**
+ - SlackOnly
+ - Slackers (Conraid)
+ - Slacky (Italian Slackware Community)
+ - AlienBob
+ - ktown (KDE5)
+ - Cinnamon SlackBuilds
+ - MATE SlackBuilds
+ - Salix
+ - Microlinux
+ - ... and more
+
+## Sample configuration
 
 This is a sample .repo configuration
 
