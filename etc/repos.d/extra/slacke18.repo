@@ -1,4 +1,0 @@
-[packages]
-name=Slackware Enlightenment DR18 (E18) Packages
-enabled=false
-mirror=https://ngc891.blogdns.net/pub/slacke18/slackware$release.suffix-$release.real/

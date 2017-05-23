@@ -1,5 +1,0 @@
-[slackbuilds]
-name=Cinnamon SlackBuilds
-enabled=false
-mirror=http://slackware.uk/csb/$release.real/$arch.family/
-changelog=http://slackware.uk/csb/ChangeLog.txt

@@ -1,4 +1,0 @@
-[slackbuilds]
-name= Slackers (Slackware Current Repository)
-enabled=false
-mirror=http://slack.conraid.net/repository/slackware64-current/

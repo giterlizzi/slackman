@@ -1,5 +1,0 @@
-[latest]
-name=MATE SlackBuilds
-enabled=false
-mirror=http://slackware.uk/msb/$release/latest/$arch/
-changelog=http://slackware.uk/msb/ChangeLog.txt
