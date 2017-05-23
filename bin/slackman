@@ -87,6 +87,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   -c, --config              Configuration file
   --root                    Set Slackware root directory
   --repo                    Use specified repo during update or install packages
+  -f, --force               Force action
   --download-only           Download only
   --new-packages            Check for new packages
   --obsolete-packages       Check for obsolete packages
@@ -103,6 +104,10 @@ update Slackware packages from a standard Slackware repository (official and 3th
 Update repository packages and upgrade all packages:
 
   slackman update && slackman upgrade -y
+
+Force update of specific repository:
+
+  slackman update packages --repo slackware:packages --force
 
 Install, update and remove obsolete packages from specific repository:
 

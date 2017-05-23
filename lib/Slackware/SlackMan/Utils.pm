@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.1';
+  $VERSION     = 'v1.0.2';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -102,7 +102,7 @@ our $slackman_opts = {};
 
 GetOptions( $slackman_opts,
             'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
-            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s',
+            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s', 'force|f',
             'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
           );
 

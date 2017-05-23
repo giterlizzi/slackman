@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.1';
+  $VERSION     = 'v1.0.2';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(run);
   %EXPORT_TAGS = (
@@ -344,6 +344,7 @@ sub _call_clean_metadata {
 
   db_reindex();
   db_compact();
+
   STDOUT->printflush("done\n");
 
 }
@@ -352,7 +353,14 @@ sub _call_update_repo_packages {
 
   STDOUT->printflush("\nUpdate repository packages metadata:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository packages/);
     my $repo_data = get_repository($repo);
@@ -369,7 +377,14 @@ sub _call_update_repo_gpg_key {
 
   STDOUT->printflush("\nUpdate repository GPG key:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository GPG-KEY/);
     my $repo_data = get_repository($repo);
@@ -399,7 +414,14 @@ sub _call_update_repo_changelog {
 
   STDOUT->printflush("\nUpdate repository ChangeLog:\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
+
+  foreach my $repo (@repos) {
 
     logger->info(qq/Update "$repo" repository ChangeLog/);
     my $repo_data = get_repository($repo);
@@ -416,7 +438,14 @@ sub _call_update_repo_manifest {
 
   STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n");
 
-  foreach my $repo (get_enabled_repositories()) {
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
+
+  foreach my $repo (@repos) {
 
     my $repo_data = get_repository($repo);
 
@@ -725,7 +754,6 @@ sub _call_package_update {
                                            packages.checksum
                                       FROM packages, history
                                      WHERE history.name   = packages.name
-                                       AND packages.arch  = history.arch
                                        AND history.status = "installed"
                                        AND old_version_build != new_version_build
                                        AND version_compare(old_version_build, new_version_build) < 0
@@ -1028,7 +1056,7 @@ sub _call_changelog {
   my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'}));
   $sth->execute();
 
-  print sprintf("%-60s %-15s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
+  print sprintf("%-60s %-10s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
 
   while (my $row = $sth->fetchrow_hashref()) {
