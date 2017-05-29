@@ -153,7 +153,7 @@ sub file_handler {
   my ($filename, $mode) = @_;
   my $fh;
 
-  open($fh, $mode.':encoding(UTF-8)', $filename) or die "Could not open '$filename': $!";
+  open($fh, $mode, $filename) or die "Could not open '$filename': $!";
   return $fh;
 
 }

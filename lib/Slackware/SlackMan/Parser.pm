@@ -40,6 +40,7 @@ use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
+use Slackware::SlackMan::Repo    qw(:all);
 
 
 sub parse_changelog {
@@ -47,39 +48,19 @@ sub parse_changelog {
   my ($repo, $callback_status) = @_;
 
   my $repository          = $repo->{'id'};
-  my $changelog_contents  = '';
-  my $changelog_url       = $repo->{'changelog'};
-  my $changelog_file      = sprintf("%s/%s/ChangeLog.txt", $slackman_conf->{directory}->{'cache'}, $repository);
   my $changelog_separator = quotemeta('+--------------------------+');
 
-  unless ($changelog_url =~ /^(http(|s)|ftp|file)\:\/\//) {
-    die("Malformed URI for $repository");
-  }
-
-  my $changelog_last_modified = get_last_modified($changelog_url);
-  my $meta_last_modified = db_meta_get("changelog-last-update.$repository");
-     $meta_last_modified = 0 unless($meta_last_modified);
-
-  # Force update
-  if ($slackman_opts->{'force'}) {
-    $meta_last_modified = 0;
-    unlink($changelog_file);
-    logger->info('Force changelog update');
-  }
-
-  if ($meta_last_modified >= $changelog_last_modified) {
+  unless(download_repository_metadata($repository, 'packages', \&$callback_status)) {
     &$callback_status('skip') if ($callback_status);
     return(0);
   }
 
-  unless ( -e $changelog_file) {
-    &$callback_status('download') if ($callback_status);
-    download_file($changelog_url, $changelog_file, "-s")
-  }
+  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf->{directory}->{'cache'}, $repository);
+  return(0) unless (-e $changelog_file);
 
-  $changelog_contents = file_read($changelog_file);
+  my $changelog_contents = file_read($changelog_file);
+  return(0) unless($changelog_contents);
 
-  db_meta_delete("changelog-last-update.$repository");
   $dbh->do('DELETE FROM changelogs WHERE repository = ?', undef, $repository);
 
   chomp($changelog_contents);
@@ -209,7 +190,6 @@ sub parse_changelog {
     'values'  => \@values,
   });
 
-  db_meta_set("changelog-last-update.$repository", $changelog_last_modified);
   db_compact();
 
 }
@@ -219,10 +199,15 @@ sub parse_checksums {
 
   my ($repo) = @_;
 
-  my $checksums_contents = '';
-  my $checksums_file     = $repo->{'checksums'};
+  unless(download_repository_metadata($repo->{'id'}, 'checksums')) {
+    return(0);
+  }
 
-  $checksums_contents = file_read_url($checksums_file);
+  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf->{directory}->{'cache'}, $repo->{'id'});
+  return(0) unless (-e $checksums_file);
+
+  my $checksums_contents = file_read($checksums_file);
+  return(0) unless($checksums_contents);
 
   my @checksums = split(/\n/, $checksums_contents);
   my @filtered_checksums = ();
@@ -241,36 +226,18 @@ sub parse_packages {
 
   my ($repo, $callback_status) = @_;
 
-  my $repository = $repo->{'id'};
-  my $mirror     = $repo->{'mirror'};
-
-  unless ($mirror =~ /^(http(|s)|ftp|file)\:\/\//) {
-    die("Malformed URI for $repository");
-  }
-
-  my $packages_contents = '';
-  my $packages_file     = $repo->{'packages'};
-
-  my $packages_last_modified = get_last_modified($packages_file);
-  my $meta_last_modified     = db_meta_get("packages-last-update.$repository");
-     $meta_last_modified     = 0 unless($meta_last_modified);
-
-  # Force update
-  if ($slackman_opts->{'force'}) {
-    $meta_last_modified = 0;
-    logger->info('Force packages update');
-  }
-
-  if ($meta_last_modified >= $packages_last_modified) {
+  unless(download_repository_metadata($repo->{'id'}, 'packages', \&$callback_status, \&$callback_status)) {
     &$callback_status('skip') if ($callback_status);
     return(0);
   }
 
-  &$callback_status('download') if ($callback_status);
-  $packages_contents = file_read_url($packages_file);
+  my $repository = $repo->{'id'};
+  my $mirror     = $repo->{'mirror'};
 
-  db_meta_delete("packages-last-update.$repository");
+  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf->{directory}->{'cache'}, $repository);
+  return(0) unless (-e $packages_file);
 
+  my $packages_contents = file_read($packages_file);
   return(0) unless($packages_contents);
 
   &$callback_status('parse') if ($callback_status);
@@ -337,7 +304,6 @@ sub parse_packages {
     'values'  => \@values,
   });
 
-  db_meta_set("packages-last-update.$repository", $packages_last_modified);
   db_compact();
 
 }
@@ -347,34 +313,18 @@ sub parse_manifest {
 
   my ($repo, $callback_status) = @_;
 
-  my $repository    = $repo->{'id'};
-  my $manifest_file = $repo->{'manifest'};
+  my $repository        = $repo->{'id'};
+  my $manifest_contents = '';
 
-  unless ($manifest_file =~ /^(http(|s)|ftp|file)\:\/\//) {
-    die("Malformed URI for $repository");
-  }
-
-  my ($manifest_contents, $manifest_input);
-
-  my $manifest_last_modified = get_last_modified($manifest_file);
-
-  my $meta_last_modified = db_meta_get("manifest-last-update.$repository");
-     $meta_last_modified = 0 unless($meta_last_modified);
-
-  # Force update
-  if ($slackman_opts->{'force'}) {
-    $meta_last_modified = 0;
-    logger->info('Force manifest update');
-  }
-
-  if ($meta_last_modified >= $manifest_last_modified) {
+  unless(download_repository_metadata($repository, 'manifest', \&$callback_status, \&$callback_status)) {
     &$callback_status('skip') if ($callback_status);
     return(0);
   }
 
-  &$callback_status('download') if ($callback_status);
+  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf->{directory}->{'cache'}, $repository);
+  return(0) unless(-e $manifest_file);
 
-  $manifest_input = file_read_url($manifest_file);
+  my $manifest_input = file_read($manifest_file);
   return(0) unless($manifest_input);
 
   db_meta_delete("manifest-last-update.$repository");
@@ -448,7 +398,6 @@ sub parse_manifest {
     'values'  => \@values,
   });
 
-  db_meta_set("manifest-last-update.$repository", $manifest_last_modified);
   db_compact();
 
 }

@@ -21,6 +21,7 @@ BEGIN {
     get_disabled_repositories
     disable_repository
     enable_repository
+    download_repository_metadata
   };
 
   %EXPORT_TAGS = (
@@ -35,6 +36,7 @@ use File::Basename;
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
+use Slackware::SlackMan::DB     qw(:all);
 
 my $repository = {};
 
@@ -172,6 +174,54 @@ sub get_repositories {
 
 }
 
+sub download_repository_metadata {
+
+  my ($repo_id, $meta_id, $callback_status) = @_;
+
+  my @metadata = qw(gpgkey packages checksums changelog manifest);
+
+  if ($meta_id) {
+    @metadata = ( $meta_id );
+  }
+
+  foreach my $metadata (@metadata) {
+
+    my $metadata_url  = $repository->{$repo_id}->{$metadata};
+    my $metadata_file = sprintf("%s/%s/%s", $slackman_conf->{directory}->{'cache'}, $repo_id, basename($metadata_url));
+
+    unless ($metadata_url =~ /^(http(|s)|ftp|file)\:\/\//) {
+      die(sprintf('Malformed URI %s for %s', $metadata, $repo_id));
+    }
+
+    logger->debug("Check $metadata last update of $repo_id");
+
+    my $metadata_last_modified = get_last_modified($metadata_url);
+    my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata");
+       $db_meta_last_modified  = 0 unless($db_meta_last_modified);
+
+    # Force update
+    if ($slackman_opts->{'force'}) {
+      logger->debug("Force $metadata last update of $repo_id");
+      $db_meta_last_modified = 0;
+      unlink($metadata_file);
+    }
+
+    return (0) if ($db_meta_last_modified >= $metadata_last_modified);
+
+    unless ( -e $metadata_file) {
+      &$callback_status('download') if ($callback_status);
+      download_file($metadata_url, $metadata_file, "-s");
+      logger->debug("Download $metadata file for $repo_id");
+    }
+
+    db_meta_set("last-update.$repo_id.$metadata", $metadata_last_modified);
+
+  }
+
+  return(1);
+
+}
+
 
 1;
 __END__
@@ -205,6 +255,8 @@ No subs are exported by default.
 =head2 get_repository
 
 =head2 get_repository_list
+
+=head2 download_repository_metadata
 
 =head1 AUTHOR
 

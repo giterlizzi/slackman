@@ -352,7 +352,6 @@ sub package_download {
   unless (-e $package_path) {
 
     $package_url =~ s/\/\/\.//;
-    print "$package_url\n";
 
     logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
 
