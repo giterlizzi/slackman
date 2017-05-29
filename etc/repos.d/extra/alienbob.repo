@@ -1,4 +1,4 @@
-[slackbuilds]
+[packages]
 name=AlienBob SlackBuilds
 enabled=false
 mirror=http://bear.alienbase.nl/mirrors/people/alien/sbrepos/$release/$arch/

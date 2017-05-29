@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.2';
+  $VERSION     = 'v1.0.3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -352,7 +352,6 @@ sub package_download {
   unless (-e $package_path) {
 
     $package_url =~ s/\/\/\.//;
-    print "$package_url\n";
 
     logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
 

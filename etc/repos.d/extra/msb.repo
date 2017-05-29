@@ -1,5 +1,61 @@
+# Mate SlackBuilds (MSB) repository
+
+# MSB repo | Slackware version
+# ---------|-----------------------
+# 1.18     | 14.2 *
+# 1.16     | 14.2
+# 1.14     | 14.2
+# 1.12     | 14.1 *
+# 1.10     | 14.1
+# 1.8      | 14.1
+# 1.6      | 14.1 * 14.0 *
+#
+# (*) "latest" repository version
+
 [latest]
-name=MATE SlackBuilds
+name=MATE SlackBuilds (MSB)
 enabled=false
-mirror=http://slackware.uk/msb/$release/latest/$arch/
+mirror=http://slackware.uk/msb/$release.real/latest/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.18]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.18/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.16]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.16/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.14]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.14/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.12]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.12/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.10]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.10/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.8]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.8/$arch/
+changelog=http://slackware.uk/msb/ChangeLog.txt
+
+[1.6]
+name=MATE SlackBuilds (MSB)
+enabled=false
+mirror=http://slackware.uk/msb/$release.real/1.6/$arch/
 changelog=http://slackware.uk/msb/ChangeLog.txt

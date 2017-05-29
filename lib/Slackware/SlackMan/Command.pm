@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.2';
+  $VERSION     = 'v1.0.3';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(run);
   %EXPORT_TAGS = (
@@ -73,9 +73,13 @@ sub run {
 
   _show_help() unless ($command);
 
+  my @lock_commands = qw(update install upgrade remove reinstall clean);
+
   logger->debug(sprintf('Call %s command (cmd: slackman %s)', $command, join(' ', @ARGV)));
 
-  if ($lock_check) {
+  # Check running slackman instance and block certain commands (only
+  # informational command are available)
+  if ($lock_check && grep(/^$command/, @lock_commands)) {
 
     print "Another instance of slackman is running (pid: $lock_check) If this is not correct,\n" .
           "you can remove /var/lock/slackman file and run slackman again.\n\n";
@@ -524,7 +528,7 @@ sub _call_package_info {
     print sprintf("%-10s : %s\n",     'Tag',     $row->{tag}) if ($row->{tag});
     print sprintf("%-10s : %s\n",     'Version', $row->{version});
     print sprintf("%-10s : %.1f M\n", 'Size',    ($row->{size_uncompressed}/1024));
-    print sprintf("%-10s : %s\n",     'Require', $pkg_dependency->{'required'}) if ($pkg_dependency);
+    print sprintf("%-10s : %s\n",     'Require', $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
     print sprintf("%-10s : %s\n",     'Summary', $row->{description});
 
     if ($slackman_opts->{'show-files'}) {
@@ -958,6 +962,7 @@ sub _call_package_update {
     foreach my $pkg (@downloads) {
 
       $count_downloads++;
+
       STDOUT->printflush(sprintf("[%d/%d] %s\n", $count_downloads, $num_downloads, $pkg->{'package'}));
       package_download($pkg, \@packages, \@errors);
 
@@ -1038,9 +1043,9 @@ sub _call_changelog {
   # Get only machine arch and noarch changelogs
   my $arch = get_arch();
 
-     if ($arch eq 'x86_64')        { push(@filters, 'arch IN ("x86_64", "noarch")') }
-  elsif ($arch =~ /x86|i[3456]86/) { push(@filters, '(arch = "noarch" OR arch = "x86" OR arch LIKE "i%86")') }
-  elsif ($arch =~ /arm(.*)/)       { push(@filters, '(arch = "noarch" OR arch LIKE "arm%")')}
+     if ($arch eq 'x86_64')        { push(@filters, '(arch IN ("x86_64", "noarch") OR arch IS NULL)') }
+  elsif ($arch =~ /x86|i[3456]86/) { push(@filters, '(arch = "noarch" OR arch = "x86" OR arch LIKE "i%86" OR arch IS NULL)') }
+  elsif ($arch =~ /arm(.*)/)       { push(@filters, '(arch = "noarch" OR arch LIKE "arm%" OR arch IS NULL)')}
 
   # Filter repository
   if ($option_repo) {
@@ -1056,11 +1061,17 @@ sub _call_changelog {
   my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'}));
   $sth->execute();
 
-  print sprintf("%-60s %-10s %-25s %s\n", "Package",  "Status", "Timestamp", "Repository");
+  print sprintf("%-60s %-20s %-10s %-20s %s\n", "Package",  "Version", "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
 
   while (my $row = $sth->fetchrow_hashref()) {
-    print sprintf("%-60s %-10s %-25s %s\n", $row->{'package'}, $row->{'status'}, $row->{'timestamp'}, $row->{'repository'});
+    print sprintf("%-60s %-20s %-10s %-20s %s\n",
+      ($row->{'package'}    || ''),
+      ($row->{'version'}    || ''),
+      ($row->{'status'}     || ''),
+      ($row->{'timestamp'}  || ''),
+      ($row->{'repository'} || '')
+    );
   }
 
 }

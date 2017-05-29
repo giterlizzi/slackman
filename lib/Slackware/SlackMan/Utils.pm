@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.2';
+  $VERSION     = 'v1.0.3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -20,6 +20,7 @@ BEGIN {
     callback_status
     changelog_date_to_time
     confirm
+    curl_cmd
     directory_files
     download_file
     file_append
@@ -70,23 +71,21 @@ my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --
 # Set proxy flags for cURL
 if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'enable'}) {
 
-  my $proxy_conf = $Slackware::SlackMan::Config::slackman_conf->{'proxy'};
-
-  if ($proxy_conf->{'username'}) {
+  if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'}) {
 
     $curl_global_flags .= sprintf(" -x %s://%s:%s@%s:%s",
-      $proxy_conf->{'protocol'},
-      $proxy_conf->{'username'},
-      $proxy_conf->{'password'},
-      $proxy_conf->{'hostname'},
-      $proxy_conf->{'port'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'password'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
     );
 
   } else {
     $curl_global_flags .= sprintf(" -x %s://%s:%s",
-      $proxy_conf->{'protocol'},
-      $proxy_conf->{'hostname'},
-      $proxy_conf->{'port'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
+      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
     );
   }
 
@@ -154,33 +153,44 @@ sub file_handler {
   my ($filename, $mode) = @_;
   my $fh;
 
-  open($fh, $mode.':encoding(UTF-8)', $filename) or die "Could not open '$filename': $!";
+  open($fh, $mode, $filename) or die "Could not open '$filename': $!";
   return $fh;
+
+}
+
+sub curl_cmd {
+
+  my ($curl_flags) = @_;
+
+  my $curl_cmd = "curl $curl_global_flags $curl_flags";
+
+  logger->debug("CURL: $curl_cmd");
+
+  return $curl_cmd;
 
 }
 
 sub file_read_url {
 
   my $url      = shift;
-  my $curl_cmd = "curl $curl_global_flags -s $url";
+  my $curl_cmd = curl_cmd("-s $url");
 
   logger->info("Downloading $url");
-  logger->debug("CURL: $curl_cmd");
 
   my $data = qx{ $curl_cmd };
   return $data;
+
 }
 
 sub download_file {
 
   my ($url, $output, $extra_curl_flags) = @_;
 
-  my $curl_flags  = $curl_global_flags;
-     $curl_flags .= " $extra_curl_flags" if ($extra_curl_flags);
-  my $curl_cmd    = "curl $curl_flags -# -o $output $url";
+  $extra_curl_flags ||= '';
+
+  my $curl_cmd = curl_cmd("$extra_curl_flags -# -o $output $url");
 
   logger->info("Downloading $url");
-  logger->debug("CURL: $curl_cmd");
 
   system($curl_cmd);
   return ($?) ? 0 : 1;
@@ -190,10 +200,9 @@ sub download_file {
 sub get_last_modified {
 
   my $url      = shift;
-  my $curl_cmd = "curl $curl_global_flags -s -I $url";
+  my $curl_cmd = curl_cmd("-s -I $url");
 
   logger->debug(qq/Get "Last-Modified" date of $url/);
-  logger->debug("CURL: $curl_cmd");
 
   my $headers = qx{ $curl_cmd };
   my $result  = 0;
@@ -228,7 +237,6 @@ sub confirm {
   return 0 if ($answer =~ /n/i);
 
 }
-
 
 sub changelog_date_to_time {
 
