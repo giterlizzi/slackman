@@ -48,20 +48,22 @@ sub parse_changelog {
 
   my $repository          = $repo->{'id'};
   my $changelog_contents  = '';
-  my $changelog_file      = $repo->{'changelog'};
+  my $changelog_url       = $repo->{'changelog'};
+  my $changelog_file      = sprintf("%s/%s/ChangeLog.txt", $slackman_conf->{directory}->{'cache'}, $repository);
   my $changelog_separator = quotemeta('+--------------------------+');
 
-  unless ($changelog_file =~ /^(http(|s)|ftp|file)\:\/\//) {
+  unless ($changelog_url =~ /^(http(|s)|ftp|file)\:\/\//) {
     die("Malformed URI for $repository");
   }
 
-  my $changelog_last_modified = get_last_modified($changelog_file);
+  my $changelog_last_modified = get_last_modified($changelog_url);
   my $meta_last_modified = db_meta_get("changelog-last-update.$repository");
      $meta_last_modified = 0 unless($meta_last_modified);
 
   # Force update
   if ($slackman_opts->{'force'}) {
     $meta_last_modified = 0;
+    unlink($changelog_file);
     logger->info('Force changelog update');
   }
 
@@ -70,9 +72,12 @@ sub parse_changelog {
     return(0);
   }
 
-  &$callback_status('download') if ($callback_status);
+  unless ( -e $changelog_file) {
+    &$callback_status('download') if ($callback_status);
+    download_file($changelog_url, $changelog_file, "-s")
+  }
 
-  $changelog_contents = file_read_url($changelog_file);
+  $changelog_contents = file_read($changelog_file);
 
   db_meta_delete("changelog-last-update.$repository");
   $dbh->do('DELETE FROM changelogs WHERE repository = ?', undef, $repository);
@@ -100,48 +105,64 @@ sub parse_changelog {
 
     foreach my $line (@lines) {
 
+      chomp($line);
+
       next if ($line =~ /^\s/);
       next if ($line =~ /\*\:/);
       next if ($line =~ /\.img/);
 
+      next unless ($line =~ /(added|rebuilt|removed|upgraded|patched|updated)/i);
+
       my ($package, $status);
       my ($name, $version, $arch, $tag, $build);
 
-      if ($line =~ m/((.*)\.(txz|tgz|tbz|tlz)):\s+(Added|Rebuilt|Removed|Upgraded|Patched)/i) {
+      # Standard Slackware ChangeLog
+      if ($line =~ /(([[:graph:]]*)\.(txz|tgz|tbz|tlz)):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched)/i) {
 
         $package = $1;
         $status  = $4;
 
-      } elsif ($line =~ m/(.*): (updated to|added) ((v\s|v)(\d.([A-Za-z0-9-.]*)))/i) {
+      } elsif ($line =~ /([[:graph:]]*):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
 
         $package = $1;
-        $version = $5;
-        $version =~ s/\.$//;
-
         $status  = $2;
-        $status  = 'upgraded' if ($status && $status =~ /updated/i);
-
-
-      } elsif ($line =~ m/(.*): (updated to|added) (\d.([A-Za-z0-9-.]*))/i) {
-
-        $package = $1;
         $version = $3;
-        $version =~ s/\.$//;
 
+        $version =~ s/(\.|\;|\,)$//;
+        $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
+        $status  = 'added'    if ($status && $status =~ /added/i);
+
+      } elsif ($line =~ /([[:graph:]]*):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+
+        $package = $1;
         $status  = $2;
-        $status  = 'upgraded' if ($status && $status =~ /updated/i);
+        $version = $3;
 
-      } elsif ($line =~ m/(.*) added version (\d.([A-Za-z0-9-.]*))/i) {
+        $version =~ s/(\.|\;|\,)$//;
+        $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
+        $status  = 'added'    if ($status && $status =~ /added/i);
+
+      } elsif ($line =~ /([[:graph:]]*) added version (\d.([[:graph:]]*))/i) {
+
         $package = $1;
         $version = $2;
         $status  = 'added';
 
-      } elsif ($line =~ m/(.*) updated for version (\d.([A-Za-z0-9-.]*))/i) {
+      } elsif ($line =~ /([[:graph:]]*) updated for version (\d.([[:graph:]]*))/i) {
+
         $package = $1;
         $version = $2;
         $status  = 'upgraded';
+
+      # slackonly ChangeLog
+      } elsif ($line =~ /(([[:graph:]]*)\/([[:graph:]]*))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+
+        $package = $1;
+        $status  = $4;
+
       }
 
+      next     if (defined($version) && ! $version =~ /\d/);
       next unless ($status);
 
       if ($package =~ /(txz|tgz|tbz|tlz)/) {
