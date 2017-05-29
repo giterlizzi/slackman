@@ -50,7 +50,7 @@ sub parse_changelog {
   my $repository          = $repo->{'id'};
   my $changelog_separator = quotemeta('+--------------------------+');
 
-  unless(download_repository_metadata($repository, 'packages', \&$callback_status)) {
+  unless(download_repository_metadata($repository, 'changelog', \&$callback_status)) {
     &$callback_status('skip') if ($callback_status);
     return(0);
   }
@@ -235,6 +235,7 @@ sub parse_packages {
   my $mirror     = $repo->{'mirror'};
 
   my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf->{directory}->{'cache'}, $repository);
+
   return(0) unless (-e $packages_file);
 
   my $packages_contents = file_read($packages_file);

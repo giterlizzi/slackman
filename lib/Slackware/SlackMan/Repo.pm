@@ -32,6 +32,7 @@ BEGIN {
 
 use Data::Dumper;
 use File::Basename;
+use File::Path qw(make_path remove_tree);
 
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
@@ -176,47 +177,47 @@ sub get_repositories {
 
 sub download_repository_metadata {
 
-  my ($repo_id, $meta_id, $callback_status) = @_;
+  my ($repo_id, $metadata, $callback_status) = @_;
 
-  my @metadata = qw(gpgkey packages checksums changelog manifest);
+  my $metadata_url  = $repository->{$repo_id}->{$metadata};
+  my $metadata_file = sprintf("%s/%s/%s", $slackman_conf->{directory}->{'cache'}, $repo_id, basename($metadata_url));
 
-  if ($meta_id) {
-    @metadata = ( $meta_id );
+  unless ($metadata_url =~ /^(http(|s)|ftp|file)\:\/\//) {
+    die(sprintf('Malformed "%s" URI for "%s" repository', $metadata, $repo_id));
   }
 
-  foreach my $metadata (@metadata) {
+  logger->debug(sprintf('[%s] Check "%s" metadata last update', $repo_id, $metadata));
 
-    my $metadata_url  = $repository->{$repo_id}->{$metadata};
-    my $metadata_file = sprintf("%s/%s/%s", $slackman_conf->{directory}->{'cache'}, $repo_id, basename($metadata_url));
+  my $metadata_last_modified = get_last_modified($metadata_url);
+  my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata");
+     $db_meta_last_modified  = 0 unless($db_meta_last_modified);
 
-    unless ($metadata_url =~ /^(http(|s)|ftp|file)\:\/\//) {
-      die(sprintf('Malformed URI %s for %s', $metadata, $repo_id));
-    }
-
-    logger->debug("Check $metadata last update of $repo_id");
-
-    my $metadata_last_modified = get_last_modified($metadata_url);
-    my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata");
-       $db_meta_last_modified  = 0 unless($db_meta_last_modified);
-
-    # Force update
-    if ($slackman_opts->{'force'}) {
-      logger->debug("Force $metadata last update of $repo_id");
-      $db_meta_last_modified = 0;
-      unlink($metadata_file);
-    }
-
-    return (0) if ($db_meta_last_modified >= $metadata_last_modified);
-
-    unless ( -e $metadata_file) {
-      &$callback_status('download') if ($callback_status);
-      download_file($metadata_url, $metadata_file, "-s");
-      logger->debug("Download $metadata file for $repo_id");
-    }
-
-    db_meta_set("last-update.$repo_id.$metadata", $metadata_last_modified);
-
+  # Force update
+  if ($slackman_opts->{'force'}) {
+    logger->debug(sprintf('[%s] Force "%s" metadata last update', $repo_id, $metadata));
+    $db_meta_last_modified = 0;
+    unlink($metadata_file);
   }
+
+  logger->debug(sprintf('[%s] "%s" metadata time (repo: %s - local: %s)',
+    $repo_id, $metadata,
+    time_to_timestamp($metadata_last_modified),
+    time_to_timestamp($db_meta_last_modified)));
+
+  if ($metadata_last_modified == $db_meta_last_modified) {
+    logger->debug(sprintf('[%s] Skip "%s" metadata download', $repo_id, $metadata));
+    return (0);
+  }
+
+  make_path(dirname($metadata_file)) unless (-d dirname($metadata_file));
+
+  unless ( -e $metadata_file) {
+    &$callback_status('download') if ($callback_status);
+    download_file($metadata_url, $metadata_file, "-s");
+    logger->debug(sprintf('[%s] Download %s metadata file', $repo_id, $metadata));
+  }
+
+  db_meta_set("last-update.$repo_id.$metadata", $metadata_last_modified);
 
   return(1);
 
