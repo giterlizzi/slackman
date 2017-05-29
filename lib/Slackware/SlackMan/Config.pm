@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.2';
+  $VERSION     = 'v1.0.3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
