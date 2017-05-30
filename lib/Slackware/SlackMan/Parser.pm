@@ -92,13 +92,13 @@ sub parse_changelog {
       next if ($line =~ /\*\:/);
       next if ($line =~ /\.img/);
 
-      next unless ($line =~ /(added|rebuilt|removed|upgraded|patched|updated)/i);
+      next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
 
       my ($package, $status);
       my ($name, $version, $arch, $tag, $build);
 
       # Standard Slackware ChangeLog
-      if ($line =~ /(([[:graph:]]*)\.(txz|tgz|tbz|tlz)):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched)/i) {
+      if ($line =~ /(^(a|ap|d|e|f|k|kde|kdei|gnome|l|n|t|tcl|x|xap|xfce|y|extra|testing|pastrure|patches)\/([[:graph:]]+)):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
 
         $package = $1;
         $status  = $4;
