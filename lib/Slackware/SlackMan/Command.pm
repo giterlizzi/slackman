@@ -1111,7 +1111,7 @@ sub _call_repo_info {
   }
 
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
-  my $last_update  = time_to_timestamp(db_meta_get("packages-last-update.$repo_id"));
+  my $last_update  = time_to_timestamp(db_meta_get("last-update.$repo_id.packages"));
 
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
@@ -1120,7 +1120,7 @@ sub _call_repo_info {
   print sprintf("%-20s %s\n", "ID:",          $repo_data->{id});
   print sprintf("%-20s %s\n", "Mirror:",      $repo_data->{mirror});
   print sprintf("%-20s %s\n", "Status:",      (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-20s %s\n", "Last Update:", $last_update);
+  print sprintf("%-20s %s\n", "Last Update:", ($last_update || ''));
   print sprintf("%-20s %s\n", "Priority:",    $repo_data->{priority});
   print sprintf("%-20s %s\n", "Packages:",    $package_nums);
 
