@@ -94,49 +94,44 @@ sub parse_changelog {
 
       next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
 
-      my ($package, $status);
-      my ($name, $version, $arch, $tag, $build);
+      my ($package, $status, $name, $version, $arch, $tag, $build);
 
-      # Standard Slackware ChangeLog
-      if ($line =~ /(^(a|ap|d|e|f|k|kde|kdei|gnome|l|n|t|tcl|x|xap|xfce|y|extra|testing|pastrure|patches)\/([[:graph:]]+)):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
+      # Standard Slackware ChangeLog format (directory/package: status)
+      if ($line =~ /([[:graph:]]+t?z):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
 
         $package = $1;
-        $status  = $4;
+        $status  = $2;
 
-      } elsif ($line =~ /([[:graph:]]*):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+      # AlienBob Changelog
+      } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
 
         $package = $1;
         $status  = $2;
         $version = $3;
 
-        $version =~ s/(\.|\;|\,)$//;
-        $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
-        $status  = 'added'    if ($status && $status =~ /added/i);
-
-      } elsif ($line =~ /([[:graph:]]*):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+      # AlienBob Changelog
+      } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
 
         $package = $1;
         $status  = $2;
         $version = $3;
 
-        $version =~ s/(\.|\;|\,)$//;
-        $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
-        $status  = 'added'    if ($status && $status =~ /added/i);
-
-      } elsif ($line =~ /([[:graph:]]*) added version (\d.([[:graph:]]*))/i) {
+      # AlienBob Changelog
+      } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
 
         $package = $1;
         $version = $2;
         $status  = 'added';
 
-      } elsif ($line =~ /([[:graph:]]*) updated for version (\d.([[:graph:]]*))/i) {
+      # AlienBob Changelog
+      } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
 
         $package = $1;
         $version = $2;
         $status  = 'upgraded';
 
       # slackonly ChangeLog
-      } elsif ($line =~ /(([[:graph:]]*)\/([[:graph:]]*))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+      } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
 
         $package = $1;
         $status  = $4;
@@ -145,6 +140,12 @@ sub parse_changelog {
 
       next     if (defined($version) && ! $version =~ /\d/);
       next unless ($status);
+
+      $version =~ s/(\.|\;|\,)$// if ($version);
+      $package =~ s/\://          if ($package);
+
+      $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
+      $status  = 'added'    if ($status && $status =~ /added/i);
 
       if ($package =~ /(txz|tgz|tbz|tlz)/) {
 
