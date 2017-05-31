@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.3';
+  $VERSION     = 'v1.0.4';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -164,7 +164,7 @@ sub curl_cmd {
 
   my $curl_cmd = "curl $curl_global_flags $curl_flags";
 
-  logger->debug("CURL: $curl_cmd");
+  logger->debug("[CURL] $curl_cmd");
 
   return $curl_cmd;
 
@@ -175,7 +175,7 @@ sub file_read_url {
   my $url      = shift;
   my $curl_cmd = curl_cmd("-s $url");
 
-  logger->info("Downloading $url");
+  logger->info("[CURL] Downloading $url");
 
   my $data = qx{ $curl_cmd };
   return $data;
@@ -190,7 +190,7 @@ sub download_file {
 
   my $curl_cmd = curl_cmd("$extra_curl_flags -# -o $output $url");
 
-  logger->info("Downloading $url");
+  logger->info("[CURL] Downloading $url");
 
   system($curl_cmd);
   return ($?) ? 0 : 1;
@@ -202,7 +202,7 @@ sub get_last_modified {
   my $url      = shift;
   my $curl_cmd = curl_cmd("-s -I $url");
 
-  logger->debug(qq/Get "Last-Modified" date of $url/);
+  logger->debug(qq/[CURL] Get "Last-Modified" date of $url/);
 
   my $headers = qx{ $curl_cmd };
   my $result  = 0;
@@ -308,7 +308,7 @@ sub gpg_verify {
 
   my $file = shift;
 
-  logger->debug(qq/GPG: verify file "$file" width "$file.asc"/);
+  logger->debug(qq/[GPG] verify file "$file" width "$file.asc"/);
 
   system("gpg --verify $file.asc $file 2>/dev/null");
   return ($?) ? 0 : 1;
@@ -322,7 +322,7 @@ sub gpg_import_key {
      $key_contents =~ /uid\s+(.*)/;
   my $key_uid      = $1;
 
-  logger->debug(qq/GPG: Import key file with "$key_uid" uid/);
+  logger->debug(qq/[GPG] Import key file with "$key_uid" uid/);
 
   system("/usr/bin/gpg --yes --batch --delete-key '$key_uid' &>/dev/null") if ($key_uid);
   system("/usr/bin/gpg --import $key_file &>/dev/null");

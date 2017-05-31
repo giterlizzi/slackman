@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.3';
+  $VERSION     = 'v1.0.4';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(run);
   %EXPORT_TAGS = (
@@ -75,7 +75,7 @@ sub run {
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
 
-  logger->debug(sprintf('Call %s command (cmd: slackman %s)', $command, join(' ', @ARGV)));
+  logger->debug(sprintf('[CMD] Call "%s" command (cmd: %s, pid: %s)', $command, join( " ", $0, @ARGV ), $$));
 
   # Check running slackman instance and block certain commands (only
   # informational command are available)
@@ -395,17 +395,10 @@ sub _call_update_repo_gpg_key {
 
     STDOUT->printflush("  * $repo... ");
 
-    my $gpg_key_url  = $repo_data->{gpgkey};
     my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{directory}->{cache}, $repo);
 
-    unless (-e $gpg_key_path) {
-
-      make_path(dirname($gpg_key_path));
-
-      if (download_file($gpg_key_url, $gpg_key_path, "-s")) {
-        gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
-      }
-
+    if (download_repository_metadata($repo, 'gpgkey')) {
+      gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
     }
 
     STDOUT->printflush("done\n");
@@ -1058,19 +1051,23 @@ sub _call_changelog {
   # Filter disabled repository
   push(@filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
 
-  my $sth = $dbh->prepare(sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'}));
+  $query = sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'});
+
+  my $sth = $dbh->prepare($query);
   $sth->execute();
 
-  print sprintf("%-60s %-20s %-10s %-20s %s\n", "Package",  "Version", "Status", "Timestamp", "Repository");
+  print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
 
   while (my $row = $sth->fetchrow_hashref()) {
-    print sprintf("%-60s %-20s %-10s %-20s %s\n",
-      ($row->{'package'}    || ''),
-      ($row->{'version'}    || ''),
-      ($row->{'status'}     || ''),
-      ($row->{'timestamp'}  || ''),
-      ($row->{'repository'} || '')
+
+    print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
+      ($row->{'package'}      || ''),
+      ($row->{'version'}      || ''),
+      ($row->{'security_fix'} ? '!' : ''),
+      ($row->{'status'}       || ''),
+      ($row->{'timestamp'}    || ''),
+      ($row->{'repository'}   || '')
     );
   }
 
@@ -1111,7 +1108,7 @@ sub _call_repo_info {
   }
 
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
-  my $last_update  = time_to_timestamp(db_meta_get("packages-last-update.$repo_id"));
+  my $last_update  = time_to_timestamp(db_meta_get("last-update.$repo_id.packages"));
 
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
@@ -1120,7 +1117,7 @@ sub _call_repo_info {
   print sprintf("%-20s %s\n", "ID:",          $repo_data->{id});
   print sprintf("%-20s %s\n", "Mirror:",      $repo_data->{mirror});
   print sprintf("%-20s %s\n", "Status:",      (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-20s %s\n", "Last Update:", $last_update);
+  print sprintf("%-20s %s\n", "Last Update:", ($last_update || ''));
   print sprintf("%-20s %s\n", "Priority:",    $repo_data->{priority});
   print sprintf("%-20s %s\n", "Packages:",    $package_nums);
 
