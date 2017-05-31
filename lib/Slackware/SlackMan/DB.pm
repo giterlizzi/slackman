@@ -103,7 +103,9 @@ use constant SLACKMAN_CHANGELOGS_TABLE => qq/CREATE TABLE IF NOT EXISTS "changel
   "arch"              VARCHAR,
   "build"             INTEGER,
   "tag"               VARCHAR,
+  "category"          VARCHAR,
   "status"            VARCHAR,
+  "description"       VARCHAR,
   "security_fix"      BOOL)/;
 
 use constant SLACKMAN_METADATA_TABLE => qq/CREATE TABLE IF NOT EXISTS "metadata" (
@@ -156,12 +158,12 @@ sub dbh {
 sub db_init {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/Init table "$_"/);
+    logger->debug(qq/[DB] Init table "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/Init index "$_"/);
+    logger->debug(qq/[DB] Init index "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
@@ -177,7 +179,7 @@ sub db_wipe_tables {
 }
 
 sub db_wipe_table {
-  logger->debug(qq/Wipe "$_" table/);
+  logger->debug(qq/[DB] Wipe "$_" table/);
   $dbh->do("DELETE FROM $_");
 }
 
@@ -196,19 +198,19 @@ sub db_insert {
 }
 
 sub db_compact {
-  logger->debug('Compact database');
+  logger->debug('[DB] Compact database');
   $dbh->do('PRAGMA VACUUM');
 }
 
 sub db_reindex {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/Reindex "$_" table/);
+    logger->debug(qq/[DB] Reindex "$_" table/);
     $dbh->do("REINDEX $_");
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/Reindex "$_" index/);
+    logger->debug(qq/[DB] Reindex "$_" index/);
     $dbh->do("REINDEX $_");
   }
 
@@ -216,15 +218,15 @@ sub db_reindex {
 
 sub db_bulk_insert {
 
-  my ($data) = @_;
+  my (%params) = @_;
 
-  my $table   = $data->{'table'};
-  my $columns = $data->{'columns'};
-  my $values  = $data->{'values'};
+  my $table   = $params{'table'};
+  my $columns = $params{'columns'};
+  my $values  = $params{'values'};
 
   my $n_rows  = scalar(@$values);
 
-  logger->debug(qq/Insert $n_rows rows into "$table" table/);
+  logger->debug(qq/[DB] Insert $n_rows rows into "$table" table/);
 
   my $query = sprintf("INSERT INTO %s(%s) VALUES(%s)",
     $table,
@@ -235,6 +237,8 @@ sub db_bulk_insert {
   $dbh->begin_work();
 
   my $sth = $dbh->prepare($query);
+
+  logger->debug(qq/[DB] $query/);
 
   foreach my $row (@$values) {
     $sth->execute(@$row);
@@ -247,8 +251,7 @@ sub db_bulk_insert {
 sub db_meta_get {
 
   my ($key) = @_;
-
-  logger->debug(qq/Get key "$key" value/);
+  logger->debug(qq/[DB] Get key "$key" value/);
 
   return $dbh->selectrow_array(qq/SELECT value FROM metadata WHERE key = ?/, undef, $key);
 
@@ -257,8 +260,7 @@ sub db_meta_get {
 sub db_meta_set {
 
   my ($key, $value) = @_;
-
-  logger->debug(qq/Set key "$key" value "$value"/);
+  logger->debug(qq/[DB] Set key "$key" value "$value"/);
 
   $dbh->do(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
   $dbh->do(qq/INSERT INTO metadata(key, value) VALUES(?, ?)/, undef, $key, $value);
@@ -271,7 +273,7 @@ sub db_meta_delete {
 
   my ($key) = @_;
 
-  logger->debug(qq/Delete key "$key"/);
+  logger->debug(qq/[DB] Delete key "$key"/);
 
   return $dbh->selectrow_array(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
 
@@ -288,14 +290,14 @@ Slackware::SlackMan::DB - SlackMan DB module
 
   use Slackware::SlackMan::DB qw(:all);
 
-  db_bulk_insert({
+  db_bulk_insert(
     'table'   => 'foo',
     'columns' => [ 'foo', 'bar', 'baz' ],
     'values'  => [
       [1,2,3],
       [4,5,6]
     ],
-  })
+  )
 
 =head1 DESCRIPTION
 

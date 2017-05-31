@@ -66,7 +66,7 @@ sub parse_changelog {
   chomp($changelog_contents);
 
   my @changelogs = split(/$changelog_separator/, $changelog_contents);
-  my @columns    = qw(timestamp package status name version arch build tag repository);
+  my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description);
   my @values     = ();
 
   &$callback_status('parse') if ($callback_status);
@@ -78,82 +78,38 @@ sub parse_changelog {
     callback_spinner($num);
     $num++;
 
+    chomp($changelog);
+
     my @lines               = split(/\n/, trim($changelog));
     my $changelog_time      = changelog_date_to_time($lines[0]);
     my $changelog_timestamp = time_to_timestamp($changelog_time);
 
-    @lines = @lines[ 1 .. $#lines ];
+    @lines     = @lines[ 1 .. $#lines ];
+    $changelog = join("\n", @lines);
+    $changelog =~ s/(\n^  )/|/gm;
 
-    foreach my $line (@lines) {
+    my @changelog_lines = split(/\n/, $changelog);
 
-      chomp($line);
+    foreach my $line (@changelog_lines) {
 
-      next if ($line =~ /^\s/);
-      next if ($line =~ /\*\:/);
-      next if ($line =~ /\.img/);
+      my ($package, $status, $name, $version, $arch, $tag, $build, $description, $security_fix, $text, $category);
 
-      next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
+      $security_fix = 0;
 
-      my ($package, $status, $name, $version, $arch, $tag, $build);
-
-      # Standard Slackware ChangeLog format (directory/package: status)
-      if ($line =~ /([[:graph:]]+t?z):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
+      # Standard Slackware Changelog format (directory/package.ext:  status. description)
+      if ($line =~ /^([[:graph:]]+):\s+(.*)/gm) {
 
         $package = $1;
-        $status  = $2;
+        $text    = $2;
 
-      # AlienBob Changelog
-      } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+        ($status, $description) = ($text =~ m/(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched).(.*)/gi) if ($text);
 
-        $package = $1;
-        $status  = $2;
-        $version = $3;
+        $security_fix = 1 if ($description && $description =~ /Security fix/);
 
-      # AlienBob Changelog
-      } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
-
-        $package = $1;
-        $status  = $2;
-        $version = $3;
-
-      # AlienBob Changelog
-      } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
-
-        $package = $1;
-        $version = $2;
-        $status  = 'added';
-
-      # AlienBob Changelog
-      } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
-
-        $package = $1;
-        $version = $2;
-        $status  = 'upgraded';
-
-      # slackonly ChangeLog
-      } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
-
-        $package = $1;
-        $status  = $4;
-
-      }
-
-      next     if (defined($version) && ! $version =~ /\d/);
-      next unless ($status);
-
-      $version =~ s/(\.|\;|\,)$// if ($version);
-      $package =~ s/\://          if ($package);
-
-      $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
-      $status  = 'added'    if ($status && $status =~ /added/i);
-
-      if ($package =~ /(txz|tgz|tbz|tlz)/) {
+        $description =~ s/\|/\n/g  if ($description);
+        $description =~ s/^  //gm  if ($description);
 
         my $package_info = package_info(basename($package));
-
-        next unless ($package_info->{'name'});
-        next unless ($package_info->{'version'});
-        next unless ($package_info->{'build'} =~ /^[0-9]+$/);
 
         $name    = $package_info->{'name'};
         $version = $package_info->{'version'};
@@ -162,8 +118,57 @@ sub parse_changelog {
         $tag     = $package_info->{'tag'};
 
       } else {
-        $name = basename($package);
+
+        next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
+
+        # AlienBob ChangeLog
+        if ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+
+          $package = $1;
+          $status  = $2;
+          $version = $3;
+
+        # AlienBob Changelog
+        } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+
+          $package = $1;
+          $status  = $2;
+          $version = $3;
+
+        # AlienBob Changelog
+        } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
+
+          $package = $1;
+          $version = $2;
+          $status  = 'added';
+
+        # AlienBob Changelog
+        } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
+
+          $package = $1;
+          $version = $2;
+          $status  = 'upgraded';
+
+        # slackonly ChangeLog
+        } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+
+          $package = $1;
+          $status  = $4;
+
+        }
+
+        $version =~ s/(\.|\;|\,)$// if ($version);
+        $package =~ s/\://          if ($package);
+
+        $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
+        $status  = 'added'    if ($status && $status =~ /added/i);
+
       }
+
+      next     if (defined($version) && $version !~ /\d/);
+      next unless ($status);
+
+      $category = dirname($package) || '';
 
       my @row = (
         $changelog_timestamp,    # timestamp
@@ -174,22 +179,124 @@ sub parse_changelog {
         $arch,                   # arch
         $build,                  # build
         $tag,                    # tag
-        $repository              # repository
+        $repository,             # repository
+        $security_fix,           # security fix
+        $category,               # category
+        trim($description),      # description
       );
 
       push(@values, \@row);
 
     }
 
+
+#     foreach my $line (@lines) {
+# 
+#       chomp($line);
+# 
+#       next if ($line =~ /^\s/);
+#       next if ($line =~ /\*\:/);
+#       next if ($line =~ /\.img/);
+# 
+#       next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
+# 
+#       my ($package, $status, $name, $version, $arch, $tag, $build);
+# 
+#       # Standard Slackware ChangeLog format (directory/package.ext: status)
+#       if ($line =~ /([[:graph:]]+t?z):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
+# 
+#         $package = $1;
+#         $status  = $2;
+# 
+#       # AlienBob Changelog
+#       } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+# 
+#         $package = $1;
+#         $status  = $2;
+#         $version = $3;
+# 
+#       # AlienBob Changelog
+#       } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+# 
+#         $package = $1;
+#         $status  = $2;
+#         $version = $3;
+# 
+#       # AlienBob Changelog
+#       } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
+# 
+#         $package = $1;
+#         $version = $2;
+#         $status  = 'added';
+# 
+#       # AlienBob Changelog
+#       } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
+# 
+#         $package = $1;
+#         $version = $2;
+#         $status  = 'upgraded';
+# 
+#       # slackonly ChangeLog
+#       } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+# 
+#         $package = $1;
+#         $status  = $4;
+# 
+#       }
+# 
+#       next     if (defined($version) && ! $version =~ /\d/);
+#       next unless ($status);
+# 
+#       $version =~ s/(\.|\;|\,)$// if ($version);
+#       $package =~ s/\://          if ($package);
+# 
+#       $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
+#       $status  = 'added'    if ($status && $status =~ /added/i);
+# 
+#       if ($package =~ /(txz|tgz|tbz|tlz)/) {
+# 
+#         my $package_info = package_info(basename($package));
+# 
+#         next unless ($package_info->{'name'});
+#         next unless ($package_info->{'version'});
+#         next unless ($package_info->{'build'} =~ /^[0-9]+$/);
+# 
+#         $name    = $package_info->{'name'};
+#         $version = $package_info->{'version'};
+#         $arch    = $package_info->{'arch'};
+#         $build   = $package_info->{'build'};
+#         $tag     = $package_info->{'tag'};
+# 
+#       } else {
+#         $name = basename($package);
+#       }
+# 
+#       my @row = (
+#         $changelog_timestamp,    # timestamp
+#         $package,                # package
+#         lc($status),             # status
+#         $name,                   # name
+#         $version,                # version
+#         $arch,                   # arch
+#         $build,                  # build
+#         $tag,                    # tag
+#         $repository,             # repository
+#         0
+#       );
+# 
+#       push(@values, \@row);
+# 
+#     }
+
   }
 
   &$callback_status('save') if ($callback_status);
 
-  db_bulk_insert({
+  db_bulk_insert(
     'table'   => 'changelogs',
     'columns' => \@columns,
     'values'  => \@values,
-  });
+  );
 
   db_compact();
 
@@ -300,11 +407,11 @@ sub parse_packages {
 
   &$callback_status('save') if ($callback_status);
 
-  db_bulk_insert({
+  db_bulk_insert(
     'table'   => 'packages',
     'columns' => \@columns,
     'values'  => \@values,
-  });
+  );
 
   db_compact();
 
@@ -394,11 +501,11 @@ sub parse_manifest {
 
   &$callback_status('save') if ($callback_status);
 
-  db_bulk_insert({
+  db_bulk_insert(
     'table'   => 'manifest',
     'columns' => \@columns,
     'values'  => \@values,
-  });
+  );
 
   db_compact();
 
@@ -506,11 +613,11 @@ sub parse_history {
 
   &$callback_status('save') if ($callback_status);
 
-  db_bulk_insert({
+  db_bulk_insert(
     'table'   => 'history',
     'columns' => \@columns,
     'values'  => \@values,
-  });
+  );
 
   $dbh->do('PRAGMA VACUUM');
 

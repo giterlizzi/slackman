@@ -186,7 +186,7 @@ sub download_repository_metadata {
     die(sprintf('Malformed "%s" URI for "%s" repository', $metadata, $repo_id));
   }
 
-  logger->debug(sprintf('[%s] Check "%s" metadata last update', $repo_id, $metadata));
+  logger->debug(sprintf('[REPO/%s] Check "%s" metadata last update', $repo_id, $metadata));
 
   my $metadata_last_modified = get_last_modified($metadata_url);
   my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata");
@@ -194,18 +194,18 @@ sub download_repository_metadata {
 
   # Force update
   if ($slackman_opts->{'force'}) {
-    logger->debug(sprintf('[%s] Force "%s" metadata last update', $repo_id, $metadata));
+    logger->debug(sprintf('[REPO/%s] Force "%s" metadata last update', $repo_id, $metadata));
     $db_meta_last_modified = 0;
     unlink($metadata_file);
   }
 
-  logger->debug(sprintf('[%s] "%s" metadata time (repo: %s - local: %s)',
+  logger->debug(sprintf('[REPO/%s] "%s" metadata time (repo: %s - local: %s)',
     $repo_id, $metadata,
     time_to_timestamp($metadata_last_modified),
     time_to_timestamp($db_meta_last_modified)));
 
   if ($metadata_last_modified == $db_meta_last_modified) {
-    logger->debug(sprintf('[%s] Skip "%s" metadata download', $repo_id, $metadata));
+    logger->debug(sprintf('[REPO/%s] Skip "%s" metadata download', $repo_id, $metadata));
     return (0);
   }
 
@@ -214,7 +214,7 @@ sub download_repository_metadata {
   unless ( -e $metadata_file) {
     &$callback_status('download') if ($callback_status);
     download_file($metadata_url, $metadata_file, "-s");
-    logger->debug(sprintf('[%s] Download %s metadata file', $repo_id, $metadata));
+    logger->debug(sprintf('[REPO/%s] Download %s metadata file', $repo_id, $metadata));
   }
 
   db_meta_set("last-update.$repo_id.$metadata", $metadata_last_modified);
