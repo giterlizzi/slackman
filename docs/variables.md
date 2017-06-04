@@ -27,7 +27,19 @@ Variable         | Description
 
 ## Examples
 
-Slackware-14.2
+Slackware-14.2 (32-bit)
+--------------
+
+    name=Slackware{$release.suffix}-{$release.real} repository
+    mirror=http://example.org/slackware{$release.suffix}-{$release.real}/
+
+      release.suffix => 
+      release.real   => 14.2
+
+    name=Slackware64-14.2
+    mirror=http://example.org/slackware-14.2
+
+Slackware64-current (64-bit)
 --------------
 
     name=Slackware{$release.suffix}-{$release} repository
@@ -37,4 +49,4 @@ Slackware-14.2
       release        => current
 
     name=Slackware64-14.2
-    mirror=http://example.org/slackware64-14.2
+    mirror=http://example.org/slackware64-current
