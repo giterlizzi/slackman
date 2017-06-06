@@ -217,9 +217,13 @@ sub get_last_modified {
 }
 
 sub trim {
+
   my $string = shift;
+  return $string unless($string);
+
   $string =~ s/^\s+|\s+$//g;
   return $string;
+
 }
 
 sub confirm {
