@@ -64,6 +64,9 @@ $SIG{__WARN__} = sub {
   warn @_;
 };
 
+# Prevent Insecure $ENV{PATH} while running with -T switch
+$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
+
 sub run {
 
   db_init();
