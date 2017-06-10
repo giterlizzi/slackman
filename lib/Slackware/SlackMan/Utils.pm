@@ -106,7 +106,7 @@ GetOptions( $slackman_opts,
           );
 
 # Set default options
-$slackman_opts->{'limit'} ||= 50;
+$slackman_opts->{'limit'} ||= 25;
 
 sub file_read {
 
