@@ -94,7 +94,23 @@ sub run {
   # Always create lock if pid not exists
   create_lock() unless(get_lock_pid());
 
+  # Update packages (priority, exclude) from repository configurations
   _update_repo_data();
+
+  # Check repository option
+  if ($command && $slackman_opts->{'repo'}) {
+
+    my @repos = get_repositories();
+
+    my $repo  = $slackman_opts->{'repo'};
+       $repo .= ':' unless ($repo =~ /:/);
+
+    unless (/^$repo/ ~~ @repos) {
+      print "Unknown repository!\n\n";
+      exit(1);
+    }
+
+  }
 
   given($command) {
 
@@ -905,9 +921,7 @@ sub _call_changelog {
   print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
 
-  foreach my $id (keys %$changelogs) {
-
-    my $row = $changelogs->{$id};
+  foreach my $row (@{$changelogs}) {
 
     print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
       ($row->{'package'}      || ''),

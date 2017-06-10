@@ -79,7 +79,7 @@ sub package_changelogs {
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
-  my $rows = $sth->fetchall_hashref('id');
+  return $sth->fetchall_arrayref({});
 
 }
 
