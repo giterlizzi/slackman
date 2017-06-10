@@ -97,7 +97,7 @@ sub parse_changelog {
       $security_fix = 0;
 
       # Standard Slackware Changelog format (directory/package.ext:  status. description)
-      if ($line =~ /^([[:graph:]]+):\s+(.*)/gm) {
+      if ($line =~ /^([[:graph:]]+\/[[:graph:]]+):\s+(.*)/gm) {
 
         $package = $1;
         $text    = $2;
@@ -117,48 +117,60 @@ sub parse_changelog {
         $build   = $package_info->{'build'};
         $tag     = $package_info->{'tag'};
 
+        next unless($name);
+
+      # Non-standard ChangeLogs
       } else {
 
         next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
 
+        my $line2 = $line;
+           $line2 =~ s/\|/\n/g;
+
         # AlienBob ChangeLog
-        if ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+        if ($line2 =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
 
           $package = $1;
           $status  = $2;
           $version = $3;
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+        } elsif ($line2 =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
 
           $package = $1;
           $status  = $2;
           $version = $3;
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
+        } elsif ($line2 =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
 
           $package = $1;
           $version = $2;
           $status  = 'added';
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
+        } elsif ($line2 =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
 
           $package = $1;
           $version = $2;
           $status  = 'upgraded';
 
         # slackonly ChangeLog
-        } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+        } elsif ($line2 =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
 
           $package = $1;
           $status  = $4;
 
         }
 
-        $version =~ s/(\.|\;|\,)$// if ($version);
-        $package =~ s/\://          if ($package);
+        $description = $line2;
+
+        $category = dirname($package)  if ($package);
+        $name     = basename($package) if ($package);
+
+        $category =~ s/^\.//         if ($category);
+        $package  =~ s/\://          if ($package);
+        $version  =~ s/(\.|\;|\,)$// if ($version);
 
         $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
         $status  = 'added'    if ($status && $status =~ /added/i);
@@ -167,8 +179,6 @@ sub parse_changelog {
 
       next     if (defined($version) && $version !~ /\d/);
       next unless ($status);
-
-      $category = dirname($package) || '';
 
       my @row = (
         $changelog_timestamp,    # timestamp
