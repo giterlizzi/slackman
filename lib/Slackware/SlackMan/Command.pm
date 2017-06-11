@@ -926,7 +926,7 @@ sub _call_changelog {
     print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
       ($row->{'package'}      || ''),
       ($row->{'version'}      || ''),
-      ($row->{'security_fix'} ? '!' : ''),
+      ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
       ($row->{'status'}       || ''),
       ($row->{'timestamp'}    || ''),
       ($row->{'repository'}   || '')
