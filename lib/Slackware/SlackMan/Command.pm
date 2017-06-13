@@ -81,7 +81,7 @@ sub run {
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
 
-  logger->debug(sprintf('[CMD] Call "%s" command (cmd: %s, pid: %s)', $command, join( " ", $0, @ARGV ), $$));
+  logger->debug(sprintf('[CMD] Call "%s" command (cmd: %s, pid: %s)', $command, join( " ", $0, @ARGV ), $$)) if ($command);
 
   # Check running slackman instance and block certain commands (only
   # informational command are available)
@@ -978,7 +978,7 @@ sub _call_repo_info {
   my ($repo_id) = @_;
 
   unless($repo_id) {
-    warn "Specicy repository!\n";
+    warn "Specify repository!\n";
     exit(255);
   }
 
