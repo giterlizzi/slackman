@@ -1,4 +1,8 @@
+# Italian Slackware Community
+
+# Home-Page: http://slacky.eu
+
 [packages]
-name=Italian Slackware Community SlackBuilds
-enabled=false
-mirror=http://repository.slacky.eu/slackware{$release.suffix}-{$release.real}/
+name    = Italian Slackware Community
+enabled = false
+mirror  = http://repository.slacky.eu/slackware{$release.suffix}-{$release.real}/

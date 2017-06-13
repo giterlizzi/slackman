@@ -1,7 +1,7 @@
-# Cinnamon SlackBuilds (CSB) repository
+# Cinnamon SlackBuilds (CSB)
 
 [packages]
-name=Cinnamon SlackBuilds (CSB)
-enabled=false
-mirror=http://slackware.uk/csb/$release.real/$arch.family/
-changelog=http://slackware.uk/csb/ChangeLog.txt
+name      = Cinnamon SlackBuilds (CSB)
+enabled   = false
+mirror    = http://slackware.uk/csb/$release.real/$arch.family/
+changelog = http://slackware.uk/csb/ChangeLog.txt

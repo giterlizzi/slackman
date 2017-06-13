@@ -1,4 +1,17 @@
+# SlackOnly
+
+# SlackOnly is a third party software repository for Slackware Linux that
+# provides binary packages built from SlackBuilds.org build scripts.
+#
+# The goal is to enable users to install any package from SlackBuilds.org using
+# pre-compiled binary packages. SlackOnly packages contain Metadata that
+# provides dependency information to package managers that have the ability to
+# read such information. SlackOnly assumes that its users are running a full
+# installation of Slackware Linux prior to use.
+
+# HomePage: https://slackonly.com
+
 [packages]
-name=SlackOnly SlackBuilds
-enabled=false
-mirror=https://packages.slackonly.com/pub/packages/$release-$arch/
+name    = SlackOnly SlackBuilds
+enabled = false
+mirror  = https://packages.slackonly.com/pub/packages/$release-$arch/
