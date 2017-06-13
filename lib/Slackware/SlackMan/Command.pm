@@ -30,8 +30,9 @@ use Getopt::Long qw(:config );
 use IO::File;
 use IO::Handle;
 use Sort::Versions;
-use Term::ANSIColor qw(:constants);
+use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+use Text::Wrap;
 
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
@@ -41,6 +42,8 @@ use Slackware::SlackMan::Parser  qw(:all);
 use Slackware::SlackMan::Config  qw(:all);
 
 my $lock_check = get_lock_pid();
+
+$Text::Wrap::columns = 132;
 
 exit _show_help()    if $slackman_opts->{'help'};
 exit _show_version() if $slackman_opts->{'version'};
@@ -755,6 +758,7 @@ sub _call_package_update {
   my @downloads       = ();  # Download packages
   my @packages        = ();  # Packages for upgradepkg command
   my @errors          = ();  # Download, checksum & gpg verify errors
+  my $kernel_upgrade  = 0;
 
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
@@ -815,7 +819,6 @@ sub _call_package_update {
 
   }
 
-
   print "\n\n";
   print "Update summary\n";
   print sprintf("%s\n", "-"x40);
@@ -864,6 +867,7 @@ sub _call_package_update {
       print sprintf("%s\n", "-"x132);
 
       foreach my $package_path (@packages) {
+        $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
         package_update($package_path);
         my $pkg_info = package_info(basename($package_path));
         logger->info(sprintf("Upgraded %s package to %s version", $pkg_info->{name}, $pkg_info->{version}));
@@ -884,6 +888,22 @@ sub _call_package_update {
     }
 
     print "\n\n";
+
+    if ($kernel_upgrade) {
+
+      my $new_kernel_version = qx( (basename /var/log/packages/kernel-modules-* | awk -F '-' '{ print \$3 }') );
+      chomp($new_kernel_version);
+
+      my $message = "@{[ BLINK BOLD RED ]}Kernel upgrade detected !@{[ RESET ]}\n"
+                  . "Remember to reinstall the new kernel with @{[ BOLD ]}LILO@{[ RESET ]} "
+                  . "(or @{[ BOLD ]}ELILO@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
+                  . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
+                  . "file using @{[ ITALIC ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
+                  . "@{[ ITALIC ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}\n\n";
+
+      print wrap("", "\t", $message);
+
+    }
 
     _fork_update_history();
     exit(0);
@@ -986,6 +1006,7 @@ sub _call_repo_info {
   print "\nRepository URLs:\n";
 
   foreach (@urls) {
+    next unless($repo_data->{$_});
     print sprintf("%-20s %s\n", "  * $_", $repo_data->{$_});
   }
 
@@ -1452,7 +1473,7 @@ sub _call_list_variables {
 
 sub _call_list_orphan {
 
-  print "\nOrphan packages\n\n";
+  print "\nOrphan package(s)\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
   print sprintf("%s\n", "-"x132);
