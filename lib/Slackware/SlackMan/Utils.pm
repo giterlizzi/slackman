@@ -472,7 +472,7 @@ sub set_config {
       my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
 
       if ( $key and $key eq $keyname  ) { 
-        $output .= "$keyname=$new_value\n";
+        $output .= "$keyname = $new_value\n";
         next;
       }
 
