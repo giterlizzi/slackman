@@ -41,6 +41,7 @@ use Data::Dumper;
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 use Sort::Versions;
+use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
@@ -561,7 +562,12 @@ sub package_download {
       $gpg_verify = 1;
     }
 
-    if (md5_check($package_path, $pkg->{'checksum'})) {
+    unless ($pkg->{'checksum'}) {
+      exit(0) unless(confirm(sprintf("@{[ YELLOW BOLD ]}WARNING@{[ RESET ]} %s package don't have a valid checksum. Do you want continue ? [Y/N] ", $pkg->{'package'})));
+      $md5_check = 1;
+    }
+
+    if ($pkg->{'checksum'} && md5_check($package_path, $pkg->{'checksum'})) {
       $md5_check = 1;
       logger->info(sprintf("MD5 checksum success for %s package", $pkg->{'package'}));
     } else {
