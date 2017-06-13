@@ -65,6 +65,13 @@ use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages"
   "size_uncompressed" INTEGER,
   "checksum"          VARCHAR)/;
 
+use constant SLACKMAN_PACKAGES_INDEX => qq/CREATE INDEX IF NOT EXISTS "packages_idx" ON "packages" (
+  "name"              ASC,
+  "package"           ASC,
+  "arch"              ASC,
+  "status"            ASC,
+  "repository"        ASC)/;
+
 use constant SLACKMAN_HISTORY_TABLE => qq/CREATE TABLE IF NOT EXISTS "history" (
   "id"                INTEGER PRIMARY KEY,
   "name"              VARCHAR,
@@ -114,16 +121,17 @@ use constant SLACKMAN_METADATA_TABLE => qq/CREATE TABLE IF NOT EXISTS "metadata"
   "value"             VARCHAR)/;
 
 use constant SLACKMAN_SCHEMA => {
-  'packages'    => SLACKMAN_PACKAGES_TABLE,
-  'metadata'    => SLACKMAN_METADATA_TABLE,
-  'changelogs'  => SLACKMAN_CHANGELOGS_TABLE,
-  'history'     => SLACKMAN_HISTORY_TABLE,
-  'manifest'    => SLACKMAN_MANIFEST_TABLE,
-  'history_idx' => SLACKMAN_HISTORY_INDEX,
+  'packages'     => SLACKMAN_PACKAGES_TABLE,
+  'metadata'     => SLACKMAN_METADATA_TABLE,
+  'changelogs'   => SLACKMAN_CHANGELOGS_TABLE,
+  'history'      => SLACKMAN_HISTORY_TABLE,
+  'manifest'     => SLACKMAN_MANIFEST_TABLE,
+  'history_idx'  => SLACKMAN_HISTORY_INDEX,
+  'packages_idx' => SLACKMAN_PACKAGES_INDEX,
 };
 
 use constant SLACKMAN_TABLES  => ( 'packages', 'metadata', 'changelogs', 'history', 'manifest' );
-use constant SLACKMAN_INDEXES => ( 'history_idx' );
+use constant SLACKMAN_INDEXES => ( 'history_idx', 'packages_idx' );
 
 
 our $dbh = dbh();
