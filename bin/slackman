@@ -69,9 +69,9 @@ update Slackware packages from a standard Slackware repository (official and 3th
 =head2 CLEAN COMMANDS
 
   clean cache               Clean cache package download directory
-  clean metadata            Clean database metadata
-  clean manifest            Clean manifest data
-  clean all                 Clean metadata and cache directory
+  clean metadata            Clean database metadata (packages, changelog)
+  clean manifest            Clean manifest data form database
+  clean all                 Clean all database metadata and cache directory
 
 =head2 DATABASE COMMANDS
 
