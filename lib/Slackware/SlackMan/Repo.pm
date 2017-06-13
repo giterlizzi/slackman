@@ -61,18 +61,24 @@ foreach my $file (@files) {
     $repo_cfg->{exclude} = parse_variables($repo_cfg->{exclude}) if ($repo_cfg->{exclude});
 
     # Set defaults
-    $repo_cfg->{priority}  ||= 0;
-    $repo_cfg->{enabled}   ||= 0;
-    $repo_cfg->{packages}  ||= "$mirror/PACKAGES.TXT";
-    $repo_cfg->{manifest}  ||= "$mirror/MANIFEST.bz2";
-    $repo_cfg->{checksums} ||= "$mirror/CHECKSUMS.md5";
-    $repo_cfg->{changelog} ||= "$mirror/ChangeLog.txt";
-    $repo_cfg->{gpgkey}    ||= "$mirror/GPG-KEY";
-    $repo_cfg->{filelist}  ||= "$mirror/FILELIST.TXT";
-    $repo_cfg->{exclude}   ||= undef;
+    $repo_cfg->{priority} ||= 0;
+    $repo_cfg->{enabled}  ||= 0;
+    $repo_cfg->{exclude}  ||= undef;
+
+    $repo_cfg->{changelog} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{changelog}));
+    $repo_cfg->{packages}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{packages}));
+    $repo_cfg->{manifest}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{manifest}));
+    $repo_cfg->{checksums} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{checksums}));
+    $repo_cfg->{gpgkey}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{gpgkey}));
+    $repo_cfg->{filelist}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{filelist}));
 
     my @keys_to_parse = qw( name mirror packages manifest checksums changelog
                             gpgkey filelist );
+
+    foreach (@keys_to_parse) {
+      $repo_cfg->{$_} =~ s/(\{|\})//g;
+      $repo_cfg->{$_} =~ s/\$mirror/$mirror/;
+    }
 
     foreach (@keys_to_parse) {
       $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
@@ -181,6 +187,11 @@ sub download_repository_metadata {
 
   my $metadata_url  = $repository->{$repo_id}->{$metadata};
   my $metadata_file = sprintf("%s/%s/%s", $slackman_conf->{directory}->{'cache'}, $repo_id, basename($metadata_url));
+
+  unless($metadata_url) {
+    logger->debug(sprintf('[REPO/%s] "%s" metadata disabled', $repo_id, $metadata));
+    return (1);
+  }
 
   unless ($metadata_url =~ /^(http(|s)|ftp|file)\:\/\//) {
     die(sprintf('Malformed "%s" URI for "%s" repository', $metadata, $repo_id));
