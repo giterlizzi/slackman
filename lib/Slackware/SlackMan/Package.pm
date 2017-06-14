@@ -191,7 +191,7 @@ sub package_metadata {
 
   return undef unless($package_basename);
 
-  # SlackBuilds categor*y
+  # SlackBuilds category
   {
     $location =~ /(academic|accessibility|audio|business|desktop|development|games|gis|graphics|ham|haskell|libraries|misc|multimedia|network|office|perl|python|ruby|system)/;
 
