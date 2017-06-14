@@ -898,8 +898,8 @@ sub _call_package_update {
                   . "Remember to reinstall the new kernel with @{[ BOLD ]}LILO@{[ RESET ]} "
                   . "(or @{[ BOLD ]}ELILO@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
                   . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
-                  . "file using @{[ ITALIC ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
-                  . "@{[ ITALIC ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}\n\n";
+                  . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
+                  . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}\n\n";
 
       print wrap("", "\t", $message);
 
