@@ -100,10 +100,10 @@ $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 our $slackman_opts = {};
 
 GetOptions( $slackman_opts,
-            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
-            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s', 'force|f',
-            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
-          );
+            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s',
+            'limit=i', 'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority',
+            'config=s', 'force|f', 'download-only', 'new-packages',
+            'obsolete-packages', 'summary', 'show-files', 'exclude-installed' );
 
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
