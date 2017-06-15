@@ -31,9 +31,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   history PACKAGE           Display package history information
   info PACKAGE              Display information about installed or available packages
 
-  check-update              Check packages updates
   changelog                 Display repository ChangeLogs
-
   search PATTERN            Search packages using PATTERN
   file-search PATTERN       Search files into packages using PATTERN
 

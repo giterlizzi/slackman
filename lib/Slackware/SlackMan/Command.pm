@@ -121,7 +121,6 @@ sub run {
     when('reinstall')    { _call_package_reinstall(@arguments) }
     when('remove')       { _call_package_remove(@arguments) }
     when('upgrade')      { _call_package_update(@arguments)  }
-    when('check-update') { $slackman_opts->{'no'} = 1 ; _call_package_update(@arguments) }
     when('info')         { _call_package_info($ARGV[1]) }
     when('history')      { _call_package_history($ARGV[1]) }
 
@@ -856,7 +855,7 @@ sub _call_package_update {
     exit(0) if ($slackman_opts->{'download-only'});
 
     unless ($< == 0) {
-      warn "\nPackage update requires root privileges!\n";
+      warn "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
       exit(1);
     }
 
@@ -878,7 +877,7 @@ sub _call_package_update {
     if (@errors) {
 
       print "\n\n";
-      print "Error(s) during package integrity check or download\n\n";
+      print "{[ BOLD YELLOW ]}WARNING{[ RESET ]} Error(s) during package integrity check or download\n\n";
       print sprintf("%s\n", "-"x132);
 
       foreach (@errors) {
@@ -995,13 +994,14 @@ sub _call_repo_info {
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-20s %s\n", "Name:",        $repo_data->{name});
-  print sprintf("%-20s %s\n", "ID:",          $repo_data->{id});
-  print sprintf("%-20s %s\n", "Mirror:",      $repo_data->{mirror});
-  print sprintf("%-20s %s\n", "Status:",      (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-20s %s\n", "Last Update:", ($last_update || ''));
-  print sprintf("%-20s %s\n", "Priority:",    $repo_data->{priority});
-  print sprintf("%-20s %s\n", "Packages:",    $package_nums);
+  print sprintf("%-20s %s\n", "Name:",          $repo_data->{name});
+  print sprintf("%-20s %s\n", "ID:",            $repo_data->{id});
+  print sprintf("%-20s %s\n", "Configuration:", $repo_data->{config_file});
+  print sprintf("%-20s %s\n", "Mirror:",        $repo_data->{mirror});
+  print sprintf("%-20s %s\n", "Status:",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
+  print sprintf("%-20s %s\n", "Last Update:",   ($last_update || ''));
+  print sprintf("%-20s %s\n", "Priority:",      $repo_data->{priority});
+  print sprintf("%-20s %s\n", "Packages:",      $package_nums);
 
   print "\nRepository URLs:\n";
 
