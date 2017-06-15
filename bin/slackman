@@ -84,11 +84,15 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --version                 Display version information
   -c, --config              Configuration file
   --root                    Set Slackware root directory
+
+=head3 COMMAND SPECIFIC OPTIONS
+
   --repo                    Use specified repo during update or install packages
   -f, --force               Force action
   --download-only           Download only
   --new-packages            Check for new packages
   --obsolete-packages       Check for obsolete packages
+  --exclude-installed       Exclude installed packages from list
   -x, --exclude PACKAGE     Exclude package
   --show-files              Show file lists
   --no-priority             Disable repository priority check
