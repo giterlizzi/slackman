@@ -97,9 +97,6 @@ sub run {
   # Always create lock if pid not exists
   create_lock() unless(get_lock_pid());
 
-  # Update packages (priority, exclude) from repository configurations
-  _update_repo_data();
-
   # Check repository option
   if ($command && $slackman_opts->{'repo'}) {
 
@@ -177,7 +174,8 @@ sub run {
         when('manifest')  { _call_update_repo_manifest();  exit(0); }
         when('gpg-key')   { _call_update_repo_gpg_key();   exit(0); }
         when('all')       { _call_update_all_metadata() }
-        default           { _call_update_metadata() }
+        default           { _call_update_metadata() unless ($ARGV[1]);
+                            _show_update_help(); }
       }
     }
 
@@ -763,6 +761,8 @@ sub _call_package_update {
   my $total_uncompressed_size = 0;
   my $spinner = 0;
 
+  _update_repo_data();
+
   ($update_pkgs, $install_pkgs) = package_check_updates(@update_package);
 
   STDOUT->printflush("done!\n\n");
@@ -818,14 +818,19 @@ sub _call_package_update {
 
   }
 
+  unless (scalar keys %$update_pkgs) {
+    print "Already up-to-date!\n";
+    exit(0);
+  }
+
   print "\n\n";
   print "Update summary\n";
   print sprintf("%s\n", "-"x40);
-  print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$install_pkgs);
+  print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$install_pkgs) if (scalar keys %$install_pkgs);
   print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$update_pkgs);
 
-  print sprintf("%-20s %.1f M\n", 'Download size', $total_compressed_size/1024);
-  print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size/1024);
+  print sprintf("%-20s %.1f M\n", 'Download size',   $total_compressed_size   / 1024);
+  print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size / 1024);
   print "\n\n";
 
   exit(0) if ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
@@ -923,9 +928,17 @@ sub _call_list_repo {
   print sprintf("%s\n", "-"x132);
 
   foreach my $repo_id (@repositories) {
-    my $info     = get_repository($repo_id);
-    my $packages = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
-    print sprintf("%-30s %-70s %-10s %-10s %-4s\n", $repo_id, $info->{name}, ($info->{enabled} ? 'Enabled' : 'Disabled'), $info->{priority}, $packages);
+
+    my $repo_info = get_repository($repo_id);
+    my $num_pkgs  = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
+
+    print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
+      $repo_id,
+      $repo_info->{name},
+      ($repo_info->{enabled} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
+      $repo_info->{priority},
+      $num_pkgs
+    );
 
   }
 
@@ -987,6 +1000,8 @@ sub _call_repo_info {
     warn "Repository not found!\n";
     exit(255);
   }
+
+  _update_repo_data();
 
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
   my $last_update  = time_to_timestamp(db_meta_get("last-update.$repo_id.packages"));
@@ -1239,6 +1254,8 @@ sub _call_package_install {
     print "Package already installed!\n";
     exit(1);
   }
+
+  _update_repo_data();
 
   my @repositories = get_enabled_repositories();
   my (@filters, @filter_repository);
@@ -1536,11 +1553,15 @@ sub _call_list_packages {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
   }
 
-  my $active_repositories = sprintf('IN ("%s")', join('", "', get_enabled_repositories()));
-     $active_repositories = sprintf('LIKE "%s"', $option_repo) if ($option_repo);
+  my $filter = sprintf('repository IN ("%s")', join('", "', get_enabled_repositories()));
+     $filter = sprintf('repository LIKE "%s"', $option_repo) if ($option_repo);
 
-  my $query = 'SELECT * FROM packages WHERE repository %s ORDER BY name';
-     $query = sprintf($query, $active_repositories);
+  if ($slackman_opts->{'exclude-installed'}) {
+    $filter .= ' AND name NOT IN (SELECT name FROM history WHERE status = "installed")';
+  }
+
+  my $query = 'SELECT * FROM packages WHERE %s ORDER BY name';
+     $query = sprintf($query, $filter);
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
