@@ -58,7 +58,8 @@ foreach my $file (@files) {
     my $mirror   = $repo_cfg->{mirror};
        $mirror   =~ s/\/$//;
 
-    $repo_cfg->{exclude} = parse_variables($repo_cfg->{exclude}) if ($repo_cfg->{exclude});
+    $repo_cfg->{exclude}     = parse_variables($repo_cfg->{exclude}) if ($repo_cfg->{exclude});
+    $repo_cfg->{config_file} = $file;
 
     # Set defaults
     $repo_cfg->{priority} ||= 0;
