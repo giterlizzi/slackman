@@ -616,18 +616,20 @@ sub _call_file_search {
   my $dir  = undef;
 
   unless($file) {
-    print "Usage: slackman search FILE\n";
+    print "Usage: slackman file-search FILE\n";
     exit(1);
   }
 
-  $file =~ s/\*/%/;
+  $file =~ s/\*/%/g;
 
   my $query = 'SELECT * FROM manifest m, packages p WHERE m.package_id = p.id AND m.file LIKE ?';
 
   if ($file =~ /\//) {
+
     $dir    = dirname($file);
     $file   = basename($file);
     $query .= ' AND directory LIKE ?';
+
   }
 
   my $sth = $dbh->prepare($query);
@@ -697,7 +699,14 @@ sub _call_package_search {
     my $name    = $row->{'name'};
     my $summary = $row->{'summary'};
 
-    print sprintf("%-35s %-15s %-8s %-75s %-10s %s\n", $name, $row->{'version'}, $row->{'arch'}, $summary, ($row->{'status'}||' '), $row->{'repository'});
+    print sprintf("%-35s %-15s %-8s %-75s %-10s %s\n",
+      $name,
+      $row->{'version'},
+      $row->{'arch'},
+      $summary,
+      colored(sprintf('%-10s', $row->{'status'} ||' '), 'green'),
+      $row->{'repository'}
+    );
 
   }
 
