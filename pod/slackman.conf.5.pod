@@ -1,0 +1,124 @@
+=head1 NAME
+
+slackman.conf - Configuration file for L<slackman(8)>
+
+=head1 DESCRIPTION
+
+The F<slackman.conf> file contains information for L<slackman(8)>.
+
+=head1 SECTIONS
+
+=head2 [main] SECTION
+
+B<checkmd5>
+
+Enable MD5 check for downloaded packages (default: C<true>)
+
+B<checkgpg>
+
+Enable GPG check for downloaded packages (default: C<true>)
+
+B<exclude>
+
+Comma-sepatated values of excluded packages for C<slackman install> or C<slackman upgrade> commands (default: '')
+
+=head2 [logger] SECTION
+
+B<level>
+
+Default log level (default: C<info>)
+
+The possible values are:
+
+  debug
+  info
+  notice
+  warning
+  error
+  critical
+  alert
+  emergency
+
+B<file>
+
+Define slackman log file (default: F</var/log/slackman.log>)
+
+=head2 [proxy] SECTION
+
+B<enable>
+
+Enable a proxy (default: C<false>)
+
+B<protocol>
+
+Proxy protocol type (default: C<http>).
+
+Supported protocols are:
+
+  http
+  https
+  socks4
+  socks4a
+  socks5
+  socks5h
+
+B<hostname>
+
+Proxy hostname
+
+B<port>
+
+Proxy TCP port
+
+B<username>
+
+Proxy username
+
+B<password>
+
+Proxy password
+
+=head2 [slackware] SECTION
+
+B<version>
+
+Force Slackware version. The default value is actual Slackware version in
+</etc/slackware-release> file.
+
+B<ATTENTION> Set C<current> "only" if you have I<Slackware-current>.
+
+=head2 [directory] SECTION
+
+B<cache>
+
+Package Cache directory (default: C</var/cache/slackman>)
+
+B<lib>
+
+Lib directory for slackman database (default: C</var/lib/slackman>)
+
+B<log>
+
+Log directory (default: C</var/log>)
+
+B<lock>
+
+Lock directory (default: C</var/lock>)
+
+B<root>
+
+Root directory (default: C</>)
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/slackman.conf
+
+=item /etc/slackman/repos.d/*
+
+=back
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<installpkg(8)>, L<makepkg(8)>, L<removepkg(8)>, L<explodepkg(8)>, L<pkgtool(8)>, L<upgradepkg(8)>
