@@ -26,3 +26,10 @@ WriteMakefile(
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Slackware-Slackman-*' },
 );
+
+sub MY::postamble {
+    return <<'MAKE_FRAG';
+man: pod/Makefile
+	cd pod && $(MAKE) install
+MAKE_FRAG
+}
