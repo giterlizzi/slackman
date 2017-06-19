@@ -51,11 +51,10 @@ find -L . \
 
 perl Makefile.PL \
   PREFIX=/usr \
-  INSTALLDIRS=vendor \
-  INSTALLVENDORMAN1DIR=/usr/man/man1 \
-  INSTALLVENDORMAN3DIR=/usr/man/man3
+  INSTALLDIRS=vendor
 make
 make test
+make man DESTDIR=$PKG
 make install DESTDIR=$PKG
 
 # Move slackman script to sbin
