@@ -272,9 +272,11 @@ sub w3c_date_to_time {
   return $timestamp unless($timestamp);
 
   $timestamp = trim($timestamp);
+  $timestamp =~ s/\s+GMT//;  # Remove GMT to prevent issue with older Time::Piece
+                             # NOTE: HTTP dates are always expressed in GMT, never in local time.
 
                                             # Wed, 12 Apr 2017 09:03:03 GMT
-  my $t = Time::Piece->strptime($timestamp, "%a, %d %b %Y %H:%M:%S %Z");
+  my $t = Time::Piece->strptime($timestamp, "%a, %d %b %Y %H:%M:%S");
 
   return $t->epoch();
 
