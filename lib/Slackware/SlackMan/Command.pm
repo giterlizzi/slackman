@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.4';
+  $VERSION     = 'v1.1.0-ALPHA';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(run);
   %EXPORT_TAGS = (
@@ -326,9 +326,10 @@ sub _call_db_info {
 
 sub _call_config {
 
-  foreach my $section (keys %$slackman_conf) {
-    foreach my $parameter (keys %{$slackman_conf->{$section}}) {
-      print sprintf("%-20s %s\n", "$section.$parameter", $slackman_conf->{$section}->{$parameter});
+  foreach my $section (sort keys %$slackman_conf) {
+    foreach my $parameter (sort keys %{$slackman_conf->{$section}}) {
+      my $value = $slackman_conf->{$section}->{$parameter};
+      print sprintf("%s=%s\n", "$section.$parameter", $value);
     }
   }
 
@@ -514,7 +515,7 @@ sub _call_package_info {
   my $package = shift;
 
   unless ($package) {
-    warn("Specify package!\n");
+    print "Usage: slackman info PACKAGE\n";
     exit(255);
   }
 
@@ -611,17 +612,31 @@ sub _call_package_info {
 
 sub _call_file_search {
 
-  my $search = shift;
+  my $file = shift;
+  my $dir  = undef;
 
-  unless($search) {
-    print "Missing search paramater!\n";
+  unless($file) {
+    print "Usage: slackman search FILE\n";
     exit(1);
   }
 
-  $search =~ s/\*/%/;
+  $file =~ s/\*/%/;
 
-  my $sth = $dbh->prepare('SELECT * FROM manifest m, packages p WHERE m.package_id = p.id AND m.file LIKE ?');
-  $sth->execute($search);
+  my $query = 'SELECT * FROM manifest m, packages p WHERE m.package_id = p.id AND m.file LIKE ?';
+
+  if ($file =~ /\//) {
+    $dir    = dirname($file);
+    $file   = basename($file);
+    $query .= ' AND directory LIKE ?';
+  }
+
+  my $sth = $dbh->prepare($query);
+
+  if ($dir) {
+    $sth->execute($file, $dir);
+  } else {
+    $sth->execute($file);
+  }
 
   while (my $row = $sth->fetchrow_hashref()) {
     print sprintf("%s/@{[ BOLD ]}%s@{[ RESET ]}: %s (%s)\n",
@@ -637,7 +652,7 @@ sub _call_package_search {
   my $search = shift;
 
   unless ($search) {
-    warn "Specify package!\n";
+    print "Usage: slackman search PATTERN\n";
     exit(255);
   }
 
@@ -695,7 +710,7 @@ sub _call_package_history {
   my ($package) = @_;
 
   unless ($package) {
-    warn("Specify package!\n");
+    print "Usage: slackman history PACKAGE\n";
     exit(255);
   }
 
@@ -860,7 +875,7 @@ sub _call_package_update {
     exit(0) if ($slackman_opts->{'download-only'});
 
     unless ($< == 0) {
-      warn "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
+      print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
       exit(1);
     }
 
@@ -990,14 +1005,14 @@ sub _call_repo_info {
   my ($repo_id) = @_;
 
   unless($repo_id) {
-    warn "Specify repository!\n";
+    print "Usage: slackman repo info REPOSITORY\n";
     exit(255);
   }
 
   my $repo_data = get_repository($repo_id);
 
   unless($repo_data) {
-    warn "Repository not found!\n";
+    print "Repository not found!\n";
     exit(255);
   }
 
@@ -1074,7 +1089,7 @@ sub _call_package_reinstall {
   my $option_repo  = $slackman_opts->{'repo'};
 
   unless (@packages) {
-    warn "Specify package!\n";
+    print "Usage: slackman reinstall PACKAGE [...]\n";
     exit(255);
   }
 
@@ -1145,7 +1160,7 @@ sub _call_package_reinstall {
   exit(0) if ($slackman_opts->{'download-only'});
 
   unless ($< == 0) {
-    warn "\nPackage reinstall requires root privileges!\n";
+    print "\nPackage reinstall requires root privileges!\n";
     exit(1);
   }
 
@@ -1228,7 +1243,7 @@ sub _call_package_remove {
   }
 
   unless ($< == 0) {
-    warn "\nPackage remove requires root privileges!\n";
+    print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
     exit(1);
   }
 
@@ -1434,7 +1449,7 @@ sub _call_package_install {
   exit(0) if ($slackman_opts->{'download-only'});
 
   unless ($< == 0) {
-    warn "\nPackage update requires root privileges!\n";
+    print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
     exit(1);
   }
 
