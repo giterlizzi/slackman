@@ -51,6 +51,8 @@ use Slackware::SlackMan::Parser qw(:all);
 
 sub package_changelogs {
 
+  my ($package) = @_;
+
   my $option_repo  = $slackman_opts->{'repo'};
   my @repositories = get_enabled_repositories();
   my @filters      = ();
@@ -72,6 +74,12 @@ sub package_changelogs {
 
   # Filter disabled repository
   push(@filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
+
+  # Filter specified package name
+  if ($package) {
+    $package =~ s/\*/%/g;
+    push(@filters, sprintf('name LIKE %s', $dbh->quote($package)));
+  }
 
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';

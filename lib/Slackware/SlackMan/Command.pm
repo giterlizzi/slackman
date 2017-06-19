@@ -121,7 +121,7 @@ sub run {
     when('info')         { _call_package_info($ARGV[1]) }
     when('history')      { _call_package_history($ARGV[1]) }
 
-    when('changelog')    { _call_changelog() }
+    when('changelog')    { _call_changelog($ARGV[1]) }
     when('config')       { _call_config() }
     when('search')       { _call_package_search($ARGV[1]) }
     when('file-search')  { _call_file_search($ARGV[1]) }
@@ -521,7 +521,7 @@ sub _call_package_info {
 
   $package =~ s/\*/%/g;
 
-  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($package));
+  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($dbh->quote($package)));
 
   my @installed;
 
@@ -694,20 +694,36 @@ sub _call_package_search {
   my $sth = $dbh->prepare($query);
   $sth->execute($search, $search, $search, $search);
 
+  my $rows = 0;
+
+  print sprintf("%s\n", "-"x132);
+  print sprintf("%-80s %-15s %-8s %-10s %s\n",
+    'Name', 'Version', 'Arch', 'Status', 'Repository');
+  print sprintf("%s\n", "-"x132);
+
   while (my $row = $sth->fetchrow_hashref()) {
+
+    $rows++;
 
     my $name    = $row->{'name'};
     my $summary = $row->{'summary'};
 
-    print sprintf("%-35s %-15s %-8s %-75s %-10s %s\n",
-      $name,
+    $summary =~ s/^$name//;
+    $summary =~ s/^\s+//;
+
+    print sprintf("%-80s %-15s %-8s %-10s %s\n",
+      "$name $summary",
       $row->{'version'},
       $row->{'arch'},
-      $summary,
       colored(sprintf('%-10s', $row->{'status'} ||' '), 'green'),
       $row->{'repository'}
     );
 
+  }
+
+  unless ($rows) {
+    print "Package not found!\n";
+    exit(255);
   }
 
   exit(0);
@@ -794,8 +810,12 @@ sub _call_package_update {
   if (scalar keys %$update_pkgs) {
 
     print "Package(s) to update\n\n";
+
     print sprintf("%s\n", "-"x132);
-    print sprintf("%-30s %-8s %-35s %-40s %s\n", 'Name', 'Arch', 'Version', 'Repository', 'Size');
+
+    print sprintf("%-30s %-8s %-35s %-40s %s\n",
+      'Name', 'Arch', 'Version', 'Repository', 'Size');
+
     print sprintf("%s\n", "-"x132);
 
     foreach (sort keys %$update_pkgs) {
@@ -821,8 +841,12 @@ sub _call_package_update {
 
     print "\n\n";
     print "Required package(s) to install\n\n";
+
     print sprintf("%s\n", "-"x132);
-    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n", 'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
+
+    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
+      'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
+
     print sprintf("%s\n", "-"x132);
 
     foreach (sort keys %$install_pkgs) {
@@ -834,7 +858,8 @@ sub _call_package_update {
       $total_compressed_size   += $pkg->{size_compressed};
 
       print sprintf("%-30s %-8s %-9s %-20s %-40s %.1f M\n",
-        $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by, $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
+        $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
+        $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
       );
 
       push(@downloads, $pkg);
@@ -972,7 +997,8 @@ sub _call_list_repo {
 
 sub _call_changelog {
 
-  my $changelogs = package_changelogs();
+  my ($package)  = @_;
+  my $changelogs = package_changelogs($package);
 
   print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
   print sprintf("%s\n", "-"x132);
@@ -1136,7 +1162,7 @@ sub _call_package_reinstall {
 
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@filters, qq/repository LIKE "$option_repo"/);
+    push(@filters, sprintf('repository LIKE %s', $dbh->quote($option_repo)));
   } else {
     push(@filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
@@ -1288,8 +1314,7 @@ sub _call_package_install {
 
   foreach my $repository (@repositories) {
     $repository .= ":%" unless ($repository =~ m/\:/);
-    my $repo_exclude = '';
-    push(@filter_repository, qq/packages.repository LIKE "$repository" $repo_exclude/);
+    push(@filter_repository, sprintf('packages.repository LIKE %s', $dbh->quote($repository)));
   }
 
   @packages = map { parse_module_name($_) } @packages if (@packages);
@@ -1325,11 +1350,11 @@ sub _call_package_install {
 
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
-    push(@filters, qq/packages.name NOT LIKE "$option_exclude"/);
+    push(@filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
   }
 
   foreach my $repository (get_disabled_repositories()) {
-    push(@filters, qq/( packages.repository != "$repository" )/);
+    push(@filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
   }
 
   push(@filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
@@ -1377,8 +1402,12 @@ sub _call_package_install {
   $sth_packages->execute();
 
   print "\nPackage(s) install\n\n";
+
   print sprintf("%s\n", "-"x132);
-  print sprintf("%-30s %-8s %-30s %-40s %s\n", 'Name', 'Arch', 'Version', 'Repository', 'Size');
+
+  print sprintf("%-30s %-8s %-30s %-40s %s\n",
+    'Name', 'Arch', 'Version', 'Repository', 'Size');
+
   print sprintf("%s\n", "-"x132);
 
   my @install = ();
@@ -1411,8 +1440,12 @@ sub _call_package_install {
   if (scalar keys %$dependency_pkgs) {
 
     print "\n\n";
+
     print sprintf("%s\n", "-"x132);
-    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n", 'Dependency Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
+
+    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
+      'Dependency Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
+
     print sprintf("%s\n", "-"x132);
 
     foreach (sort keys %$dependency_pkgs) {
@@ -1420,7 +1453,8 @@ sub _call_package_install {
       my $pkg = $dependency_pkgs->{$_};
 
       print sprintf("%-30s %-8s %-30s %-40s %.1f M\n",
-        $pkg->{name}, $pkg->{arch}, $pkg->{version}, $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
+        $pkg->{name}, $pkg->{arch}, $pkg->{version},
+        $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
       );
 
       push(@install, $pkg);
@@ -1578,7 +1612,7 @@ sub _call_list_packages {
   }
 
   my $filter = sprintf('repository IN ("%s")', join('", "', get_enabled_repositories()));
-     $filter = sprintf('repository LIKE "%s"', $option_repo) if ($option_repo);
+     $filter = sprintf('repository LIKE %s', $dbh->quote($option_repo)) if ($option_repo);
 
   if ($slackman_opts->{'exclude-installed'}) {
     $filter .= ' AND name NOT IN (SELECT name FROM history WHERE status = "installed")';
