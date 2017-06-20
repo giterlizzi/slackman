@@ -1,32 +1,52 @@
 =head1 NAME
 
-slackman.conf - Configuration file for L<slackman(8)>
+B<slackman.conf> - Configuration file for L<slackman(8)> Package Manager
 
 =head1 DESCRIPTION
 
-The F<slackman.conf> file contains information for L<slackman(8)>.
+The F<slackman.conf> file contain the configurations for L<slackman(8)>.
 
-=head1 SECTIONS
+To get all options use C<slackman config> command.
 
-=head2 [main] SECTION
+=head1 [main] SECTION
 
-B<checkmd5>
+B<checkmd5> (default: C<true>)
 
-Enable MD5 check for downloaded packages (default: C<true>)
+=over
 
-B<checkgpg>
+Enable MD5 check for downloaded packages
 
-Enable GPG check for downloaded packages (default: C<true>)
+=back
 
-B<exclude>
+B<checkgpg> (default: C<true>)
 
-Comma-sepatated values of excluded packages for C<slackman install> or C<slackman upgrade> commands (default: '')
+=over
 
-=head2 [logger] SECTION
+Enable GPG check for downloaded packages 
 
-B<level>
+=back
 
-Default log level (default: C<info>)
+B<exclude> (default: C<>)
+
+=over
+
+List of comma-separated packages to exclude for C<slackman install> or C<slackman upgrade> commands
+
+B<Examples>
+
+If you want exclude kernels and all KDE l10n packages:
+
+    exclude=kernel-*,kde-l10n-*
+
+=back
+
+=head1 [logger] SECTION
+
+B<level> (default: C<info>)
+
+=over
+
+Default log level
 
 The possible values are:
 
@@ -39,19 +59,33 @@ The possible values are:
   alert
   emergency
 
-B<file>
+=back
 
-Define slackman log file (default: F</var/log/slackman.log>)
+B<file> (default: F</var/log/slackman.log>)
 
-=head2 [proxy] SECTION
+=over
 
-B<enable>
+Define slackman log file
 
-Enable a proxy (default: C<false>)
+=back
 
-B<protocol>
+=head1 [proxy] SECTION
 
-Proxy protocol type (default: C<http>).
+This section provide the proxy configuration for slackman.
+
+B<enable> (default: C<false>)
+
+=over
+
+Enable a proxy
+
+=back
+
+B<protocol> (default: C<http>)
+
+=over
+
+Proxy protocol type
 
 Supported protocols are:
 
@@ -62,52 +96,96 @@ Supported protocols are:
   socks5
   socks5h
 
+=back
+
 B<hostname>
 
-Proxy hostname
+=over
 
-B<port>
+Proxy FQDN or IP address
+
+=back
+
+B<port> (default: C<8080>)
+
+=over
 
 Proxy TCP port
 
-B<username>
+=back
+
+B<username> (default: C<>)
+
+=over
 
 Proxy username
 
-B<password>
+=back
+
+B<password> (default: C<>)
+
+=over
 
 Proxy password
 
-=head2 [slackware] SECTION
+=back
 
-B<version>
+=head1 [slackware] SECTION
+
+B<version> (default: actual Slackware release)
+
+=over
 
 Force Slackware version. The default value is actual Slackware version in
-</etc/slackware-release> file.
+F</etc/slackware-release> file.
 
-B<ATTENTION> Set C<current> "only" if you have I<Slackware-current>.
+B<!!! ATTENTION !!!>
 
-=head2 [directory] SECTION
+Set C<current> value "only" if you have a I<-current> Slackware release.
 
-B<cache>
+=back
 
-Package Cache directory (default: C</var/cache/slackman>)
+=head1 [directory] SECTION
 
-B<lib>
+B<cache> (default: C</var/cache/slackman>)
 
-Lib directory for slackman database (default: C</var/lib/slackman>)
+=over
 
-B<log>
+Package Cache directory
 
-Log directory (default: C</var/log>)
+=back
 
-B<lock>
+B<lib> (default: C</var/lib/slackman>)
 
-Lock directory (default: C</var/lock>)
+=over
 
-B<root>
+Lib directory for slackman database
 
-Root directory (default: C</>)
+=back
+
+B<log> (default: C</var/log>)
+
+=over
+
+Log directory
+
+=back
+
+B<lock> (default: C</var/lock>)
+
+=over
+
+Lock directory
+
+=back
+
+B<root> (default: C</>)
+
+=over
+
+Root directory
+
+=back
 
 =head1 FILES
 
@@ -121,4 +199,4 @@ Root directory (default: C</>)
 
 =head1 SEE ALSO
 
-L<slackman(8)>, L<installpkg(8)>, L<makepkg(8)>, L<removepkg(8)>, L<explodepkg(8)>, L<pkgtool(8)>, L<upgradepkg(8)>
+L<slackman(8)>, L<slackman.repo(5)>

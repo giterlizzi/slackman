@@ -1,0 +1,321 @@
+=head1 NAME
+
+B<slackman.repo> - Configuration file for slackman repository
+
+=head1 DESCRIPTION
+
+SlackMan support official and 3th party Slackware repository. All repository
+configuration are placed into F</etc/slackman/repos.d/> directory.
+
+=head1 REPO FILE
+
+A single C<.repo> file support multiple repositories (see F</etc/slackman/repos.d/slackware.repo>
+file) identified with a specific section:
+
+    # Local repository
+    [local]
+    [...]
+
+    # Testing repository
+    [testing]
+    [...]
+
+B<NOTE> SlackMan identify a repository from C<.repo> filename + repository section
+(eg. C<slackware:packages>, C<alienbob:restricted>, etc)
+
+=head2 OPTIONS
+
+B<name>
+
+=over
+
+Short description of repository
+
+B<Example>
+
+    name=My local repository
+
+=back
+
+B<enabled>
+
+=over
+
+Enable or disable repository
+
+B<Example>
+
+    enabled=true
+
+=back
+
+B<mirror>
+
+=over
+
+Mirror URL
+
+This is the root of repository. slackman automatically detect all metadata
+file URLs (C<GPG-KEY>, C<PACKAGES.TXT>, C<MANIFEST.bz2>, etc).
+
+Support local (via "file" protocol) and remote url (http, https, ftp, etc.)
+
+B<Example>
+
+    mirror=http://example.org/slackware/
+
+=back
+
+B<priority>
+
+=over
+
+Priority (optional) 
+
+Specify repository priority (default is C<0> - "zero")
+
+B<Example>
+
+    priority=1
+
+=back
+
+B<exclude>
+
+=over
+
+Exclude packages (optional)
+
+Specify excluded packages for update or install (default C<>)
+
+B<Example>
+
+    exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+
+=back
+
+=head2 OPTIONS TO OVERRIDE METADATA URLs
+
+SlackMan detect automatically all metadata URLs from C<mirror> option but some
+repository require a little extra configuration to point at the correct metadata URLs.
+
+B<NOTE> With this options you can use C<$mirror> variable.
+
+B<gpgkey>
+
+=over
+
+GPG-KEY file URL
+
+B<Example>
+
+    gpgkey=http://example.org/slackware/GPG-KEY
+
+=back
+
+B<packages>
+
+=over
+
+Packages file URL
+
+B<Example>
+
+    packages=http://example.org/slackware/PACKAGES.TXT
+
+=back
+
+B<filelist>
+
+=over
+
+Filelist file URL
+
+B<Example>
+
+    filelist=http://example.org/slackware/FILELIST.TXT
+
+=back
+
+B<changelog>
+
+=over
+
+Changelog file URL
+
+B<Example>
+
+    changelog=http://example.org/slackware/ChangeLog.txt
+
+=back
+
+B<manifest>
+
+=over
+
+Manifest file URL
+
+B<Example>
+
+    manifest=http://example.org/slackware/MANIFEST.bz2
+
+=back
+
+B<chechsums>
+
+=over
+
+Checksums file URL
+
+B<Example>
+
+    chechsums=http://example.org/slackware/CHECHSUMS.md5
+
+=back
+
+=head2 VARIABLES
+
+SlackMan support special variables for extend the configuration of C<.repo> file:
+
+For display all variable values use C<slackman list variables> command:
+
+    # slackman list variables
+
+    Variable             Value
+    ----------------------------------------
+    arch                 x86_64
+    arch.bit             64
+    arch.family          x86_64
+    release              current
+    release.real         14.2
+    release.suffix       64
+
+C<arch>
+
+=over
+
+Machine architecture (eg. C<x86_64>, C<i686>)
+
+=back
+
+C<arch.bit>
+
+=over
+
+Machine bit architecture (eg. C<64>, C<32>)
+
+=back
+
+C<arch.family>
+
+=over
+
+Machine architecture family (eg. C<x86_64>, C<x86>)
+
+=back
+
+C<mirror>
+
+=over
+
+Mirror URL from C<mirror> config option (see above)
+
+=back
+
+C<release>
+
+=over
+
+Slackware version from F</etc/slackware-release> (eg. C<14.2>) or C<current>
+(this variable follow the I<slackware.version> option in L<slackman.conf(5)> file)
+
+=back
+
+C<release.real>
+
+=over
+
+Slackware "real" release version from  F</etc/slackware-release> file (eg. C<14.2>)
+
+=back
+
+C<release.suffix>
+
+=over
+
+Slackware release suffix (eg. C<64> - for Slackware64,  C<arm> - for Slackwarearm)
+
+=back
+
+=head3  EXAMPLES
+
+B<Slackware-14.2 (32-bit)>
+
+    name=Slackware{$release.suffix}-{$release.real} repository
+    mirror=http://example.org/slackware{$release.suffix}-{$release.real}/
+
+      release.suffix => 
+      release.real   => 14.2
+
+    name=Slackware64-14.2
+    mirror=http://example.org/slackware-14.2
+
+B<Slackware64-current (64-bit)>
+
+    name=Slackware{$release.suffix}-{$release} repository
+    mirror=http://example.org/slackware{$release.suffix}-{$release}/
+
+      release.suffix => 64
+      release        => current
+
+    name=Slackware64-current
+    mirror=http://example.org/slackware64-current
+
+=head1 DISPLAY REPOSITORY CONFIGURATION
+
+To display repository configuration you can use C<slackman repo list> and
+C<slackman repo info REPOSITORY> commands:
+
+    # slackman repo list
+
+    --------------------------------------------------------------------------------------
+    Repository ID         Description                       Status     Priority   Packages
+    --------------------------------------------------------------------------------------
+    slackware:extra       Slackware64-current (Extra)       Enabled    0          92
+    slackware:multilib    Slackware64-current (MultiLib)    Enabled    10         181
+    slackware:packages    Slackware64-current               Enabled    0          1348
+    slackware:pasture     Slackware64-current (Pasture)     Disabled   0          0
+    slackware:patches     Slackware64-current (Patches)     Enabled    10         0
+    slackware:testing     Slackware64-current (Testing)     Disabled   -1         0
+
+
+    # slackman repo info slackware:extra
+
+    Name:                Slackware64-current (Extra)
+    ID:                  slackware:extra
+    Configuration:       /etc/slackman/repos.d/slackware.repo
+    Mirror:              http://mirrors.slackware.com/slackware/slackware64-current/
+    Status:              enabled
+    Last Update:         2017-05-24 07:03:49
+    Priority:            0
+    Packages:            92
+    
+    Repository URLs:
+      * packages         http://mirrors.slackware.com/slackware/slackware64-current/extra/PACKAGES.TXT
+      * manifest         http://mirrors.slackware.com/slackware/slackware64-current/extra/MANIFEST.bz2
+      * checksums        http://mirrors.slackware.com/slackware/slackware64-current/extra/CHECKSUMS.md5
+      * gpgkey           http://mirrors.slackware.com/slackware/slackware64-current/GPG-KEY
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/slackman.conf
+
+=item /etc/slackman/repos.d/*
+
+=back
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.conf(5)>
