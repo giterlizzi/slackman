@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-ALPHA';
+  $VERSION     = 'v1.1.0-beta1';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -276,6 +276,11 @@ sub package_install {
   system('/sbin/installpkg', '--terse', $package);
   unlink($package) or warn "Failed to delete file $package: $!";
 
+  my $pkg_info = package_info(basename($package));
+
+  logger->info(sprintf("Installed %s package with %s version",
+    $pkg_info->{'name'}, $pkg_info->{'version'}));
+
 }
 
 
@@ -287,6 +292,11 @@ sub package_update {
 
   system('/sbin/upgradepkg', '--reinstall', '--install-new', $package);
   unlink($package) or warn "Failed to delete file: $!";
+
+  my $pkg_info = package_info(basename($package));
+
+  logger->info(sprintf("Upgraded %s package to %s version",
+    $pkg_info->{'name'}, $pkg_info->{'version'}));
 
 }
 
@@ -525,11 +535,12 @@ sub package_check_updates {
 
 sub package_download {
 
-  my ($pkg, $packages, $errors) = @_;
+  my ($pkg) = @_;
 
-  my $package_url  = sprintf('%s/%s/%s', $pkg->{'mirror'}, $pkg->{'location'}, $pkg->{'package'});
-  my $save_path    = sprintf('%s/%s/%s', $slackman_conf->{directory}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
-  my $package_path = sprintf('%s/%s', $save_path, $pkg->{'package'});
+  my $package_url    = sprintf('%s/%s/%s', $pkg->{'mirror'}, $pkg->{'location'}, $pkg->{'package'});
+  my $save_path      = sprintf('%s/%s/%s', $slackman_conf->{directory}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
+  my $package_path   = sprintf('%s/%s', $save_path, $pkg->{'package'});
+  my @package_errors = ();
 
   make_path($save_path) unless (-d $save_path);
 
@@ -544,7 +555,7 @@ sub package_download {
       logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
     } else {
       logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-      push(@$errors, $pkg->{'package'});
+      push(@package_errors, 'download');
     }
 
   }
@@ -589,14 +600,14 @@ sub package_download {
       logger->error(sprintf("Error during GPG signature verify of %s package", $pkg->{'package'}));
     }
 
-    if ($md5_check && $gpg_verify) {
-      push(@$packages, $package_path);
-    } else {
+    unless ($md5_check && $gpg_verify) {
       unlink($package_path) or warn "Failed to remove file: $!";
-      push(@$errors, $pkg->{'package'});
+      push(@package_errors, 'checksum');
     }
 
   }
+
+  return ($package_path, \@package_errors);
 
 }
 

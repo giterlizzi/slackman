@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-ALPHA';
+  $VERSION     = 'v1.1.0-beta1';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(run);
   %EXPORT_TAGS = (
@@ -523,7 +523,7 @@ sub _call_package_info {
 
   my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($dbh->quote($package)));
 
-  my @installed;
+  my @packages_to_installed;
 
   print "Installed package(s)\n";
   print sprintf("%s\n\n", "-"x80);
@@ -532,7 +532,7 @@ sub _call_package_info {
 
     my $row = $installed_rows->{$_};
 
-    push @installed, $row->{name};
+    push @packages_to_installed, $row->{name};
 
     my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
 
@@ -564,7 +564,7 @@ sub _call_package_info {
   print "No packages installed found\n" unless (scalar keys %$installed_rows);
 
   my $available_query = sprintf('SELECT * FROM packages WHERE name LIKE ? AND name NOT IN (%s) AND repository NOT IN (%s)',
-    '"' . join('","', @installed) . '"',
+    '"' . join('","', @packages_to_installed) . '"',
     '"' . join('","', get_disabled_repositories()) . '"');
   my $available_rows  = $dbh->selectall_hashref($available_query, 'id', undef, $package);
 
@@ -790,24 +790,23 @@ sub _call_package_update {
 
   STDOUT->printflush('Search packages update... ');
 
-  my $update_pkgs     = {};  # Updatable packages
-  my $install_pkgs    = {};  # Required packages to install
-  my @downloads       = ();  # Download packages
-  my @packages        = ();  # Packages for upgradepkg command
-  my @errors          = ();  # Download, checksum & gpg verify errors
-  my $kernel_upgrade  = 0;
+  my $packages_to_update    = {};  # Updatable packages list
+  my $packages_to_install   = {};  # Required packages to install
+  my @packages_to_downloads = ();  # Download packages list
+  my @packages_for_pkgtool  = ();  # Packages for upgradepkg command
+  my $packages_errors       = {};  # Download, checksum & gpg verify errors
+  my $kernel_upgrade        = 0;   # Check Kernel Upgrade
 
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
-  my $spinner = 0;
 
   _update_repo_data();
 
-  ($update_pkgs, $install_pkgs) = package_check_updates(@update_package);
+  ($packages_to_update, $packages_to_install) = package_check_updates(@update_package);
 
   STDOUT->printflush("done!\n\n");
 
-  if (scalar keys %$update_pkgs) {
+  if (scalar keys %$packages_to_update) {
 
     print "Package(s) to update\n\n";
 
@@ -818,9 +817,9 @@ sub _call_package_update {
 
     print sprintf("%s\n", "-"x132);
 
-    foreach (sort keys %$update_pkgs) {
+    foreach (sort keys %$packages_to_update) {
 
-      my $pkg = $update_pkgs->{$_};
+      my $pkg = $packages_to_update->{$_};
 
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
@@ -831,13 +830,13 @@ sub _call_package_update {
         $pkg->{repository}, ($pkg->{size_compressed}/1024)
       );
 
-      push(@downloads, $pkg);
+      push(@packages_to_downloads, $pkg);
 
     }
 
   }
 
-  if (scalar keys %$install_pkgs) {
+  if (scalar keys %$packages_to_install) {
 
     print "\n\n";
     print "Required package(s) to install\n\n";
@@ -849,9 +848,9 @@ sub _call_package_update {
 
     print sprintf("%s\n", "-"x132);
 
-    foreach (sort keys %$install_pkgs) {
+    foreach (sort keys %$packages_to_install) {
 
-      my $pkg       = $install_pkgs->{$_};
+      my $pkg       = $packages_to_install->{$_};
       my $needed_by = join(',', @{$pkg->{needed_by}});
 
       $total_uncompressed_size += $pkg->{size_uncompressed};
@@ -862,12 +861,12 @@ sub _call_package_update {
         $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
       );
 
-      push(@downloads, $pkg);
+      push(@packages_to_downloads, $pkg);
     }
 
   }
 
-  unless (scalar keys %$update_pkgs) {
+  unless (scalar keys %$packages_to_update) {
     print "Already up-to-date!\n";
     exit(0);
   }
@@ -875,8 +874,8 @@ sub _call_package_update {
   print "\n\n";
   print "Update summary\n";
   print sprintf("%s\n", "-"x40);
-  print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$install_pkgs) if (scalar keys %$install_pkgs);
-  print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$update_pkgs);
+  print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$packages_to_install) if (scalar keys %$packages_to_install);
+  print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$packages_to_update);
 
   print sprintf("%-20s %.1f M\n", 'Download size',   $total_compressed_size   / 1024);
   print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size / 1024);
@@ -884,7 +883,7 @@ sub _call_package_update {
 
   exit(0) if ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
 
-  if (@downloads) {
+  if (@packages_to_downloads) {
 
     unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
       exit(0) unless(confirm("Perform update of selected packages? [Y/N] "));
@@ -894,53 +893,26 @@ sub _call_package_update {
     print "Download package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
-    my $num_downloads   = scalar @downloads;
-    my $count_downloads = 0;
-
-    foreach my $pkg (@downloads) {
-
-      $count_downloads++;
-
-      STDOUT->printflush(sprintf("[%d/%d] %s\n", $count_downloads, $num_downloads, $pkg->{'package'}));
-      package_download($pkg, \@packages, \@errors);
-
-    }
+    _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
     exit(0) if ($slackman_opts->{'download-only'});
 
-    unless ($< == 0) {
-      print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
-      exit(1);
-    }
+    _check_root();
 
-    if (@packages) {
+    if (@packages_for_pkgtool) {
 
       print "\n\n";
       print "Update package(s)\n\n";
       print sprintf("%s\n", "-"x132);
 
-      foreach my $package_path (@packages) {
+      foreach my $package_path (@packages_for_pkgtool) {
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
         package_update($package_path);
-        my $pkg_info = package_info(basename($package_path));
-        logger->info(sprintf("Upgraded %s package to %s version", $pkg_info->{name}, $pkg_info->{version}));
       }
 
     }
 
-    if (@errors) {
-
-      print "\n\n";
-      print "{[ BOLD YELLOW ]}WARNING{[ RESET ]} Error(s) during package integrity check or download\n\n";
-      print sprintf("%s\n", "-"x132);
-
-      foreach (@errors) {
-        print sprintf("  * %s\n", $_);
-      }
-
-    }
-
-    print "\n\n";
+    _packages_errors($packages_errors);
 
     if ($kernel_upgrade) {
 
@@ -959,6 +931,7 @@ sub _call_package_update {
     }
 
     _fork_update_history();
+
     exit(0);
 
   }
@@ -1123,6 +1096,10 @@ sub _call_package_reinstall {
   my @is_installed = ();
   my $option_repo  = $slackman_opts->{'repo'};
 
+  my @packages_to_downloads = ();
+  my @packages_for_pkgtool  = ();
+  my $packages_errors       = {};
+
   unless (@packages) {
     print "Usage: slackman reinstall PACKAGE [...]\n";
     exit(255);
@@ -1172,58 +1149,33 @@ sub _call_package_reinstall {
   my $query = 'SELECT * FROM packages WHERE ' . join(' AND ', @filters);
   my $rows  = $dbh->selectall_hashref($query, 'id', undef);
 
-  my $i = 0;
-  my $num_reinstall = scalar keys %$rows;
-  my @pkg_reinstall = ();
-  my @pkg_errors    = ();
+  @packages_to_downloads = values(%$rows);
 
-  exit(0) unless ($num_reinstall);
+  exit(0) unless (@packages_to_downloads);
 
   print "\n\n";
+  print "Download package(s)\n\n";
+  print sprintf("%s\n", "-"x132);
 
-  foreach (keys %$rows) {
-
-    $i++;
-
-    my $pkg = $rows->{$_};
-
-    STDOUT->printflush(sprintf("[%d/%d] %s\n", $i, $num_reinstall, $pkg->{'package'}));
-    package_download($pkg, \@pkg_reinstall, \@pkg_errors);
-
-  }
+  _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
   exit(0) if ($slackman_opts->{'download-only'});
 
-  unless ($< == 0) {
-    print "\nPackage reinstall requires root privileges!\n";
-    exit(1);
-  }
+  _check_root();
 
-  if (@pkg_reinstall) {
+  if (@packages_for_pkgtool) {
 
     print "\n\n";
     print "Reinstall package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
-    foreach my $package_path (@pkg_reinstall) {
-      package_update($package_path);
-      my $pkg_info = package_info(basename($package_path));
-      logger->info(sprintf("Reinstalled %s package to %s version", $pkg_info->{name}, $pkg_info->{version}));
+    foreach (@packages_for_pkgtool) {
+      package_update($_);
     }
 
   }
 
-  if (@pkg_errors) {
-
-    print "\n\n";
-    print "Error(s) during package integrity check or download\n\n";
-    print sprintf("%s\n", "-"x132);
-
-    foreach (@pkg_errors) {
-      print sprintf("  * %s\n", $_);
-    }
-
-  }
+  _packages_errors($packages_errors);
 
   _fork_update_history();
   exit(0);
@@ -1277,10 +1229,7 @@ sub _call_package_remove {
     exit(0) unless(confirm("Are you sure? [Y/N] "));
   }
 
-  unless ($< == 0) {
-    print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
-    exit(1);
-  }
+  _check_root();
 
   foreach (@is_installed) {
     package_remove($_);
@@ -1298,9 +1247,10 @@ sub _call_package_install {
   my $option_repo    = $slackman_opts->{'repo'};
   my $option_exclude = $slackman_opts->{'exclude'};
 
-  my $check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"', '"' . join('","', @packages) . '"'), undef);
+  my $pkg_check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"',
+    '"' . join('","', @packages) . '"'), undef);
 
-  if ($check) {
+  if ($pkg_check) {
     print "Package already installed!\n";
     exit(1);
   }
@@ -1410,7 +1360,10 @@ sub _call_package_install {
 
   print sprintf("%s\n", "-"x132);
 
-  my @install = ();
+  my @packages_to_downloads = ();
+  my @packages_for_pkgtool  = ();
+  my $packages_errors       = {};
+
   my $dependency_pkgs = {};
 
   while (my $row = $sth_packages->fetchrow_hashref()) {
@@ -1428,12 +1381,12 @@ sub _call_package_install {
 
       unless (package_is_installed($pkg_required)) {
         $dependency_pkgs->{$pkg_required} = $dependency_row;
-        push(@install, $dependency_row);
+        push(@packages_to_downloads, $dependency_row);
       }
 
     }
 
-    push(@install, $row);
+    push(@packages_to_downloads, $row);
 
   }
 
@@ -1457,7 +1410,7 @@ sub _call_package_install {
         $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
       );
 
-      push(@install, $pkg);
+      push(@packages_to_downloads, $pkg);
     }
 
   }
@@ -1465,64 +1418,38 @@ sub _call_package_install {
   print "\n\n";
 
   exit(0)     if ($slackman_opts->{'no'});
-  exit(0) unless (@install);
+  exit(0) unless (@packages_to_downloads);
 
   unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
     exit(0) unless(confirm("Install selected packages? [Y/N] "));
   }
 
 
-  my $num_install   = scalar @install;
-  my $count_install = 0;
-  my @pkg_install   = ();
-  my @errors        = ();
-
   print "\n\n";
   print "Download package(s)\n\n";
   print sprintf("%s\n", "-"x132);
 
-  foreach my $install (@install) {
-
-    $count_install++;
-
-    STDOUT->printflush(sprintf("[%d/%d] %s\n", $count_install, $num_install, $install->{'package'}));
-    package_download($install, \@pkg_install, \@errors);
-  }
+  _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
   exit(0) if ($slackman_opts->{'download-only'});
 
-  unless ($< == 0) {
-    print "\n{[ BOLD RED ]}ERROR{[ RESET ]} This action require {[ BOLD ]}root{[ RESET ]} privilege!\n";
-    exit(1);
-  }
+  _check_root();
 
-  if (@pkg_install) {
+  if (@packages_for_pkgtool) {
 
     print "\n\n";
     print "Install package(s)\n\n";
     print sprintf("%s\n", "-"x132);
 
-    foreach (@pkg_install) {
+    foreach (@packages_for_pkgtool) {
       package_install($_);
-      my $pkg_info = package_info(basename($_));
-      logger->info(sprintf("Installed %s package %s version", $pkg_info->{name}, $pkg_info->{version}));
     }
 
   }
 
-  if (@errors) {
-
-    print "\n\n";
-    print "Error(s) during package integrity check or download\n\n";
-    print sprintf("%s\n", "-"x132);
-
-    foreach (@errors) {
-        print sprintf("  * %s\n", $_);
-    }
-    print "\n\n";
-  }
-
+  _packages_errors($packages_errors);
   _fork_update_history();
+
   exit(0);
 
 }
@@ -1652,6 +1579,63 @@ sub _fork_update_history {
   logger->debug("Call update history command in background ($update_history_cmd)");
 
   qx{ $update_history_cmd };
+
+}
+
+
+sub _packages_download {
+
+  my ($packages_to_downloads, $packages_for_pkgtool, $packages_errors) = @_;
+
+  my $num_downloads   = scalar @$packages_to_downloads;
+  my $count_downloads = 0;
+
+  foreach my $pkg (@$packages_to_downloads) {
+
+    $count_downloads++;
+
+    STDOUT->printflush(sprintf("[%d/%d] %s\n", $count_downloads, $num_downloads, $pkg->{'package'}));
+
+    my ($package_path, $package_errors) = package_download($pkg);
+
+    if (scalar @{$package_errors}) {
+      $packages_errors->{$pkg->{'package'}} = $package_errors;
+    } else {
+      push(@$packages_for_pkgtool, $package_path);
+    }
+
+  }
+
+}
+
+
+sub _packages_errors {
+
+  my ($packages_errors) = @_;
+
+  if (scalar keys %$packages_errors) {
+
+    print "\n\n";
+    print sprintf("%s Error(s) during package integrity check or download\n\n", colored('WARNING', 'yellow bold'));
+    print sprintf("%s\n", "-"x132);
+
+    foreach my $pkg (keys %$packages_errors) {
+      print sprintf("  * %s (%s error)\n", $pkg, join(' error, ', @{$packages_errors->{$pkg}}));
+    }
+
+    print "\n\n";
+
+  }
+
+}
+
+
+sub _check_root {
+
+  unless ($< == 0) {
+    print sprintf("%s This action require root privilege!\n", colored('ERROR', 'bold red'));
+    exit(1);
+  }
 
 }
 

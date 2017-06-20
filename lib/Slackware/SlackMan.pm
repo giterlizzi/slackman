@@ -21,7 +21,7 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION = 'v1.1.0-ALPHA';
+  $VERSION = 'v1.1.0-beta1';
 
   @EXPORT_OK = (
     @Slackware::SlackMan::Utils::EXPORT_OK,
