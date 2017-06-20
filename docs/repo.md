@@ -63,7 +63,7 @@ This is a sample .repo configuration
 
     # Override metadata URLs if the file is in another location
 
-    # Packages file URL
+    # GPG-KEY file URL
     #
     gpgkey=http://example.org/slackware/GPG-KEY
 

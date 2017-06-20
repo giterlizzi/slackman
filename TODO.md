@@ -1,4 +1,4 @@
-# TODO
+# SlackMan TODO
 
  - [ ] Number of installed packages in `slackman repo info REPOSITORY` command
  - [ ] D-BUS notification/service of avaiable packages update
