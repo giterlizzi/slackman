@@ -572,6 +572,7 @@ sub package_download {
 
     my $md5_check  = 0;
     my $gpg_verify = 0;
+    my $skip_check = 0;
 
     unless ($slackman_conf->{'main'}->{'checkmd5'}) {
       $md5_check = 1;
@@ -582,8 +583,8 @@ sub package_download {
     }
 
     unless ($pkg->{'checksum'}) {
-      exit(0) unless(confirm(sprintf("@{[ YELLOW BOLD ]}WARNING@{[ RESET ]} %s package don't have a valid checksum. Do you want continue ? [Y/N] ", $pkg->{'package'})));
-      $md5_check = 1;
+      exit(0) unless(confirm(sprintf("%s %s package don't have a valid checksum. Do you want continue ? [Y/N] ", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
+      $skip_check = 1;
     }
 
     if ($pkg->{'checksum'} && md5_check($package_path, $pkg->{'checksum'})) {
@@ -591,6 +592,7 @@ sub package_download {
       logger->info(sprintf("MD5 checksum success for %s package", $pkg->{'package'}));
     } else {
       logger->error(sprintf("Error during MD5 checksum of %s package", $pkg->{'package'}));
+      push(@package_errors, 'checksum');
     }
 
     if (gpg_verify($package_path)) {
@@ -598,11 +600,15 @@ sub package_download {
       $gpg_verify = 1;
     } else {
       logger->error(sprintf("Error during GPG signature verify of %s package", $pkg->{'package'}));
+      push(@package_errors, 'gpg');
     }
 
-    unless ($md5_check && $gpg_verify) {
-      unlink($package_path) or warn "Failed to remove file: $!";
-      push(@package_errors, 'checksum');
+    unless ($skip_check) {
+
+      unless ($md5_check && $gpg_verify) {
+        unlink($package_path) or warn "Failed to remove file: $!";
+      }
+
     }
 
   }
