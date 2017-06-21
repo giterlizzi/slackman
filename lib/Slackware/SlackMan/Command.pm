@@ -316,6 +316,9 @@ sub _call_db_info {
   print sprintf("%-20s %s\n",     'Path:', $db_path);
   print sprintf("%-20s %.1f M\n", 'Size:', ($size/1024/1024));
 
+  my $user_version = ($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0];
+  print sprintf("%-20s %s\n", 'Schema Version:', $user_version);
+
   my $quick_check  = ($dbh->selectrow_arrayref('PRAGMA quick_check', undef))->[0];
   print sprintf("%-20s %s\n", 'Quick check:', uc($quick_check));
 
@@ -808,9 +811,8 @@ sub _call_package_update {
 
   if (scalar keys %$packages_to_update) {
 
-    print "Package(s) to update\n\n";
-
-    print sprintf("%s\n", "-"x132);
+    print "Package(s) to update\n";
+    print sprintf("%s\n\n", "-"x132);
 
     print sprintf("%-30s %-8s %-35s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Repository', 'Size');
@@ -839,9 +841,9 @@ sub _call_package_update {
   if (scalar keys %$packages_to_install) {
 
     print "\n\n";
-    print "Required package(s) to install\n\n";
+    print "Required package(s) to install\n";
 
-    print sprintf("%s\n", "-"x132);
+    print sprintf("%s\n\n", "-"x132);
 
     print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
@@ -890,8 +892,8 @@ sub _call_package_update {
     }
 
     print "\n\n";
-    print "Download package(s)\n\n";
-    print sprintf("%s\n", "-"x132);
+    print "Download package(s)\n";
+    print sprintf("%s\n\n", "-"x132);
 
     _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
@@ -902,8 +904,8 @@ sub _call_package_update {
     if (@packages_for_pkgtool) {
 
       print "\n\n";
-      print "Update package(s)\n\n";
-      print sprintf("%s\n", "-"x132);
+      print "Update package(s)\n";
+      print sprintf("%s\n\n", "-"x132);
 
       foreach my $package_path (@packages_for_pkgtool) {
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
@@ -912,27 +914,17 @@ sub _call_package_update {
 
     }
 
+    # Display packages error list
     _packages_errors($packages_errors);
 
-    if ($kernel_upgrade) {
+    # Display packages upgraded
+    _packages_upgraded(\@packages_for_pkgtool);
 
-      my $new_kernel_version = qx( (basename /var/log/packages/kernel-modules-* | awk -F '-' '{ print \$3 }') );
-      chomp($new_kernel_version);
+    # Display Kernel Update message
+    _kernel_update_message() if ($kernel_upgrade);
 
-      my $message = "@{[ BLINK BOLD RED ]}Kernel upgrade detected !@{[ RESET ]}\n"
-                  . "Remember to reinstall the new kernel with @{[ BOLD ]}LILO@{[ RESET ]} "
-                  . "(or @{[ BOLD ]}ELILO@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
-                  . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
-                  . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
-                  . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}\n\n";
-
-      print wrap("", "\t", $message);
-
-    }
-
+    # Update history metadata in background
     _fork_update_history();
-
-    exit(0);
 
   }
 
@@ -1004,7 +996,11 @@ sub _call_repo_enable {
   my ($repo_id) = @_;
 
   enable_repository($repo_id);
-  print qq/Repository "$repo_id" enabled\n/;
+  print qq/Repository "$repo_id" enabled\n\n/;
+
+  print sprintf("%s: Remember to launch \"slackman update --repo $repo_id\" command!\n", colored('NOTE', 'bold'));
+
+  exit(0);
 
 }
 
@@ -1202,16 +1198,16 @@ sub _call_package_remove {
     foreach (@packages) {
 
       if ($_ =~ /^aaa\_(base|elflibs|terminfo)/) {
-        print sprintf("%-20s never remove this package\n", $_);
+        print sprintf("%-20s Never remove this package !!!\n", colored(sprintf('%-20s', $_), 'red bold'));
       } else {
 
         my $pkg = package_is_installed($_);
 
         if ($pkg) {
+          print sprintf("%-20s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'});
           push(@is_installed, $_);
-          print sprintf("%-20s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{tag}, $pkg->{timestamp});
         } else {
-          print sprintf("%-20s not installed\n", $_);
+          print sprintf("%-50s   not installed\n", colored(sprintf('%-50s', $_), 'red bold'));
         }
 
       }
@@ -1250,9 +1246,11 @@ sub _call_package_install {
   my $pkg_check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"',
     '"' . join('","', @packages) . '"'), undef);
 
-  if ($pkg_check) {
-    print "Package already installed!\n";
-    exit(1);
+  foreach (@packages) {
+    if (package_is_installed($_)) {
+      print sprintf("%s package is already installed!\n", colored($_, 'bold'));
+      exit(1);
+    }
   }
 
   _update_repo_data();
@@ -1426,8 +1424,8 @@ sub _call_package_install {
 
 
   print "\n\n";
-  print "Download package(s)\n\n";
-  print sprintf("%s\n", "-"x132);
+  print "Download package(s)\n";
+  print sprintf("%s\n\n", "-"x132);
 
   _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
@@ -1438,8 +1436,8 @@ sub _call_package_install {
   if (@packages_for_pkgtool) {
 
     print "\n\n";
-    print "Install package(s)\n\n";
-    print sprintf("%s\n", "-"x132);
+    print "Install package(s)\n";
+    print sprintf("%s\n\n", "-"x132);
 
     foreach (@packages_for_pkgtool) {
       package_install($_);
@@ -1448,6 +1446,7 @@ sub _call_package_install {
   }
 
   _packages_errors($packages_errors);
+  _packages_installed(\@packages_for_pkgtool);
   _fork_update_history();
 
   exit(0);
@@ -1587,6 +1586,8 @@ sub _packages_download {
 
   my ($packages_to_downloads, $packages_for_pkgtool, $packages_errors) = @_;
 
+  return 1 unless(@$packages_to_downloads);
+
   my $num_downloads   = scalar @$packages_to_downloads;
   my $count_downloads = 0;
 
@@ -1598,9 +1599,11 @@ sub _packages_download {
 
     my ($package_path, $package_errors) = package_download($pkg);
 
-    if (scalar @{$package_errors}) {
+    if (scalar @$package_errors) {
       $packages_errors->{$pkg->{'package'}} = $package_errors;
-    } else {
+    }
+
+    if (-e $package_path) {
       push(@$packages_for_pkgtool, $package_path);
     }
 
@@ -1609,23 +1612,67 @@ sub _packages_download {
 }
 
 
+sub _packages_upgraded {
+
+  my ($packages) = @_;
+
+  return 1 unless(@$packages);
+
+  print "\n\n";
+  print sprintf("%s Package(s) upgraded\n", colored('SUCCESS', 'green bold'));
+  print sprintf("%s\n\n", "-"x80);
+
+  foreach (@$packages) {
+
+    my $pkg = package_info(basename($_));
+
+    print sprintf("  * %s upgraded to %s version\n",
+      colored($pkg->{'name'}, 'bold'),
+      colored($pkg->{'version'}, 'bold')
+    );
+
+  }
+
+  print "\n\n";
+
+}
+
+
+sub _packages_installed {
+
+  my ($packages) = @_;
+
+  return 1 unless(@$packages);
+
+  print "\n\n";
+  print sprintf("%s Package(s) installed\n", colored('SUCCESS', 'green bold'));
+  print sprintf("%s\n\n", "-"x80);
+
+  foreach (@$packages) {
+    my $pkg = package_info(basename($_));
+    print sprintf("  * installed %s %s version\n", $pkg->{'name'}, $pkg->{'version'});
+  }
+
+  print "\n\n";
+
+}
+
+
 sub _packages_errors {
 
   my ($packages_errors) = @_;
 
-  if (scalar keys %$packages_errors) {
+  return 1 unless(scalar keys %$packages_errors);
 
-    print "\n\n";
-    print sprintf("%s Error(s) during package integrity check or download\n\n", colored('WARNING', 'yellow bold'));
-    print sprintf("%s\n", "-"x132);
+  print "\n\n";
+  print sprintf("%s Problems during package integrity check or download\n", colored('WARNING', 'yellow bold'));
+  print sprintf("%s\n\n", "-"x80);
 
-    foreach my $pkg (keys %$packages_errors) {
-      print sprintf("  * %s (%s error)\n", $pkg, join(' error, ', @{$packages_errors->{$pkg}}));
-    }
-
-    print "\n\n";
-
+  foreach my $pkg (keys %$packages_errors) {
+    print sprintf("  * %-50s (%s error)\n", $pkg, join(' error, ', @{$packages_errors->{$pkg}}));
   }
+
+  print "\n\n";
 
 }
 
@@ -1636,6 +1683,23 @@ sub _check_root {
     print sprintf("%s This action require root privilege!\n", colored('ERROR', 'bold red'));
     exit(1);
   }
+
+}
+
+
+sub _kernel_update_message {
+
+  my $new_kernel_version = qx( (basename /var/log/packages/kernel-modules-* | awk -F '-' '{ print \$3 }') );
+  chomp($new_kernel_version);
+
+  my $message = "@{[ BLINK BOLD RED ]}Kernel upgrade detected !@{[ RESET ]}\n"
+              . "Remember to reinstall the new kernel with @{[ BOLD ]}LILO@{[ RESET ]} "
+              . "(or @{[ BOLD ]}ELILO@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
+              . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
+              . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
+              . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}\n\n";
+
+  print wrap("", "\t", $message);
 
 }
 
