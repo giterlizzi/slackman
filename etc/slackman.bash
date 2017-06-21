@@ -211,7 +211,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --download-only"
+  local slackman_options="--repo --exclude --download-only --new-packages"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -222,6 +222,8 @@ _slackman_install() {
 
   COMPREPLY=( $(compgen -W "$(__slackman_list_no_installed_packages "$@")" -- "$cur") )
   __ltrim_colon_completions "$cur"
+
+  __slackman_complete_options "$cur" "$prev" && return
 
 }
 
@@ -252,6 +254,9 @@ _slackman_remove() {
     return 0
   fi
 
+  COMPREPLY=( $(compgen -W "$(__slackman_list_installed_packages "$@")" -- "$cur") )
+  __ltrim_colon_completions "$cur"
+
 }
 
 
@@ -275,7 +280,7 @@ _slackman_help() {
 
 _slackman_list() {
 
-  local slackman_options="--no-installed"
+  local slackman_options="--exclude-installed"
 
   __slackman_complete_options "$cur" "$prev" && return
 
