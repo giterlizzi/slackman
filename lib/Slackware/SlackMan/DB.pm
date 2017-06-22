@@ -96,7 +96,13 @@ use constant SLACKMAN_HISTORY_INDEX => qq/CREATE INDEX IF NOT EXISTS "history_id
 
 use constant SLACKMAN_MANIFEST_TABLE => qq/CREATE TABLE IF NOT EXISTS "manifest" (
   "id"                INTEGER PRIMARY KEY,
-  "package_id"        INTEGER,
+  "repository"        VARCHAR,
+  "name"              VARCHAR,
+  "package"           VARCHAR,
+  "version"           VARCHAR,
+  "arch"              VARCHAR,
+  "build"             INTEGER,
+  "tag"               VARCHAR,
   "directory"         VARCHAR,
   "file"              VARCHAR)/;
 

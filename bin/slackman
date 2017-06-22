@@ -69,7 +69,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
   clean cache               Clean cache package download directory
   clean metadata            Clean database metadata (packages, changelog)
   clean manifest            Clean manifest data form database
-  clean all                 Clean all database metadata and cache directory
+  clean db                  Clean database file
+  clean all                 Clean database file and cache directory
 
 =head2 DATABASE COMMANDS
 
@@ -97,6 +98,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --show-files              Show file lists
   --no-priority             Disable repository priority check
   --no-excludes             Disable exclude repo configuration
+  --no-deps                 Disable dependency check
   -y, --yes                 Assume yes
   -n, --no                  Assume no
   --quiet                   Quiet

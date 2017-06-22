@@ -117,7 +117,7 @@ sub run {
     when('install')      { _call_package_install(@arguments) }
     when('reinstall')    { _call_package_reinstall(@arguments) }
     when('remove')       { _call_package_remove(@arguments) }
-    when('upgrade')      { _call_package_update(@arguments)  }
+    when('upgrade')      { _call_package_upgrade(@arguments)  }
     when('info')         { _call_package_info($ARGV[1]) }
     when('history')      { _call_package_history($ARGV[1]) }
 
@@ -139,6 +139,7 @@ sub run {
         when('metadata') { _call_clean_metadata(); exit(0); }
         when('manifest') { _call_clean_metadata('manifest'); exit(0); }
         when('cache')    { _call_clean_cache(); exit(0); }
+        when('db')       { _call_clean_db(); exit(0); }
         when('all')      { _call_clean_all(); }
         default          { _show_clean_help(); }
       }
@@ -341,10 +342,23 @@ sub _call_config {
 
 sub _call_clean_all {
 
-  _call_clean_metadata();
+  _call_clean_db();
   _call_clean_cache();
 
   exit(0);
+
+}
+
+sub _call_clean_db {
+
+  my $lib_dir = $slackman_conf->{'directory'}->{'lib'};
+  my $db_file = "$lib_dir/db.sqlite";
+
+  logger->debug(qq/Clear database file "$db_file"/);
+
+  STDOUT->printflush("\nClear database... ");
+  unlink($db_file) or warn("Unable to delete file: $!");
+  STDOUT->printflush(colored("done\n", 'green'));
 
 }
 
@@ -355,14 +369,14 @@ sub _call_clean_cache {
 
   STDOUT->printflush("\nClean packages download cache... ");
   remove_tree($cache_dir, { keep_root => 1 });
-  STDOUT->printflush("done\n");
+  STDOUT->printflush(colored("done\n", 'green'));
 
 
 }
 
 sub _call_clean_metadata {
 
-  my $table = shift;
+  my ($table) = @_;
 
   STDOUT->printflush("\nClean database metadata... ");
 
@@ -372,13 +386,13 @@ sub _call_clean_metadata {
   db_reindex();
   db_compact();
 
-  STDOUT->printflush("done\n");
+  STDOUT->printflush(colored("done\n", 'green'));
 
 }
 
 sub _call_update_repo_packages {
 
-  STDOUT->printflush("\nUpdate repository packages metadata:\n");
+  STDOUT->printflush("\nUpdate repository packages metadata:\n\n");
 
   my @repos       = get_enabled_repositories();
   my $repo_option = $slackman_opts->{'repo'};
@@ -392,17 +406,19 @@ sub _call_update_repo_packages {
     logger->info(qq/Update "$repo" repository packages/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush("  * $repo... ");
+    STDOUT->printflush(sprintf("  * %-30s", $repo));
     parse_packages($repo_data, \&callback_status);
-    STDOUT->printflush("done\n");
+    STDOUT->printflush(colored("done\n", 'green'));
 
   }
+
+  print "\n";
 
 }
 
 sub _call_update_repo_gpg_key {
 
-  STDOUT->printflush("\nUpdate repository GPG key:\n");
+  STDOUT->printflush("\nUpdate repository GPG key:\n\n");
 
   my @repos       = get_enabled_repositories();
   my $repo_option = $slackman_opts->{'repo'};
@@ -416,7 +432,7 @@ sub _call_update_repo_gpg_key {
     logger->info(qq/Update "$repo" repository GPG-KEY/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush("  * $repo... ");
+    STDOUT->printflush(sprintf("  * %-30s", $repo));
 
     my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{directory}->{cache}, $repo);
 
@@ -424,15 +440,17 @@ sub _call_update_repo_gpg_key {
       gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
     }
 
-    STDOUT->printflush("done\n");
+    STDOUT->printflush(colored("done\n", 'green'));
 
   }
+
+  print "\n";
 
 }
 
 sub _call_update_repo_changelog {
 
-  STDOUT->printflush("\nUpdate repository ChangeLog:\n");
+  STDOUT->printflush("\nUpdate repository ChangeLog:\n\n");
 
   my @repos       = get_enabled_repositories();
   my $repo_option = $slackman_opts->{'repo'};
@@ -446,17 +464,19 @@ sub _call_update_repo_changelog {
     logger->info(qq/Update "$repo" repository ChangeLog/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush("  * $repo... ");
+    STDOUT->printflush(sprintf("  * %-30s", $repo));
     parse_changelog($repo_data, \&callback_status);
-    STDOUT->printflush("done\n");
+    STDOUT->printflush(colored("done\n", 'green'));
 
   }
+
+  print "\n";
 
 }
 
 sub _call_update_repo_manifest {
 
-  STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n");
+  STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n\n");
 
   my @repos       = get_enabled_repositories();
   my $repo_option = $slackman_opts->{'repo'};
@@ -469,25 +489,29 @@ sub _call_update_repo_manifest {
 
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush("  * $repo... ");
+    STDOUT->printflush(sprintf("  * %-30s", $repo));
     parse_manifest($repo_data, \&callback_status);
-    STDOUT->printflush("done\n");
+    STDOUT->printflush(colored("done\n", 'green'));
 
   }
+
+  print "\n";
 
 }
 
 sub _call_update_history {
 
-  STDOUT->printflush("\nUpdate local packages metadata:\n");
+  STDOUT->printflush("\nUpdate local packages metadata:\n\n");
 
-  STDOUT->printflush("  * installed... ");
+  STDOUT->printflush(sprintf("  * %-30s", 'installed'));
   parse_history('installed', \&callback_status);
-  STDOUT->printflush("done\n");
+  STDOUT->printflush(colored("done\n", 'green'));
 
-  STDOUT->printflush("  * removed/updated... ");
+  STDOUT->printflush(sprintf("  * %-30s", 'removed & updated'));
   parse_history('removed', \&callback_status);
-  STDOUT->printflush("done\n");
+  STDOUT->printflush(colored("done\n", 'green'));
+
+  print "\n";
 
 }
 
@@ -594,8 +618,8 @@ sub _call_package_info {
 
       print sprintf("\n%-10s :\n", 'File lists');
 
-      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package_id = ? ORDER BY directory, file');
-      $sth->execute($row->{'id'});
+      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY directory, file');
+      $sth->execute($row->{'package'});
 
       while(my $row = $sth->fetchrow_hashref()) {
         print sprintf("\t%s%s\n", $row->{'directory'}, ($row->{'file'} || ''));
@@ -625,7 +649,7 @@ sub _call_file_search {
 
   $file =~ s/\*/%/g;
 
-  my $query = 'SELECT * FROM manifest m, packages p WHERE m.package_id = p.id AND m.file LIKE ?';
+  my $query = 'SELECT * FROM manifest WHERE file LIKE ?';
 
   if ($file =~ /\//) {
 
@@ -787,11 +811,9 @@ sub _call_package_history {
 
 }
 
-sub _call_package_update {
+sub _call_package_upgrade {
 
   my (@update_package) = @_;
-
-  STDOUT->printflush('Search packages update... ');
 
   my $packages_to_update    = {};  # Updatable packages list
   my $packages_to_install   = {};  # Required packages to install
@@ -803,6 +825,8 @@ sub _call_package_update {
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
 
+  STDOUT->printflush('Search packages update... ');
+
   _update_repo_data();
 
   ($packages_to_update, $packages_to_install) = package_check_updates(@update_package);
@@ -811,8 +835,8 @@ sub _call_package_update {
 
   if (scalar keys %$packages_to_update) {
 
-    print "Package(s) to update\n";
-    print sprintf("%s\n\n", "-"x132);
+    print "Package(s) to update\n\n";
+    print sprintf("%s\n", "-"x132);
 
     print sprintf("%-30s %-8s %-35s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Repository', 'Size');
@@ -828,7 +852,7 @@ sub _call_package_update {
 
       print sprintf("%-30s %-8s %-35s %-40s %.1f M\n",
         $pkg->{name}, $pkg->{arch},
-        ($pkg->{old_version_build} .' -> '. $pkg->{new_version_build}),
+        sprintf('%s %s %s', $pkg->{old_version_build}, '→', $pkg->{new_version_build}),
         $pkg->{repository}, ($pkg->{size_compressed}/1024)
       );
 
@@ -841,9 +865,9 @@ sub _call_package_update {
   if (scalar keys %$packages_to_install) {
 
     print "\n\n";
-    print "Required package(s) to install\n";
+    print "Required package(s) to install\n\n";
 
-    print sprintf("%s\n\n", "-"x132);
+    print sprintf("%s\n", "-"x132);
 
     print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
@@ -1238,173 +1262,85 @@ sub _call_package_remove {
 
 sub _call_package_install {
 
-  my @packages       = @_;
-  my $arch           = get_arch();
-  my $option_repo    = $slackman_opts->{'repo'};
-  my $option_exclude = $slackman_opts->{'exclude'};
+  my (@install_packages) = @_;
+
+  my $packages_to_install   = {};
+  my @packages_to_downloads = ();
+  my @packages_for_pkgtool  = ();
+  my $packages_errors       = {};
+  my $dependency_pkgs       = {};
+
+  my $total_compressed_size   = 0;
+  my $total_uncompressed_size = 0;
 
   my $pkg_check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"',
-    '"' . join('","', @packages) . '"'), undef);
+    '"' . join('","', @install_packages) . '"'), undef);
 
-  foreach (@packages) {
+  foreach (@install_packages) {
     if (package_is_installed($_)) {
       print sprintf("%s package is already installed!\n", colored($_, 'bold'));
       exit(1);
     }
   }
 
+  STDOUT->printflush('Search packages... ');
+
   _update_repo_data();
 
-  my @repositories = get_enabled_repositories();
-  my (@filters, @filter_repository);
+  ($packages_to_install, $dependency_pkgs) = package_check_install(@install_packages);
 
-  @repositories = qq\$option_repo\ if ($option_repo); # TODO verificare se repository è disabilitato
+  STDOUT->printflush("done!\n\n");
 
-  foreach my $repository (@repositories) {
-    $repository .= ":%" unless ($repository =~ m/\:/);
-    push(@filter_repository, sprintf('packages.repository LIKE %s', $dbh->quote($repository)));
-  }
+  if (scalar keys %$packages_to_install) {
 
-  @packages = map { parse_module_name($_) } @packages if (@packages);
+    print "Package(s) to install\n\n";
+    print sprintf("%s\n", "-"x132);
 
-  if (@packages) {
+    print sprintf("%-30s %-8s %-30s %-40s %s\n",
+      'Name', 'Arch', 'Version', 'Repository', 'Size');
 
-    my $packages_filter = '';
-    my @packages_in     = ();
-    my @packages_like   = ();
+    print sprintf("%s\n", "-"x132);
 
-    foreach my $pkg (@packages) {
-      if ($pkg =~ /\*/) {
-        $pkg =~ s/\*/%/g;
-        push(@packages_like, qq/packages.name LIKE "$pkg"/);
-      } else {
-        push(@packages_in, $pkg);
-      }
-    }
+    foreach (sort keys %$packages_to_install) {
 
-    $packages_filter .= '(';
+      my $pkg = $packages_to_install->{$_};
 
-    $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
-    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
-    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+      $total_uncompressed_size += $pkg->{size_uncompressed};
+      $total_compressed_size   += $pkg->{size_compressed};
 
-    $packages_filter .= ')';
+      print sprintf("%-30s %-8s %-30s %-40s %.1f M\n",
+        $pkg->{name}, $pkg->{arch}, $pkg->{version},
+        $pkg->{repository}, ($pkg->{size_compressed}/1024)
+      );
 
-    push(@filters, $packages_filter);
-
-  }
-
-  push(@filters, '( ' . join(' OR ', @filter_repository) . ' )');
-
-  if ($option_exclude) {
-    $option_exclude =~ s/\*/%/g;
-    push(@filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
-  }
-
-  foreach my $repository (get_disabled_repositories()) {
-    push(@filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
-  }
-
-  push(@filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
-
-  my $query_packages = qq/SELECT *
-                            FROM packages
-                           WHERE name NOT IN (SELECT name
-                                                FROM history
-                                               WHERE status = "installed")
-                             AND %s
-                        ORDER BY name/;
-
-  my $query_new_packages = qq/SELECT DISTINCT(packages.name), packages.*
-                                FROM packages, changelogs
-                               WHERE packages.repository = changelogs.repository
-                                 AND packages.name = changelogs.name
-                                 AND changelogs.status = 'added'
-                                 AND %s
-                                 AND packages.name NOT IN (SELECT history.name
-                                                             FROM history
-                                                            WHERE history.status = "installed")
-                            ORDER BY name/;
-
-  my $dependency_query = qq/SELECT package,
-                                   name,
-                                   arch,
-                                   MAX(version) AS version,
-                                   repository,
-                                   size_uncompressed,
-                                   location,
-                                   mirror,
-                                   checksum
-                              FROM packages
-                             WHERE name = ?
-                               AND repository = ?
-                               AND arch IN (?, "noarch")/;
-
-  if ($slackman_opts->{'new-packages'}) {
-    $query_packages = $query_new_packages;
-  }
-
-  $query_packages = sprintf($query_packages, join(' AND ', @filters));
-
-  my $sth_packages = $dbh->prepare($query_packages);
-  $sth_packages->execute();
-
-  print "\nPackage(s) install\n\n";
-
-  print sprintf("%s\n", "-"x132);
-
-  print sprintf("%-30s %-8s %-30s %-40s %s\n",
-    'Name', 'Arch', 'Version', 'Repository', 'Size');
-
-  print sprintf("%s\n", "-"x132);
-
-  my @packages_to_downloads = ();
-  my @packages_for_pkgtool  = ();
-  my $packages_errors       = {};
-
-  my $dependency_pkgs = {};
-
-  while (my $row = $sth_packages->fetchrow_hashref()) {
-
-    print sprintf("%-30s %-8s %-30s %-40s %.1f M\n",
-      $row->{name}, $row->{arch}, $row->{version},
-      $row->{repository}, ($row->{size_uncompressed}/1024)
-    );
-
-    foreach my $pkg_required (package_dependency($row->{name}, $row->{repository})) {
-
-      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $row->{repository}, $arch);
-
-      next unless ($dependency_row->{name});
-
-      unless (package_is_installed($pkg_required)) {
-        $dependency_pkgs->{$pkg_required} = $dependency_row;
-        push(@packages_to_downloads, $dependency_row);
-      }
+      push(@packages_to_downloads, $pkg);
 
     }
-
-    push(@packages_to_downloads, $row);
 
   }
 
   if (scalar keys %$dependency_pkgs) {
 
     print "\n\n";
+    print "Required package(s) to install\n\n";
 
     print sprintf("%s\n", "-"x132);
 
     print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
-      'Dependency Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
+      'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
 
     print sprintf("%s\n", "-"x132);
 
     foreach (sort keys %$dependency_pkgs) {
 
-      my $pkg = $dependency_pkgs->{$_};
+      my $pkg       = $dependency_pkgs->{$_};
+      my $needed_by = join(',', @{$pkg->{needed_by}});
 
-      print sprintf("%-30s %-8s %-30s %-40s %.1f M\n",
-        $pkg->{name}, $pkg->{arch}, $pkg->{version},
+      $total_uncompressed_size += $pkg->{size_uncompressed};
+      $total_compressed_size   += $pkg->{size_compressed};
+
+      print sprintf("%-30s %-8s %-9s %-20s %-40s %.1f M\n",
+        $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
         $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
       );
 
@@ -1413,15 +1349,26 @@ sub _call_package_install {
 
   }
 
+  unless (scalar keys %$packages_to_install) {
+    print "Package not found!\n";
+    exit(0);
+  }
+
+  print "\n\n";
+  print "Install summary\n";
+  print sprintf("%s\n", "-"x40);
+  print sprintf("%-20s %s package(s)\n", 'Install', scalar @packages_to_downloads);
+
+  print sprintf("%-20s %.1f M\n", 'Download size',   $total_compressed_size   / 1024);
+  print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size / 1024);
   print "\n\n";
 
-  exit(0)     if ($slackman_opts->{'no'});
+  exit(0) if     ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
   exit(0) unless (@packages_to_downloads);
 
   unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
     exit(0) unless(confirm("Install selected packages? [Y/N] "));
   }
-
 
   print "\n\n";
   print "Download package(s)\n";
@@ -1571,7 +1518,7 @@ sub _fork_update_history {
   delete_lock();
 
   # Call update history command in background and set ROOT environment
-  my $update_history_cmd  = "slackman update history";
+  my $update_history_cmd  = "slackman update history --force";
      $update_history_cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
      $update_history_cmd .= " > /dev/null &";
 

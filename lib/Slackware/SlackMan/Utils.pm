@@ -102,7 +102,7 @@ our $slackman_opts = {};
 GetOptions( $slackman_opts,
             'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s',
             'limit=i', 'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority',
-            'config=s', 'force|f', 'download-only', 'new-packages',
+            'config=s', 'force|f', 'download-only', 'new-packages', 'no-deps',
             'obsolete-packages', 'summary', 'show-files', 'exclude-installed' );
 
 # Set default options
@@ -295,8 +295,7 @@ sub time_to_timestamp {
 }
 
 sub callback_status {
-  my $status = shift;
-  STDOUT->printflush("$status... ");
+  STDOUT->printflush(sprintf("%s... ", shift));
 }
 
 sub callback_spinner {

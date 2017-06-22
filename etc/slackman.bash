@@ -180,7 +180,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --download-only --summary"
+  local slackman_options="--repo --exclude --download-only --summary --no-deps"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -211,7 +211,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --download-only --new-packages"
+  local slackman_options="--repo --exclude --download-only --new-packages --no-deps"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -298,7 +298,7 @@ _slackman_list() {
 
 _slackman_clean() {
 
-  local subcommands="cache metadata manifest all"
+  local subcommands="cache metadata manifest db all"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

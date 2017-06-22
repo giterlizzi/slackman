@@ -29,6 +29,7 @@ BEGIN {
     package_list_obsoletes
     package_changelogs
     package_check_updates
+    package_check_install
   };
 
   %EXPORT_TAGS = (
@@ -53,37 +54,37 @@ sub package_changelogs {
 
   my ($package) = @_;
 
-  my $option_repo  = $slackman_opts->{'repo'};
-  my @repositories = get_enabled_repositories();
-  my @filters      = ();
+  my $option_repo   = $slackman_opts->{'repo'};
+  my @repositories  = get_enabled_repositories();
+  my @query_filters = ();
 
   # Get only machine arch and "noarch" changelogs
   my $arch = get_arch();
 
-     if ($arch eq 'x86_64')        { push(@filters, '(arch IN ("x86_64", "noarch") OR arch IS NULL)') }
-  elsif ($arch =~ /x86|i[3456]86/) { push(@filters, '(arch = "noarch" OR arch = "x86" OR arch LIKE "i%86" OR arch IS NULL)') }
-  elsif ($arch =~ /arm(.*)/)       { push(@filters, '(arch = "noarch" OR arch LIKE "arm%" OR arch IS NULL)')}
+     if ($arch eq 'x86_64')        { push(@query_filters, '(arch IN ("x86_64", "noarch") OR arch IS NULL)') }
+  elsif ($arch =~ /x86|i[3456]86/) { push(@query_filters, '(arch = "noarch" OR arch = "x86" OR arch LIKE "i%86" OR arch IS NULL)') }
+  elsif ($arch =~ /arm(.*)/)       { push(@query_filters, '(arch = "noarch" OR arch LIKE "arm%" OR arch IS NULL)')}
 
   # Filter repository
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@filters, qq/repository LIKE "$option_repo"/);
+    push(@query_filters, qq/repository LIKE "$option_repo"/);
   } else {
-    push(@filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
+    push(@query_filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
   # Filter disabled repository
-  push(@filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
+  push(@query_filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
 
   # Filter specified package name
   if ($package) {
     $package =~ s/\*/%/g;
-    push(@filters, sprintf('name LIKE %s', $dbh->quote($package)));
+    push(@query_filters, sprintf('name LIKE %s', $dbh->quote($package)));
   }
 
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
-     $query = sprintf($query, join(' AND ', @filters), $slackman_opts->{'limit'});
+     $query = sprintf($query, join(' AND ', @query_filters), $slackman_opts->{'limit'});
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
@@ -396,9 +397,138 @@ sub package_available_update {
 }
 
 
+sub package_check_install {
+
+  my (@install_packages) = @_;
+
+  my $install_pkgs          = {};
+  my $dependency_pkgs       = {};
+  my $arch                  = get_arch();
+  my $option_repo           = $slackman_opts->{'repo'};
+  my $option_exclude        = $slackman_opts->{'exclude'};
+  my @repositories          = get_enabled_repositories();
+  my @query_filters         = ();
+  my @filter_repository     = ();
+
+  @repositories = qq\$option_repo\ if ($option_repo); # TODO verificare se repository è disabilitato
+
+  foreach my $repository (@repositories) {
+    $repository .= ":%" unless ($repository =~ m/\:/);
+    push(@filter_repository, sprintf('packages.repository LIKE %s', $dbh->quote($repository)));
+  }
+
+  @install_packages = map { parse_module_name($_) } @install_packages if (@install_packages);
+
+  if (@install_packages) {
+
+    my $packages_filter = '';
+    my @packages_in     = ();
+    my @packages_like   = ();
+
+    foreach my $pkg (@install_packages) {
+      if ($pkg =~ /\*/) {
+        $pkg =~ s/\*/%/g;
+        push(@packages_like, qq/packages.name LIKE "$pkg"/);
+      } else {
+        push(@packages_in, $pkg);
+      }
+    }
+
+    $packages_filter .= '(';
+    $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
+    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
+    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+    $packages_filter .= ')';
+
+    push(@query_filters, $packages_filter);
+
+  }
+
+  push(@query_filters, '( ' . join(' OR ', @filter_repository) . ' )');
+
+  if ($option_exclude) {
+    $option_exclude =~ s/\*/%/g;
+    push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
+  }
+
+  foreach my $repository (get_disabled_repositories()) {
+    push(@query_filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
+  }
+
+  push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
+
+  my $query_packages = qq/SELECT *
+                            FROM packages
+                           WHERE name NOT IN (SELECT name
+                                                FROM history
+                                               WHERE status = "installed")
+                             AND %s
+                        ORDER BY name/;
+
+  my $query_new_packages = qq/SELECT DISTINCT(packages.name), packages.*
+                                FROM packages, changelogs
+                               WHERE packages.repository = changelogs.repository
+                                 AND packages.name = changelogs.name
+                                 AND changelogs.status = 'added'
+                                 AND %s
+                                 AND packages.name NOT IN (SELECT history.name
+                                                             FROM history
+                                                            WHERE history.status = "installed")
+                            ORDER BY name/;
+
+  my $dependency_query = qq/SELECT package,
+                                   name,
+                                   arch,
+                                   MAX(version) AS version,
+                                   repository,
+                                   size_uncompressed,
+                                   size_compressed,
+                                   location,
+                                   mirror,
+                                   checksum
+                              FROM packages
+                             WHERE name = ?
+                               AND repository = ?
+                               AND arch IN (?, "noarch")/;
+
+  $query_packages = $query_new_packages if ($slackman_opts->{'new-packages'});
+  $query_packages = sprintf($query_packages, join(' AND ', @query_filters));
+
+  my $sth_packages = $dbh->prepare($query_packages);
+     $sth_packages->execute();
+
+  while (my $row = $sth_packages->fetchrow_hashref()) {
+
+    $install_pkgs->{$row->{name}} = $row;
+
+    # Skip dependency check
+    next if ($slackman_opts->{'no-deps'});
+
+    foreach my $pkg_required (package_dependency($row->{'name'}, $row->{'repository'})) {
+
+      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $row->{'repository'}, $arch);
+
+      next unless ($dependency_row->{'name'});
+
+      unless (package_is_installed($pkg_required)) {
+
+        $dependency_pkgs->{$pkg_required} = $dependency_row;
+        push(@{$dependency_pkgs->{$pkg_required}->{'needed_by'}}, $row->{'name'});
+
+      }
+
+    }
+
+  }
+
+  return ($install_pkgs, $dependency_pkgs);
+
+}
+
+
 sub package_check_updates {
 
-  my (@update_package) = @_;
+  my (@update_packages) = @_;
 
   my $updatable_packages_query = qq/
     SELECT packages.name,
@@ -445,7 +575,7 @@ sub package_check_updates {
        AND repository IN (?)/;
 
   my $arch           = get_arch();
-  my @filters        = ();
+  my @query_filters  = ();
   my $update_pkgs    = {};  # Updatable packages
   my $install_pkgs   = {};  # Required packages to install
   my $option_repo    = $slackman_opts->{'repo'};
@@ -453,28 +583,28 @@ sub package_check_updates {
 
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
-    push(@filters, qq/packages.name NOT LIKE "$option_exclude"/);
+    push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
   }
 
   if ($option_repo) {
     $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@filters, qq/packages.repository LIKE "$option_repo"/);
+    push(@query_filters, qq/packages.repository LIKE "$option_repo"/);
   } else {
-    push(@filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
+    push(@query_filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
-  push(@filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
-  push(@filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
+  push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
+  push(@query_filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
-  @update_package = map { parse_module_name($_) } @update_package if (@update_package);
+  @update_packages = map { parse_module_name($_) } @update_packages if (@update_packages);
 
-  if (@update_package) {
+  if (@update_packages) {
 
     my $packages_filter = '';
     my @packages_in     = ();
     my @packages_like   = ();
 
-    foreach my $pkg (@update_package) {
+    foreach my $pkg (@update_packages) {
       if ($pkg =~ /\*/) {
         $pkg =~ s/\*/%/g;
         push(@packages_like, qq/packages.name LIKE "$pkg"/);
@@ -491,11 +621,11 @@ sub package_check_updates {
 
     $packages_filter .= ')';
 
-    push(@filters, $packages_filter);
+    push(@query_filters, $packages_filter);
 
   }
 
-  $updatable_packages_query = sprintf($updatable_packages_query, join(' AND ', @filters));
+  $updatable_packages_query = sprintf($updatable_packages_query, join(' AND ', @query_filters));
 
   my $sth = $dbh->prepare($updatable_packages_query);
   $sth->execute();
@@ -505,6 +635,9 @@ sub package_check_updates {
     next if (($row->{old_priority} > $row->{new_priority}) && ! $slackman_opts->{'no-priority'});
 
     $update_pkgs->{$row->{name}} = $row;
+
+    # Skip dependency check
+    next if ($slackman_opts->{'no-deps'});
 
     foreach my $pkg_required (package_dependency($row->{name}, $row->{repository})) {
 

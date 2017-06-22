@@ -217,16 +217,27 @@ sub download_repository_metadata {
     time_to_timestamp($db_meta_last_modified)));
 
   if ($metadata_last_modified == $db_meta_last_modified) {
+
     logger->debug(sprintf('[REPO/%s] Skip "%s" metadata download', $repo_id, $metadata));
     return (0);
+
+  } else {
+
+    logger->debug(sprintf('[REPO/%s] Delete "%s" metadata file', $repo_id, $metadata));
+    unlink($metadata_file);
+
   }
 
+  # Create repo cache directory if not exists
   make_path(dirname($metadata_file)) unless (-d dirname($metadata_file));
 
   unless ( -e $metadata_file) {
-    &$callback_status('download') if ($callback_status);
-    download_file($metadata_url, $metadata_file, "-s");
+
+    &$callback_status(sprintf("download %s", basename($metadata_file))) if ($callback_status);
     logger->debug(sprintf('[REPO/%s] Download %s metadata file', $repo_id, $metadata));
+
+    download_file($metadata_url, $metadata_file, "-s");
+
   }
 
   db_meta_set("last-update.$repo_id.$metadata", $metadata_last_modified);
