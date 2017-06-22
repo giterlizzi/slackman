@@ -452,8 +452,8 @@ sub parse_history {
 
   # Detect force flag
   unless ($slackman_opts->{'force'}) {
-    $meta_installed_packages = db_meta_get('installed-packages');
-    $meta_removed_packages   = db_meta_get('removed-packages');
+    $meta_installed_packages = db_meta_get('installed-packages') || 0;
+    $meta_removed_packages   = db_meta_get('removed-packages')   || 0;
   }
 
   given($type) {
