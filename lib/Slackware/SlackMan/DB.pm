@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -37,7 +37,7 @@ BEGIN {
 
 use DBI;
 use Sort::Versions;
-use Data::Dumper;
+
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 
@@ -145,7 +145,7 @@ our $dbh = dbh();
 
 sub dbh {
 
-  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf->{directory}->{lib});
+  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf{'directory'}->{'lib'});
 
   my $dbh = DBI->connect($dsn,'', '', {
     PrintError       => 1,

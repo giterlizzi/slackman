@@ -11,11 +11,11 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
-    $slackman_conf
+    %slackman_conf
   };
 
   %EXPORT_TAGS = (
@@ -24,7 +24,6 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use Slackware::SlackMan::Utils qw(:all);
 
 my $option_root   = undef;
@@ -61,30 +60,19 @@ unless (-f $config_file) {
   exit(255);
 }
 
-my %config         = read_config($config_file);
-my $conf_main      = $config{main};
-my $conf_proxy     = $config{proxy};
-my $conf_slackware = $config{slackware};
-my $conf_directory = $config{directory};
-my $conf_logger    = $config{logger};
+our %slackman_conf = read_config($config_file);
 
-$conf_directory->{'root'}  ||= $root;
-$conf_directory->{'conf'}  ||= "$root/etc/slackman";
-$conf_directory->{'log'}   ||= "$root/var/log";
-$conf_directory->{'lib'}   ||= "$root/var/lib/slackman";
-$conf_directory->{'cache'} ||= "$root/var/cache/slackman";
-$conf_directory->{'lock'}  ||= "$root/var/lock";
+# Set default slackman directories
+$slackman_conf{'directory'}->{'root'}  ||= $root;
+$slackman_conf{'directory'}->{'conf'}  ||= "$root/etc/slackman";
+$slackman_conf{'directory'}->{'log'}   ||= "$root/var/log";
+$slackman_conf{'directory'}->{'lib'}   ||= "$root/var/lib/slackman";
+$slackman_conf{'directory'}->{'cache'} ||= "$root/var/cache/slackman";
+$slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
 
-$conf_logger->{'level'} ||= 'debug';
-$conf_logger->{'file'}  ||= $conf_directory->{'log'} . '/slackman.log';
-
-our $slackman_conf = {
-  'main'      => $conf_main,
-  'proxy'     => $conf_proxy,
-  'slackware' => $conf_slackware,
-  'directory' => $conf_directory,
-  'logger'    => $conf_logger,
-};
+# Set default logger values
+$slackman_conf{'logger'}->{'level'} ||= 'debug';
+$slackman_conf{'logger'}->{'file'}  ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
 
 1;
 __END__

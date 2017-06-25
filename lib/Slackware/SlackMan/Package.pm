@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -38,7 +38,6 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 use Sort::Versions;
@@ -47,7 +46,6 @@ use Term::ANSIColor qw(color colored :constants);
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
-use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 
 sub package_changelogs {
@@ -274,7 +272,7 @@ sub package_install {
 
   logger->debug(qq/Install $package/);
 
-  system('/sbin/installpkg', '--terse', $package);
+  system('/sbin/upgradepkg', '--install-new', $package);
   unlink($package) or warn "Failed to delete file $package: $!";
 
   my $pkg_info = package_info(basename($package));
@@ -671,7 +669,7 @@ sub package_download {
   my ($pkg) = @_;
 
   my $package_url    = sprintf('%s/%s/%s', $pkg->{'mirror'}, $pkg->{'location'}, $pkg->{'package'});
-  my $save_path      = sprintf('%s/%s/%s', $slackman_conf->{directory}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
+  my $save_path      = sprintf('%s/%s/%s', get_conf('directory')->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
   my $package_path   = sprintf('%s/%s', $save_path, $pkg->{'package'});
   my @package_errors = ();
 
@@ -707,11 +705,11 @@ sub package_download {
     my $gpg_verify = 0;
     my $skip_check = 0;
 
-    unless ($slackman_conf->{'main'}->{'checkmd5'}) {
+    unless (get_conf('main')->{'checkmd5'}) {
       $md5_check = 1;
     }
 
-    unless ($slackman_conf->{'main'}->{'checkgpg'}) {
+    unless (get_conf('main')->{'checkgpg'}) {
       $gpg_verify = 1;
     }
 

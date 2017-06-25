@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -20,7 +20,9 @@ BEGIN {
     callback_status
     changelog_date_to_time
     confirm
+    create_lock
     curl_cmd
+    delete_lock
     directory_files
     download_file
     file_append
@@ -28,21 +30,22 @@ BEGIN {
     file_read
     file_read_url
     file_write
+    get_arch
+    get_conf
     get_last_modified
+    get_lock_pid
+    get_slackware_release
     gpg_import_key
     gpg_verify
-    time_to_timestamp
-    trim
-    w3c_date_to_time
-    md5_check
-    get_arch
-    get_slackware_release
+    ldd
     logger
-    create_lock
-    get_lock_pid
-    delete_lock
+    md5_check
     read_config
     set_config
+    time_to_timestamp
+    trim
+    uniq
+    w3c_date_to_time
 
     $slackman_opts
 
@@ -68,29 +71,6 @@ use Slackware::SlackMan::Logger;
 my $curl_useragent    = "SlackMan/$VERSION";
 my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --retry 5 --retry-max-time 0/;
 
-# Set proxy flags for cURL
-if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'enable'}) {
-
-  if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'}) {
-
-    $curl_global_flags .= sprintf(" -x %s://%s:%s@%s:%s",
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'password'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
-    );
-
-  } else {
-    $curl_global_flags .= sprintf(" -x %s://%s:%s",
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
-    );
-  }
-
-}
-
 my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
@@ -107,6 +87,71 @@ GetOptions( $slackman_opts,
 
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
+
+# Get proxy flags for cURL
+#
+sub _get_curl_proxy_flags {
+
+  my $proxy_conf = get_conf('proxy');
+
+  return '' unless ($proxy_conf->{'enable'});
+
+  my $curl_proxy_flags = '';
+
+  if ($proxy_conf->{'username'}) {
+
+    $curl_proxy_flags .= sprintf(" -x %s://%s:%s@%s:%s",
+      $proxy_conf->{'protocol'},
+      $proxy_conf->{'username'},
+      $proxy_conf->{'password'},
+      $proxy_conf->{'hostname'},
+      $proxy_conf->{'port'},
+    );
+
+  } else {
+    $curl_proxy_flags .= sprintf(" -x %s://%s:%s",
+      $proxy_conf->{'protocol'},
+      $proxy_conf->{'hostname'},
+      $proxy_conf->{'port'},
+    );
+  }
+
+  return $curl_proxy_flags;
+
+}
+
+# Get SlackMan config
+#
+sub get_conf {
+
+  my ($key) = @_;
+
+  return %Slackware::SlackMan::Config::slackman_conf unless ($key);
+  return $Slackware::SlackMan::Config::slackman_conf{$key};
+
+}
+
+sub get_opt {
+  my ($option) = @_;
+  return $slackman_opts->{$option};
+}
+
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
+}
+
+sub ldd {
+
+  my ($file) = @_;
+
+  return sort { $a cmp $b }
+          map { (abs_path($_) || $_) }
+          map { $_ =~ m/(\/\S+)/ }
+              ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
+
+}
 
 sub file_read {
 
@@ -162,23 +207,12 @@ sub curl_cmd {
 
   my ($curl_flags) = @_;
 
-  my $curl_cmd = "curl $curl_global_flags $curl_flags";
+  my $curl_proxy_flags = _get_curl_proxy_flags() || '';
+  my $curl_cmd = "curl $curl_global_flags $curl_proxy_flags $curl_flags";
 
   logger->debug("[CURL] $curl_cmd");
 
   return $curl_cmd;
-
-}
-
-sub file_read_url {
-
-  my $url      = shift;
-  my $curl_cmd = curl_cmd("-s $url");
-
-  logger->info("[CURL] Downloading $url");
-
-  my $data = qx{ $curl_cmd };
-  return $data;
 
 }
 
@@ -340,7 +374,7 @@ sub get_arch {
 
 sub get_slackware_release {
 
-  my $slackware_version_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
+  my $slackware_version_file = get_conf('directory')->{'root'} . '/etc/slackware-version';
   my $slackware_version      = file_read($slackware_version_file);
 
   chomp($slackware_version);
@@ -364,11 +398,10 @@ sub md5_check {
 
 sub logger {
 
-  my $logger_file  = $Slackware::SlackMan::Config::slackman_conf->{'logger'}->{'file'};
-  my $logger_level = $Slackware::SlackMan::Config::slackman_conf->{'logger'}->{'level'};
+  my $logger_conf = get_conf('logger');
 
-  $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_file,
-                                                'level' => $logger_level );
+  $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_conf->{'file'},
+                                                'level' => $logger_conf->{'level'} );
   return $logger;
 
 }
@@ -376,7 +409,7 @@ sub logger {
 sub create_lock {
 
   my $pid = $$;
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
 
   file_write($lock_file, $pid);
 
@@ -384,7 +417,7 @@ sub create_lock {
 
 sub get_lock_pid {
 
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
 
   open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
@@ -401,7 +434,7 @@ sub get_lock_pid {
 
 sub delete_lock {
 
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
   unlink($lock_file);
 
 }

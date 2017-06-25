@@ -5,13 +5,20 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
-use Slackware::SlackMan::Utils   qw(:all);
-use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::DB      qw(:all);
+use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Parser  qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
-use Slackware::SlackMan::Command qw(:all);
+use Slackware::SlackMan::Utils   qw(:all);
+
+use Slackware::SlackMan::Command::Clean   qw(:all);
+use Slackware::SlackMan::Command::Core    qw(:all);
+use Slackware::SlackMan::Command::DB      qw(:all);
+use Slackware::SlackMan::Command::Help    qw(:all);
+use Slackware::SlackMan::Command::List    qw(:all);
+use Slackware::SlackMan::Command::Package qw(:all);
+use Slackware::SlackMan::Command::Update  qw(:all);
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
 
@@ -21,29 +28,44 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION = 'v1.1.0-beta1';
+  $VERSION = 'v1.1.0-beta3';
+
+  my @EXPORT_COMMANDS = (
+    @Slackware::SlackMan::Command::Clean::EXPORT_OK,
+    @Slackware::SlackMan::Command::Core::EXPORT_OK,
+    @Slackware::SlackMan::Command::DB::EXPORT_OK,
+    @Slackware::SlackMan::Command::Help::EXPORT_OK,
+    @Slackware::SlackMan::Command::List::EXPORT_OK,
+    @Slackware::SlackMan::Command::Package::EXPORT_OK,
+    @Slackware::SlackMan::Command::Repo::EXPORT_OK,
+    @Slackware::SlackMan::Command::Update::EXPORT_OK,
+  );
 
   @EXPORT_OK = (
-    @Slackware::SlackMan::Utils::EXPORT_OK,
-    @Slackware::SlackMan::Package::EXPORT_OK,
     @Slackware::SlackMan::Config::EXPORT_OK,
     @Slackware::SlackMan::DB::EXPORT_OK,
+    @Slackware::SlackMan::Logger::EXPORT_OK,
+    @Slackware::SlackMan::Package::EXPORT_OK,
     @Slackware::SlackMan::Parser::EXPORT_OK,
     @Slackware::SlackMan::Repo::EXPORT_OK,
-    @Slackware::SlackMan::Command::EXPORT_OK,
-    @Slackware::SlackMan::Logger::EXPORT_OK,
+    @Slackware::SlackMan::Utils::EXPORT_OK,
+    @EXPORT_COMMANDS,
   );
 
   %EXPORT_TAGS = (
-    'all'     => \@EXPORT_OK,
-    'utils'   => \@Slackware::SlackMan::Utils::EXPORT_OK,
-    'package' => \@Slackware::SlackMan::Package::EXPORT_OK,
+
+    'all'      => \@EXPORT_OK,
+    'commands' => \@EXPORT_COMMANDS,
+
+    'command' => \@Slackware::SlackMan::Command::EXPORT_OK,
     'config'  => \@Slackware::SlackMan::Config::EXPORT_OK,
     'db'      => \@Slackware::SlackMan::DB::EXPORT_OK,
+    'logger'  => \@Slackware::SlackMan::Logger::EXPORT_OK,
+    'package' => \@Slackware::SlackMan::Package::EXPORT_OK,
     'parser'  => \@Slackware::SlackMan::Parser::EXPORT_OK,
     'repo'    => \@Slackware::SlackMan::Repo::EXPORT_OK,
-    'command' => \@Slackware::SlackMan::Command::EXPORT_OK,
-    'logger'  => \@Slackware::SlackMan::Logger::EXPORT_OK,
+    'utils'   => \@Slackware::SlackMan::Utils::EXPORT_OK,
+
   );
 
 }

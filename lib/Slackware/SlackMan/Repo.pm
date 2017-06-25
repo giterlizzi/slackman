@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -30,18 +30,16 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 
-use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 
-my $repository = {};
+my %repository = ();
 
-my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', $slackman_conf->{directory}->{conf}));
+my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', get_conf('directory')->{'conf'}));
 
 foreach my $file (@files) {
 
@@ -55,23 +53,23 @@ foreach my $file (@files) {
 
     my $repo_cfg = $repo_config{$repo};
     my $repo_id  = "$config_name:$repo";
-    my $mirror   = $repo_cfg->{mirror};
+    my $mirror   = $repo_cfg->{'mirror'};
        $mirror   =~ s/\/$//;
 
-    $repo_cfg->{exclude}     = parse_variables($repo_cfg->{exclude}) if ($repo_cfg->{exclude});
-    $repo_cfg->{config_file} = $file;
+    $repo_cfg->{'exclude'}     = parse_variables($repo_cfg->{'exclude'}) if ($repo_cfg->{'exclude'});
+    $repo_cfg->{'config_file'} = $file;
 
     # Set defaults
-    $repo_cfg->{priority} ||= 0;
-    $repo_cfg->{enabled}  ||= 0;
-    $repo_cfg->{exclude}  ||= undef;
+    $repo_cfg->{'priority'} ||= 0;
+    $repo_cfg->{'enabled'}  ||= 0;
+    $repo_cfg->{'exclude'}  ||= undef;
 
-    $repo_cfg->{changelog} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{changelog}));
-    $repo_cfg->{packages}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{packages}));
-    $repo_cfg->{manifest}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{manifest}));
-    $repo_cfg->{checksums} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{checksums}));
-    $repo_cfg->{gpgkey}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{gpgkey}));
-    $repo_cfg->{filelist}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{filelist}));
+    $repo_cfg->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{'changelog'}));
+    $repo_cfg->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{'packages'}));
+    $repo_cfg->{'manifest'}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{'manifest'}));
+    $repo_cfg->{'checksums'} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{'checksums'}));
+    $repo_cfg->{'gpgkey'}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{'gpgkey'}));
+    $repo_cfg->{'filelist'}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{'filelist'}));
 
     my @keys_to_parse = qw( name mirror packages manifest checksums changelog
                             gpgkey filelist );
@@ -85,10 +83,10 @@ foreach my $file (@files) {
       $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
     }
 
-    $repo_cfg->{priority} += 0;
-    $repo_cfg->{id}        = $repo_id;
+    $repo_cfg->{'priority'} += 0;
+    $repo_cfg->{'id'}        = $repo_id;
 
-    $repository->{"$config_name:$repo"} = $repo_cfg;
+    $repository{"$config_name:$repo"} = $repo_cfg;
 
   }
 
@@ -99,14 +97,14 @@ sub _write_repository_config {
   my ($repo_id, $key, $value) = @_;
 
   my ($repo_conf, $repo_section) = split(/:/, $repo_id);
-  my $repo_file = sprintf('%s/repos.d/%s.repo', $slackman_conf->{directory}->{conf}, $repo_conf);
+  my $repo_file = sprintf('%s/repos.d/%s.repo', get_conf('directory')->{'conf'}, $repo_conf);
 
   unless (-f $repo_file) {
     warn qq/Repository configuration file ($repo_conf.repo) not found!\n/;
     exit(255);
   }
 
-  unless ($repository->{$repo_id}) {
+  unless ($repository{$repo_id}) {
     warn qq/Repository "$repo_id" not found!\n/;
     exit(255);
   }
@@ -133,17 +131,13 @@ sub enable_repository {
 
 }
 
-sub get_repository_list {
-  return $repository;
-}
-
 sub get_enabled_repositories {
 
   my @enabled      = ();
   my @repositories = get_repositories();
 
   foreach my $repo (@repositories) {
-    push (@enabled, $repo) if ($repository->{$repo}->{enabled});
+    push (@enabled, $repo) if ($repository{$repo}->{'enabled'});
   }
 
   return @enabled;
@@ -156,7 +150,7 @@ sub get_disabled_repositories {
   my @repositories = get_repositories();
 
   foreach my $repo (@repositories) {
-    push (@enabled, $repo) unless ($repository->{$repo}->{enabled});
+    push (@enabled, $repo) unless ($repository{$repo}->{'enabled'});
   }
 
   return @enabled;
@@ -166,7 +160,7 @@ sub get_disabled_repositories {
 sub get_repository {
 
   my $repo = shift;
-  return $repository->{$repo};
+  return $repository{$repo};
 
 }
 
@@ -174,7 +168,7 @@ sub get_repositories {
 
   my @repositories = ();
 
-  foreach my $repo (sort keys %{$repository}) {
+  foreach my $repo (sort keys %repository) {
     push (@repositories, $repo);
   }
 
@@ -186,8 +180,8 @@ sub download_repository_metadata {
 
   my ($repo_id, $metadata, $callback_status) = @_;
 
-  my $metadata_url  = $repository->{$repo_id}->{$metadata};
-  my $metadata_file = sprintf("%s/%s/%s", $slackman_conf->{directory}->{'cache'}, $repo_id, basename($metadata_url));
+  my $metadata_url  = $repository{$repo_id}->{$metadata};
+  my $metadata_file = sprintf("%s/%s/%s", get_conf('directory')->{'cache'}, $repo_id, basename($metadata_url));
 
   unless($metadata_url) {
     logger->debug(sprintf('[REPO/%s] "%s" metadata disabled', $repo_id, $metadata));
@@ -277,8 +271,6 @@ No subs are exported by default.
 =head2 get_repositories
 
 =head2 get_repository
-
-=head2 get_repository_list
 
 =head2 download_repository_metadata
 

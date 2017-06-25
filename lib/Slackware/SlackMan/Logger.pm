@@ -11,13 +11,12 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.1.0-beta1';
+  $VERSION   = 'v1.1.0-beta3';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
 }
 
-use Data::Dumper;
 use Slackware::SlackMan::Utils qw(:all);
 
 use constant LOGGER_LEVELS => qw(EMERG ALERT CRIT ERR WARN NOTICE INFO DEBUG);

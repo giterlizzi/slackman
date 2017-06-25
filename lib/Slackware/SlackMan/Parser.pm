@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta1';
+  $VERSION     = 'v1.1.0-beta3';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -32,12 +32,10 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use File::Basename;
 
 use Slackware::SlackMan::DB      qw(:all);
-use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
@@ -52,7 +50,7 @@ sub parse_changelog {
 
   return(0) unless(download_repository_metadata($repository, 'changelog', \&$callback_status));
 
-  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", get_conf('directory')->{'cache'}, $repository);
   return(0) unless (-e $changelog_file);
 
   my $changelog_contents = file_read($changelog_file);
@@ -234,7 +232,7 @@ sub parse_checksums {
 
   return(0) unless(download_repository_metadata($repo->{'id'}, 'checksums', \&$callback_status));
 
-  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf->{directory}->{'cache'}, $repo->{'id'});
+  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", get_conf('directory')->{'cache'}, $repo->{'id'});
   return(0) unless (-e $checksums_file);
 
   my $checksums_contents = file_read($checksums_file);
@@ -262,7 +260,7 @@ sub parse_packages {
   my $repository = $repo->{'id'};
   my $mirror     = $repo->{'mirror'};
 
-  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", get_conf('directory')->{'cache'}, $repository);
 
   return(0) unless (-e $packages_file);
 
@@ -349,7 +347,7 @@ sub parse_manifest {
 
   return(0) unless(download_repository_metadata($repository, 'manifest', \&$callback_status));
 
-  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", get_conf('directory')->{'cache'}, $repository);
   return(0) unless(-e $manifest_file);
 
   my $manifest_input = file_read($manifest_file);
@@ -560,7 +558,7 @@ sub parse_variables {
   my $release_conf   = $release;
   my $release_suffix = '';
 
-  $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'}->{'version'});
+  $release_conf = get_conf('slackware')->{'version'} if (defined get_conf('slackware'));
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }
@@ -569,12 +567,15 @@ sub parse_variables {
   $release_suffix = $arch_family if ($arch_family eq 'arm');
   $release_suffix = $arch_bit    if ($arch_bit eq '64');
 
+  # Remove "{" and "}" char from string
   $string =~ s/(\{|\})//g;
 
+  # Replace $arch variables
   $string =~ s/\$arch\.family/$arch_family/g;
   $string =~ s/\$arch\.bit/$arch_bit/g;
   $string =~ s/\$arch/$arch/g;
 
+  # Replace $release variables
   $string =~ s/\$release\.suffix/$release_suffix/g;
   $string =~ s/\$release\.real/$release/g;
   $string =~ s/\$release/$release_conf/g;
@@ -588,13 +589,13 @@ sub parse_module_name {
 
   my $module = shift;
 
-  return _parse_perl_module_name($module) if ($module =~ /perl\((.*)\)/);
+  return _to_perl_module_name($module) if ($module =~ /perl\((.*)\)/);
   return $module;
 
 }
 
 
-sub _parse_perl_module_name {
+sub _to_perl_module_name {
 
   my ($module) = shift =~ /perl\((.*)\)/;
       $module =~ s/::/-/g;
