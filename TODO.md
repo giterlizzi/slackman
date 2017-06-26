@@ -11,3 +11,4 @@
  - [ ] Create a plugin systems
  - [ ] Move most command code into individual subs
  - [ ] Create `slackpkg new-config` like feature
+ - [x] Check last SlackMan update metadata. Display message after 24h to remember to launch "slackman update"

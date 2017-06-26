@@ -12,14 +12,6 @@ use Slackware::SlackMan::Parser  qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
-use Slackware::SlackMan::Command::Clean   qw(:all);
-use Slackware::SlackMan::Command::Core    qw(:all);
-use Slackware::SlackMan::Command::DB      qw(:all);
-use Slackware::SlackMan::Command::Help    qw(:all);
-use Slackware::SlackMan::Command::List    qw(:all);
-use Slackware::SlackMan::Command::Package qw(:all);
-use Slackware::SlackMan::Command::Update  qw(:all);
-
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
 
 BEGIN {
@@ -28,18 +20,7 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION = 'v1.1.0-beta3';
-
-  my @EXPORT_COMMANDS = (
-    @Slackware::SlackMan::Command::Clean::EXPORT_OK,
-    @Slackware::SlackMan::Command::Core::EXPORT_OK,
-    @Slackware::SlackMan::Command::DB::EXPORT_OK,
-    @Slackware::SlackMan::Command::Help::EXPORT_OK,
-    @Slackware::SlackMan::Command::List::EXPORT_OK,
-    @Slackware::SlackMan::Command::Package::EXPORT_OK,
-    @Slackware::SlackMan::Command::Repo::EXPORT_OK,
-    @Slackware::SlackMan::Command::Update::EXPORT_OK,
-  );
+  $VERSION = 'v1.1.0-beta4';
 
   @EXPORT_OK = (
     @Slackware::SlackMan::Config::EXPORT_OK,
@@ -49,15 +30,11 @@ BEGIN {
     @Slackware::SlackMan::Parser::EXPORT_OK,
     @Slackware::SlackMan::Repo::EXPORT_OK,
     @Slackware::SlackMan::Utils::EXPORT_OK,
-    @EXPORT_COMMANDS,
   );
 
   %EXPORT_TAGS = (
 
-    'all'      => \@EXPORT_OK,
-    'commands' => \@EXPORT_COMMANDS,
-
-    'command' => \@Slackware::SlackMan::Command::EXPORT_OK,
+    'all'     => \@EXPORT_OK,
     'config'  => \@Slackware::SlackMan::Config::EXPORT_OK,
     'db'      => \@Slackware::SlackMan::DB::EXPORT_OK,
     'logger'  => \@Slackware::SlackMan::Logger::EXPORT_OK,

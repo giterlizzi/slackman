@@ -1,10 +1,7 @@
-package Slackware::SlackMan::Command::Core;
+package Slackware::SlackMan::Command::Repo;
 
 use strict;
 use warnings;
-
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
 
 use 5.010;
 
@@ -14,13 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_repo_disable
-    call_repo_enable
-    call_repo_info
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -30,10 +23,47 @@ BEGIN {
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
-use Slackware::SlackMan::Commands::Core qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
 
+sub call_repo_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/REPOSITORY COMMANDS' ]
+  );
+
+}
+
+sub call_repo_list {
+
+  my @repositories = get_repositories();
+
+  print "\nAvailable repository\n\n";
+  print sprintf("%s\n", "-"x132);
+  print sprintf("%-30s %-70s %-10s %-10s %-4s\n", "Repository ID",  "Description", "Status", "Priority", "Packages");
+  print sprintf("%s\n", "-"x132);
+
+  foreach my $repo_id (@repositories) {
+
+    my $repo_info = get_repository($repo_id);
+    my $num_pkgs  = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
+
+    print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
+      $repo_id,
+      $repo_info->{name},
+      ($repo_info->{enabled} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
+      $repo_info->{priority},
+      $num_pkgs
+    );
+
+  }
+
+  exit(0);
+
+}
 
 sub call_repo_disable {
 
@@ -51,7 +81,7 @@ sub call_repo_enable {
   enable_repository($repo_id);
   print qq/Repository "$repo_id" enabled\n\n/;
 
-  print sprintf("%s: Remember to launch \"slackman update --repo $repo_id\" command!\n", colored('NOTE', 'bold'));
+  print sprintf("%s: Remember to launch 'slackman update --repo $repo_id' command!\n", colored('NOTE', 'bold'));
 
   exit(0);
 

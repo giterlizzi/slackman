@@ -3,9 +3,6 @@ package Slackware::SlackMan::Command::DB;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,12 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_db_optimize
-    call_db_info
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -28,7 +22,19 @@ BEGIN {
 
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
+
 use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
+
+sub call_db_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/DATABASE COMMANDS' ]
+  );
+
+}
 
 sub call_db_optimize {
 

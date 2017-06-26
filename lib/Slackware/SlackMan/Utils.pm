@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -32,6 +32,8 @@ BEGIN {
     file_write
     get_arch
     get_conf
+    get_option
+    get_options
     get_last_modified
     get_lock_pid
     get_slackware_release
@@ -64,7 +66,7 @@ use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
-use Getopt::Long qw(:config );
+use Getopt::Long qw(:config);
 
 use Slackware::SlackMan::Logger;
 
@@ -76,7 +78,6 @@ my $logger;
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
-# Export cmd options
 our $slackman_opts = {};
 
 GetOptions( $slackman_opts,
@@ -131,11 +132,14 @@ sub get_conf {
 
 }
 
-sub get_opt {
-  my ($option) = @_;
-  return $slackman_opts->{$option};
+sub get_options {
+  return $slackman_opts;
 }
 
+sub get_option {
+  my ($option) = @_;
+  return $slackman_opts->{$option} || undef;
+}
 
 sub uniq {
   my %seen;

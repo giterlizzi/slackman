@@ -3,9 +3,6 @@ package Slackware::SlackMan::Command::Clean;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,13 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_clean_all
-    call_clean_cache
-    call_clean_metadata
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -36,6 +29,18 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
+
+
+sub call_clean_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/CLEAN COMMANDS' ]
+  );
+
+}
 
 sub call_clean_all {
 
@@ -77,8 +82,7 @@ sub call_clean_metadata {
 
   STDOUT->printflush("\nClean database metadata... ");
 
-  db_wipe_tables()       unless ($table);
-  db_wipe_table($table)      if ($table);
+  db_wipe_tables();
 
   db_reindex();
   db_compact();
@@ -86,6 +90,5 @@ sub call_clean_metadata {
   STDOUT->printflush(colored("done\n", 'green'));
 
 }
-
 
 1;

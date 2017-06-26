@@ -3,9 +3,6 @@ package Slackware::SlackMan::Command::Update;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,17 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_update_all_metadata
-    call_update_history
-    call_update_metadata
-    call_update_repo_changelog
-    call_update_repo_gpg_key
-    call_update_repo_manifest
-    call_update_repo_packages
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -37,6 +26,17 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
+
+sub call_update_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/UPDATE COMMANDS' ]
+  );
+
+}
 
 sub call_update_repo_packages {
 

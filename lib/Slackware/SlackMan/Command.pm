@@ -4,8 +4,6 @@ use strict;
 use warnings;
 
 no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,9 +12,12 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(run);
+  @EXPORT_OK   = qw(
+    run
+    $slackman_opts
+  );
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -24,22 +25,21 @@ BEGIN {
 }
 
 use File::Basename;
-use Getopt::Long qw(:config);
 use IO::File;
 use IO::Handle;
 use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
+use Pod::Usage;
 
 use Slackware::SlackMan qw(:all);
-use Slackware::SlackMan qw(:commands);
 
 my $lock_check = get_lock_pid();
 
 $Text::Wrap::columns = 132;
 
-exit call_help()    if $slackman_opts->{'help'};
-exit show_version() if $slackman_opts->{'version'};
+exit _show_help()    if $slackman_opts->{'help'};
+exit _show_version() if $slackman_opts->{'version'};
 
 pod2usage(-exitval => 0, -verbose => 2) if $slackman_opts->{'man'};
 
@@ -67,10 +67,11 @@ sub run {
 
   db_init();
 
-  my $command   = $ARGV[0] || undef;
-  my @arguments = @ARGV[ 1 .. $#ARGV ];
+  my $command     = $ARGV[0] || undef;
+  my $sub_command = $ARGV[1] || undef;
+  my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
-  call_help() unless ($command);
+  _show_help() unless ($command);
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
 
@@ -80,8 +81,12 @@ sub run {
   # informational command are available)
   if ($lock_check && grep(/^$command/, @lock_commands)) {
 
-    print "Another instance of slackman is running (pid: $lock_check) If this is not correct,\n" .
-          "you can remove /var/lock/slackman file and run slackman again.\n\n";
+    my $message = sprintf("%s Another instance of slackman is running (pid: $lock_check). " .
+                          "If this is not correct, you can remove /var/lock/slackman file and run slackman again.",
+                          colored('WARNING', 'yellow bold'));
+
+    print wrap("", "\t", $message);
+    print "\n\n";
 
     exit(255);
 
@@ -105,92 +110,121 @@ sub run {
 
   }
 
-  given($command) {
+  my $dispatch = {
 
-    when('install')      { call_package_install(@arguments) }
-    when('reinstall')    { call_package_reinstall(@arguments) }
-    when('remove')       { call_package_remove(@arguments) }
-    when('upgrade')      { call_package_upgrade(@arguments)  }
-    when('info')         { call_package_info($ARGV[1]) }
-    when('history')      { call_package_history($ARGV[1]) }
+    'changelog'        => \&Slackware::SlackMan::Command::Package::call_package_changelog,
+    'file-search'      => \&Slackware::SlackMan::Command::Package::call_package_file_search,
+    'history'          => \&Slackware::SlackMan::Command::Package::call_package_history,
+    'info'             => \&Slackware::SlackMan::Command::Package::call_package_info,
+    'install'          => \&Slackware::SlackMan::Command::Package::call_package_install,
+    'reinstall'        => \&Slackware::SlackMan::Command::Package::call_package_reinstall,
+    'remove'           => \&Slackware::SlackMan::Command::Package::call_package_remove,
+    'search'           => \&Slackware::SlackMan::Command::Package::call_package_search,
+    'upgrade'          => \&Slackware::SlackMan::Command::Package::call_package_upgrade,
 
-    when('changelog')    { call_package_changelog($ARGV[1]) }
-    when('config')       { show_config() }
-    when('search')       { call_package_search($ARGV[1]) }
-    when('file-search')  { call_package_file_search($ARGV[1]) }
+    'config'           => \&_show_config,
+    'help'             => \&_show_help,
 
-    when('db') {
-      given($ARGV[1]) {
-        when('optimize') { call_db_optimize() }
-        when('info')     { call_db_info() }
-        default          { call_db_help() }
-      }
-    }
+    'clean'            => \&Slackware::SlackMan::Command::Clean::call_clean_help,
+    'clean::cache'     => \&Slackware::SlackMan::Command::Clean::call_clean_cache,
+    'clean::db'        => \&Slackware::SlackMan::Command::Clean::call_clean_db,
+    'clean::help'      => \&Slackware::SlackMan::Command::Clean::call_clean_help,
+    'clean::manifest'  => \&Slackware::SlackMan::Command::Clean::call_clean_metadata_manifest,
+    'clean::metadata'  => \&Slackware::SlackMan::Command::Clean::call_clean_metadata,
+    'clen::all'        => \&Slackware::SlackMan::Command::Clean::call_clean_all,
 
-    when('clean') {
-      given($ARGV[1]) {
-        when('metadata') { call_clean_metadata(); exit(0); }
-        when('manifest') { call_clean_metadata('manifest'); exit(0); }
-        when('cache')    { call_clean_cache(); exit(0); }
-        when('db')       { call_clean_db(); exit(0); }
-        when('all')      { call_clean_all(); }
-        default          { call_clean_help(); }
-      }
-    }
+    'db'               => \&Slackware::SlackMan::Command::DB::call_db_help,
+    'db::help'         => \&Slackware::SlackMan::Command::DB::call_db_help,
+    'db::info'         => \&Slackware::SlackMan::Command::DB::call_db_info,
+    'db::optimize'     => \&Slackware::SlackMan::Command::DB::call_db_optimize,
 
-    when('repo') {
-      given($ARGV[1]) {
-        when('list')      { call_list_repo() }
-        when('disable')   { call_repo_disable($ARGV[2]) }
-        when('enable')    { call_repo_enable($ARGV[2]) }
-        when('info')      { call_repo_info($ARGV[2]) }
-        default           { call_repo_help() }
-      }
-    }
+    'help::clean'      => \&Slackware::SlackMan::Command::Clean::call_clean_help,
+    'help::db'         => \&Slackware::SlackMan::Command::DB::call_db_help,
+    'help::list'        => \&Slackware::SlackMan::Command::List::call_list_help,
+    'help::repo'        => \&Slackware::SlackMan::Command::Repo::call_repo_help,
+    'help::update'      => \&Slackware::SlackMan::Command::Update::call_update_help,
 
-    when('list') {
-      given($ARGV[1]) {
-        when('installed') { call_list_installed() }
-        when('obsoletes') { call_list_obsoletes() }
-        when('repo')      { call_list_repo() }
-        when('orphan')    { call_list_orphan() }
-        when('variables') { call_list_variables() }
-        when('packages')  { call_list_packages() }
-        default           { call_list_help() }
-      }
-    }
+    'list'              => \&Slackware::SlackMan::Command::List::call_list_help,
+    'list::help'        => \&Slackware::SlackMan::Command::List::call_list_help,
+    'list::installed'   => \&Slackware::SlackMan::Command::List::call_list_installed,
+    'list::obsoletes'   => \&Slackware::SlackMan::Command::List::call_list_obsoletes,
+    'list::orphan'      => \&Slackware::SlackMan::Command::List::call_list_orphan,
+    'list::packages'    => \&Slackware::SlackMan::Command::List::call_list_packages,
+    'list::variables'   => \&Slackware::SlackMan::Command::List::call_list_variables,
 
-    when('update') {
-      given($ARGV[1]) {
-        when('packages')  { call_update_repo_packages();  exit(0); }
-        when('history')   { call_update_history();        exit(0); }
-        when('changelog') { call_update_repo_changelog(); exit(0); }
-        when('manifest')  { call_update_repo_manifest();  exit(0); }
-        when('gpg-key')   { call_update_repo_gpg_key();   exit(0); }
-        when('all')       { call_update_all_metadata() }
-        default           { call_update_metadata() unless ($ARGV[1]);
-                            call_update_help(); }
-      }
-    }
+    'repo'              => \&Slackware::SlackMan::Command::Repo::call_repo_help,
+    'repo::disable'     => \&Slackware::SlackMan::Command::Repo::call_repo_disable,
+    'repo::enable'      => \&Slackware::SlackMan::Command::Repo::call_repo_enable,
+    'repo::help'        => \&Slackware::SlackMan::Command::Repo::call_repo_help,
+    'repo::info'        => \&Slackware::SlackMan::Command::Repo::call_repo_info,
+    'repo::list'        => \&Slackware::SlackMan::Command::Repo::call_repo_list,
 
-    when('help') {
-      given($ARGV[1]) {
-        when ('list')   { call_list_help() }
-        when ('update') { call_update_help() }
-        when ('repo')   { call_repo_help() }
-        when ('db')     { call_db_help() }
-        default         { call_help() }
-      }
-    }
+    'update'            => \&Slackware::SlackMan::Command::Update::call_update_metadata,
+    'update::all'       => \&Slackware::SlackMan::Command::Update::call_update_all_metadata,
+    'update::changelog' => \&Slackware::SlackMan::Command::Update::call_update_repo_changelog,
+    'update::gpg-key'   => \&Slackware::SlackMan::Command::Update::call_update_repo_gpg_key,
+    'update::help'      => \&Slackware::SlackMan::Command::Update::call_update_help,
+    'update::history'   => \&Slackware::SlackMan::Command::Update::call_update_history,
+    'update::manifest'  => \&Slackware::SlackMan::Command::Update::call_update_repo_manifest,
+    'update::packages'  => \&Slackware::SlackMan::Command::Update::call_update_repo_packages,
 
-    default { call_help() }
 
+  };
+
+  my $dispatch_key = undef;
+
+  if ($sub_command && exists($dispatch->{"$command::$sub_command"})) {
+    $dispatch_key =  "$command::$sub_command";      # Command + Sub Command
+    @arguments    = @arguments[ 1 .. $#arguments ]; # Shift 1st argument (aka sub_command)
+  }
+
+  if ($command && ! $dispatch_key && exists($dispatch->{"$command"})) {
+    $dispatch_key = "$command";
+  }
+
+  if ($dispatch_key) {
+    $dispatch->{$dispatch_key}->(@arguments);
+  } else {
+    print "slackman: '$command' is not a slackman command. See 'slackman help'\n\n";
+    exit(1);
   }
 
   exit(0);
 
 }
 
+
+sub _show_version {
+  print sprintf("SlackMan - Slackware Package Manager %s\n\n", $VERSION);
+  exit(0);
+}
+
+sub _show_config {
+
+  my %slackman_conf = get_conf();
+
+  foreach my $section (sort keys %slackman_conf) {
+    foreach my $parameter (sort keys %{$slackman_conf{$section}}) {
+      my $value = $slackman_conf{$section}->{$parameter};
+      print sprintf("%s=%s\n", "$section.$parameter", $value);
+    }
+  }
+
+  exit(0);
+
+}
+
+sub _show_help {
+
+  print "SlackMan - Slackware Package Manager $VERSION\n\n";
+
+  pod2usage(
+  -exitval  => 0,
+  -verbose  => 99,
+  -sections => 'SYNOPSIS|COMMANDS|OPTIONS',
+  );
+
+}
 
 1;
 __END__

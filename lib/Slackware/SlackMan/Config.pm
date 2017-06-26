@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -26,37 +26,24 @@ BEGIN {
 
 use Slackware::SlackMan::Utils qw(:all);
 
-my $option_root   = undef;
-my $option_config = undef;
-
-{
-  use Getopt::Long qw(:config pass_through);
-
-  GetOptions(
-    'root=s'     => \$option_root,
-    'c|config=s' => \$option_config,
-  );
-
-}
-
 # Set ROOT environment variable for Slackware pkgtools
-$ENV{ROOT} = $option_root if ($option_root);
+$ENV{ROOT} = $slackman_opts->{'root'} if ($slackman_opts->{'root'});
 
 # Set root directory for SlackMan (configuration, database, etc)
 my $root = '';
    $root = $ENV{ROOT} if($ENV{ROOT});
 
 my $config_file = "$root/etc/slackman/slackman.conf";
-   $config_file = $option_config if ($option_config);
+   $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'});
    $config_file =~ s|^//|/|;
 
 if ($root ne '' && ! -d $root) {
-  print "Slackware root directory $root not exists!\n";
+  print "Slackware root directory '$root' not exists!\n";
   exit(255);
 }
 
 unless (-f $config_file) {
-  print "Configuration file $config_file not found!\n";
+  print "Configuration file '$config_file' not found!\n";
   exit(255);
 }
 

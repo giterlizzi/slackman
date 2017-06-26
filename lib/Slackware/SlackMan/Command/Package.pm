@@ -3,9 +3,6 @@ package Slackware::SlackMan::Command::Package;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,19 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_package_history
-    call_package_install
-    call_package_reinstall
-    call_package_remove
-    call_package_search
-    call_package_upgrade
-    call_package_info
-    call_package_changelog
-    call_package_file_search
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -36,7 +23,8 @@ BEGIN {
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
-use Slackware::SlackMan::Command::Core qw(:all);
+use Slackware::SlackMan::Parser  qw(:all);
+use Slackware::SlackMan::Repo    qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
@@ -44,7 +32,7 @@ use File::Basename;
 
 sub call_package_info {
 
-  my $package = shift;
+  my ($package) = @_;
 
   unless ($package) {
     print "Usage: slackman info PACKAGE\n";
@@ -146,7 +134,8 @@ sub call_package_info {
 
 sub call_package_reinstall {
 
-  my @packages     = @_;
+  my (@packages) = @_;
+
   my @is_installed = ();
   my $option_repo  = $slackman_opts->{'repo'};
 
@@ -240,7 +229,8 @@ sub call_package_reinstall {
 
 sub call_package_remove {
 
-  my @packages = @_;
+  my (@packages) = @_;
+
   my @is_installed = ();
 
   if ($slackman_opts->{'obsolete-packages'}) {
@@ -445,7 +435,7 @@ sub call_package_install {
 
 sub call_package_search {
 
-  my $search = shift;
+  my ($search) = @_;
 
   unless ($search) {
     print "Usage: slackman search PATTERN\n";
@@ -730,8 +720,9 @@ sub call_package_upgrade {
 
 sub call_package_file_search {
 
-  my $file = shift;
-  my $dir  = undef;
+  my ($file) = @_;
+
+  my $dir = undef;
 
   unless($file) {
     print "Usage: slackman file-search FILE\n";
@@ -770,7 +761,7 @@ sub call_package_file_search {
 
 sub call_package_changelog {
 
-  my ($package)  = @_;
+  my ($package) = @_;
   my $changelogs = package_changelogs($package);
 
   print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
@@ -907,8 +898,8 @@ sub _check_last_metadata_update {
   my $offset = (60 * 60 * 24); # 24h
 
   if ($now-$last > $offset) {
-    my $msg = sprintf("%s The last metadata update is older than 24h.\n" .
-                      "Run \"slackman update\" to check and fetch last update from your Slackware repository.",
+    my $msg = sprintf("%s The last slackman update is older than 24h.\n" .
+                      "Run 'slackman update' to check and fetch last update from your Slackware repository.",
                       colored('WARNING', 'yellow bold'));
 
     print "\n";

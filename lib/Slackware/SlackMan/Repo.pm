@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -22,6 +22,7 @@ BEGIN {
     disable_repository
     enable_repository
     download_repository_metadata
+    update_repo_data
   };
 
   %EXPORT_TAGS = (
@@ -37,7 +38,8 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 
-my %repository = ();
+my $slackman_opts = $Slackware::SlackMan::Command::slackman_opts;
+my %repository    = ();
 
 my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', get_conf('directory')->{'conf'}));
 
@@ -240,6 +242,31 @@ sub download_repository_metadata {
 
 }
 
+sub update_repo_data {
+
+  foreach my $repo_id (get_repositories())  {
+
+    my $repo_info     = get_repository($repo_id);
+    my $repo_priority = $repo_info->{'priority'};
+    my $repo_exclude  = $repo_info->{'exclude'};
+
+    $dbh->do('UPDATE packages SET priority = ? WHERE repository = ?', undef, $repo_priority, $repo_id);
+    $dbh->do('UPDATE packages SET excluded = 0 WHERE repository = ?', undef, $repo_id);
+
+    if ($repo_exclude) {
+
+      my @exclude = split(/,/, $repo_exclude);
+
+      foreach my $pkg (@exclude) {
+        $pkg =~ s/\*/\%/g;
+        $dbh->do('UPDATE packages SET excluded = 1 WHERE repository = ? AND name LIKE ?', undef, $repo_id, $pkg);
+      }
+
+    }
+
+  }
+
+}
 
 1;
 __END__
@@ -273,6 +300,8 @@ No subs are exported by default.
 =head2 get_repository
 
 =head2 download_repository_metadata
+
+=head2 update_repo_data
 
 =head1 AUTHOR
 

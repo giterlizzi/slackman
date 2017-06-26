@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -40,6 +40,7 @@ use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
 
+my $slackman_opts = $Slackware::SlackMan::Command::slackman_opts;
 
 sub parse_changelog {
 

@@ -298,7 +298,7 @@ _slackman_list() {
 
 _slackman_clean() {
 
-  local subcommands="cache metadata manifest db all"
+  local subcommands="cache metadata db all"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

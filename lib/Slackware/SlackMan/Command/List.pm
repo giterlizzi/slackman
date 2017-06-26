@@ -3,9 +3,6 @@ package Slackware::SlackMan::Command::List;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -14,16 +11,9 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta3';
+  $VERSION     = 'v1.1.0-beta4';
   @ISA         = qw(Exporter);
-  @EXPORT_OK   = qw(
-    call_list_installed
-    call_list_obsoletes
-    call_list_orphan
-    call_list_packages
-    call_list_variables
-    call_list_repo
-  );
+  @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
@@ -38,6 +28,17 @@ use Slackware::SlackMan::Repo    qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
+
+sub call_list_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/LIST COMMANDS' ]
+  );
+
+}
 
 sub call_list_obsoletes {
 
@@ -187,32 +188,5 @@ sub call_list_packages {
 
 }
 
-sub call_list_repo {
-
-  my @repositories = get_repositories();
-
-  print "\nAvailable repository\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-30s %-70s %-10s %-10s %-4s\n", "Repository ID",  "Description", "Status", "Priority", "Packages");
-  print sprintf("%s\n", "-"x132);
-
-  foreach my $repo_id (@repositories) {
-
-    my $repo_info = get_repository($repo_id);
-    my $num_pkgs  = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
-
-    print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
-      $repo_id,
-      $repo_info->{name},
-      ($repo_info->{enabled} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
-      $repo_info->{priority},
-      $num_pkgs
-    );
-
-  }
-
-  exit(0);
-
-}
 
 1;
