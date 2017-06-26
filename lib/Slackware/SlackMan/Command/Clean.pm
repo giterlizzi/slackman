@@ -20,12 +20,8 @@ BEGIN {
 
 }
 
-use Slackware::SlackMan::Config  qw(:all);
-use Slackware::SlackMan::DB      qw(:all);
-use Slackware::SlackMan::Package qw(:all);
-use Slackware::SlackMan::Parser  qw(:all);
-use Slackware::SlackMan::Repo    qw(:all);
-use Slackware::SlackMan::Utils   qw(:all);
+use Slackware::SlackMan::DB    qw(:all);
+use Slackware::SlackMan::Utils qw(:all);
 
 use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);

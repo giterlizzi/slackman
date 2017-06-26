@@ -38,8 +38,7 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 
-my $slackman_opts = $Slackware::SlackMan::Command::slackman_opts;
-my %repository    = ();
+my %repository = ();
 
 my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', get_conf('directory')->{'conf'}));
 

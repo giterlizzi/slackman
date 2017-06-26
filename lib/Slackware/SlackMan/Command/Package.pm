@@ -43,7 +43,9 @@ sub call_package_info {
 
   $package =~ s/\*/%/g;
 
-  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"', 'id', undef, parse_module_name($dbh->quote($package)));
+  my $installed_rows = $dbh->selectall_hashref('SELECT * FROM history WHERE name LIKE ? AND status = "installed"',
+    'id', undef, parse_module_name($package)
+  );
 
   my @packages_to_installed;
 
@@ -62,7 +64,7 @@ sub call_package_info {
     print sprintf("%-10s : %s\n",     'Arch',    $row->{arch});
     print sprintf("%-10s : %s\n",     'Tag',     $row->{tag}) if ($row->{tag});
     print sprintf("%-10s : %s\n",     'Version', $row->{version});
-    print sprintf("%-10s : %.1f M\n", 'Size',    ($row->{size_uncompressed}/1024));
+    print sprintf("%-10s : %s\n",     'Size',    filesize_h(($row->{size_uncompressed} * 1024), 1));
     print sprintf("%-10s : %s\n",     'Require', $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
     print sprintf("%-10s : %s\n",     'Summary', $row->{description});
 
@@ -104,7 +106,7 @@ sub call_package_info {
     print sprintf("%-10s : %s\n",     'Tag',      $row->{tag})      if ($row->{tag});
     print sprintf("%-10s : %s\n",     'Category', $row->{category}) if ($row->{category});
     print sprintf("%-10s : %s\n",     'Version',  $row->{version});
-    print sprintf("%-10s : %.1f M\n", 'Size',     ($row->{size_uncompressed}/1024));
+    print sprintf("%-10s : %s\n",     'Size',     filesize_h(($row->{size_uncompressed} * 1024), 1));
     print sprintf("%-10s : %s\n",     'Require',  $row->{required}) if ($row->{required});
     print sprintf("%-10s : %s\n",     'Repo',     $row->{repository});
     print sprintf("%-10s : %s\n",     'Summary',  $row->{description});
@@ -341,9 +343,9 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-30s %-40s %.1f M\n",
+      print sprintf("%-30s %-8s %-30s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version},
-        $pkg->{repository}, ($pkg->{size_compressed}/1024)
+        $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -372,9 +374,9 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-9s %-20s %-40s %.1f M\n",
+      print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
-        $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
+        $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -392,8 +394,8 @@ sub call_package_install {
   print sprintf("%s\n", "-"x40);
   print sprintf("%-20s %s package(s)\n", 'Install', scalar @packages_to_downloads);
 
-  print sprintf("%-20s %.1f M\n", 'Download size',   $total_compressed_size   / 1024);
-  print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size / 1024);
+  print sprintf("%-20s %s\n", 'Download size',   filesize_h(($total_compressed_size   * 1024)));
+  print sprintf("%-20s %s\n", 'Installed size',  filesize_h(($total_uncompressed_size * 1024)));
   print "\n\n";
 
   exit(0) if     ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
@@ -611,10 +613,10 @@ sub call_package_upgrade {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-35s %-40s %.1f M\n",
+      print sprintf("%-30s %-8s %-35s %-40s %s\n",
         $pkg->{name}, $pkg->{arch},
         sprintf('%s %s %s', $pkg->{old_version_build}, '→', $pkg->{new_version_build}),
-        $pkg->{repository}, ($pkg->{size_compressed}/1024)
+        $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -643,9 +645,9 @@ sub call_package_upgrade {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-9s %-20s %-40s %.1f M\n",
+      print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
-        $pkg->{repository}, ($pkg->{size_uncompressed}/1024)
+        $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -664,8 +666,8 @@ sub call_package_upgrade {
   print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$packages_to_install) if (scalar keys %$packages_to_install);
   print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$packages_to_update);
 
-  print sprintf("%-20s %.1f M\n", 'Download size',   $total_compressed_size   / 1024);
-  print sprintf("%-20s %.1f M\n", 'Installed size',  $total_uncompressed_size / 1024);
+  print sprintf("%-20s %s\n", 'Download size',   filesize_h(($total_compressed_size   * 1024), 1));
+  print sprintf("%-20s %s\n", 'Installed size',  filesize_h(($total_uncompressed_size * 1024), 1));
   print "\n\n";
 
   exit(0) if ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
