@@ -30,6 +30,7 @@ BEGIN {
     file_read
     file_read_url
     file_write
+    filesize_h
     get_arch
     get_conf
     get_option
@@ -154,6 +155,31 @@ sub ldd {
           map { (abs_path($_) || $_) }
           map { $_ =~ m/(\/\S+)/ }
               ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
+
+}
+
+sub filesize_h {
+
+  my ($size, $decimal, $padding) = @_;
+
+  $decimal ||= 0;
+  $padding ||= 0;
+
+  my @size_units = ('B', 'K', 'M', 'G', 'T');
+  my $idx_unit   = 0;
+
+  while ($size >= 1024 && ($idx_unit < scalar(@size_units) - 1)) {
+    $size /= 1024;
+    $idx_unit++;
+  }
+
+  my $size_h = sprintf('%.'.$decimal.'f %s', $size, $size_units[$idx_unit]);
+
+  if ($padding) {
+    return sprintf("%s$size_h", " "x(8 - length($size_h)));
+  }
+
+  return $size_h;
 
 }
 
