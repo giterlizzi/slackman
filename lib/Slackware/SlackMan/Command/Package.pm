@@ -328,7 +328,7 @@ sub call_package_install {
     print "Package(s) to install\n\n";
     print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-30s %-8s %-30s %-40s %s\n",
+    print sprintf("%-30s %-8s %-40s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Repository', 'Size');
 
     print sprintf("%s\n", "-"x132);
@@ -340,7 +340,7 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-30s %-40s %s\n",
+      print sprintf("%-30s %-8s %-40s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version},
         $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
@@ -358,7 +358,7 @@ sub call_package_install {
 
     print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
+    print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
 
     print sprintf("%s\n", "-"x132);
@@ -371,7 +371,7 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
+      print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
         $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
       );
@@ -598,7 +598,7 @@ sub call_package_upgrade {
     print "Package(s) to update\n\n";
     print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-30s %-8s %-35s %-40s %s\n",
+    print sprintf("%-30s %-8s %-40s %-40s %s\n",
       'Name', 'Arch', 'Version', 'Repository', 'Size');
 
     print sprintf("%s\n", "-"x132);
@@ -610,9 +610,9 @@ sub call_package_upgrade {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-35s %-40s %s\n",
+      print sprintf("%-30s %-8s %-40s %-40s %s\n",
         $pkg->{name}, $pkg->{arch},
-        sprintf('%s %s %s', $pkg->{old_version_build}, '→', $pkg->{new_version_build}),
+        sprintf('%s %s %s', $pkg->{old_version_build}, '->', $pkg->{new_version_build}),
         $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
 
