@@ -308,9 +308,6 @@ sub call_package_install {
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
 
-  my $pkg_check = $dbh->selectrow_array(sprintf('SELECT COUNT(*) FROM history WHERE name IN (%s) AND status = "installed"',
-    '"' . join('","', @install_packages) . '"'), undef);
-
   foreach (@install_packages) {
     if (package_is_installed($_)) {
       print sprintf("%s package is already installed!\n", colored($_, 'bold'));
