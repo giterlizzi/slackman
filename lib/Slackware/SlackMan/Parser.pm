@@ -507,7 +507,8 @@ sub parse_history {
       $filename  =~ s/\-upgraded(.*)//;
       $status    = 'upgraded';
     } else {
-      $status = $type;
+      $status    = $type;
+      $timestamp = time_to_timestamp($ctime) if ($status eq 'removed');
     }
 
     my $metadata = package_metadata(file_read($file));
