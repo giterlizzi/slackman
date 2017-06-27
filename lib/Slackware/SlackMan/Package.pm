@@ -312,8 +312,11 @@ sub package_remove {
 
 sub package_is_installed {
 
-  my $package = shift;
-  my $row     = $dbh->selectrow_hashref('SELECT * FROM history WHERE name = ? AND status = "installed"', undef, $package);
+  my ($package) = @_;
+
+  $package = parse_module_name($package);
+  
+  my $row = $dbh->selectrow_hashref('SELECT * FROM history WHERE name = ? AND status = "installed"', undef, $package);
 
   return $row;
 
