@@ -19,6 +19,7 @@ BEGIN {
     callback_spinner
     callback_status
     changelog_date_to_time
+    check_perl_module
     confirm
     create_lock
     curl_cmd
@@ -424,6 +425,12 @@ sub md5_check {
   return 1 if ($checksum eq $file_checksum);
   return 0;
 
+}
+
+sub check_perl_module {
+  my ($module) = @_;
+  return 1 if (eval "require $module");
+  return 0;
 }
 
 sub logger {
