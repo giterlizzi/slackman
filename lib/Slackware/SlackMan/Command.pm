@@ -28,7 +28,7 @@ use File::Basename;
 use IO::File;
 use IO::Handle;
 use Sort::Versions;
-use Term::ANSIColor qw(color colored colorstrip :constants);
+use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
 
