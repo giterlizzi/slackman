@@ -1,0 +1,61 @@
+package Slackware::SlackMan::Command::Log;
+
+use strict;
+use warnings;
+
+use 5.010;
+
+our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
+
+BEGIN {
+
+  require Exporter;
+
+  $VERSION     = 'v1.1.0-beta5';
+  @ISA         = qw(Exporter);
+  @EXPORT_OK   = qw();
+  %EXPORT_TAGS = (
+    all => \@EXPORT_OK,
+  );
+
+}
+
+use Slackware::SlackMan::Utils qw(:all);
+
+use Term::ANSIColor qw(color colored :constants);
+use Pod::Usage;
+
+my $log_file = get_conf('logger')->{'file'};
+
+sub call_log_help {
+
+  pod2usage(
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'COMMANDS/LOG COMMANDS' ]
+  );
+
+}
+
+sub call_log_clean {
+
+  if (confirm('Are you sure? [Y/N] ')) {
+
+    STDOUT->printflush("\nClean $log_file...");
+    qx { >$log_file > /dev/null 2>&1 };
+    STDOUT->printflush(colored("\tdone\n", 'green'));
+
+  }
+
+  exit(0);
+
+}
+
+sub call_log_tail {
+
+  system("tail -f $log_file");
+  exit(0);
+
+}
+
+1;

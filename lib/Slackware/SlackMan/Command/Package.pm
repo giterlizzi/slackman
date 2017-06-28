@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta4';
+  $VERSION     = 'v1.1.0-beta5';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -884,7 +884,7 @@ sub _kernel_update_message {
               . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
               . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}";
 
-  print "\n\n";
+  print "\n";
   print wrap("", "\t", $message);
   print "\n\n";
 

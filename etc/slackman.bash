@@ -68,7 +68,7 @@ __slackman_list_no_installed_packages() {
 
 __slackman_list_repos() {
 
-  local slackman_cmd="slackman repo list"
+  local slackman_cmd="slackman repo list --color=never"
 
   case "$1" in
     enabled)
@@ -114,8 +114,8 @@ _slackman_slackman() {
 
   local slackman_options slackman_commands
 
-  slackman_options="-h --help --man --version -c --config --root"
-  slackman_commands="update upgrade install reinstall remove repo db
+  slackman_options="-h --help --man --version -c --config --root --color"
+  slackman_commands="update upgrade install reinstall remove repo db log
                      changelog search file-search history config help clean list"
 
   if [[ "$cur" == -* ]]; then
@@ -146,7 +146,16 @@ _slackman_repo_info() {
 
 _slackman_repo() {
 
-  local subcommands="list info disable enable"
+  local subcommands="help list info disable enable"
+  __slackman_subcommands "$subcommands" && return
+  COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
+
+}
+
+
+_slackman_log() {
+
+  local subcommands="help clean tail"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
@@ -163,7 +172,7 @@ _slackman_info() {
 
 _slackman_update() {
 
-  local subcommands="packages history changelog manifest gpg-key all"
+  local subcommands="help packages history changelog manifest gpg-key all"
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "--repo" -- "$cur" ) )
@@ -262,7 +271,7 @@ _slackman_remove() {
 
 _slackman_db() {
 
-  local subcommands="info optimize"
+  local subcommands="help info optimize"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
@@ -271,7 +280,7 @@ _slackman_db() {
 
 _slackman_help() {
 
-  local subcommands="list repo db update"
+  local subcommands="list repo db update log clean"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
@@ -298,7 +307,7 @@ _slackman_list() {
 
 _slackman_clean() {
 
-  local subcommands="cache metadata db all"
+  local subcommands="help cache metadata db all"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

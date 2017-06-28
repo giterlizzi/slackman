@@ -12,7 +12,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta4';
+  $VERSION     = 'v1.1.0-beta5';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -28,13 +28,24 @@ use File::Basename;
 use IO::File;
 use IO::Handle;
 use Sort::Versions;
-use Term::ANSIColor qw(color colored :constants);
+use Term::ANSIColor qw(color colored colorstrip :constants);
 use Text::Wrap;
 use Pod::Usage;
 
 use Slackware::SlackMan qw(:all);
 
-my $lock_check = get_lock_pid();
+use Slackware::SlackMan::Command::Clean;
+use Slackware::SlackMan::Command::DB;
+use Slackware::SlackMan::Command::List;
+use Slackware::SlackMan::Command::Log;
+use Slackware::SlackMan::Command::Package;
+use Slackware::SlackMan::Command::Update;
+use Slackware::SlackMan::Command::Repo;
+
+my $lock_check  = get_lock_pid();
+my $command     = $ARGV[0] || undef;
+my $sub_command = $ARGV[1] || undef;
+my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
 
@@ -67,18 +78,19 @@ sub run {
 
   db_init();
 
-  my $command     = $ARGV[0] || undef;
-  my $sub_command = $ARGV[1] || undef;
-  my @arguments   = @ARGV[ 1 .. $#ARGV ];
-
   _show_help() unless ($command);
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
 
-  logger->debug(sprintf('[CMD] Call "%s" command (cmd: %s, pid: %s)', $command, join( " ", $0, @ARGV ), $$)) if ($command);
+  my $cmd  = join( " ", $0, @ARGV );
+  my $opts = join( ', ', map { $_ . '=' . $slackman_opts->{$_} } keys %$slackman_opts);
 
-  # Check running slackman instance and block certain commands (only
-  # informational command are available)
+  logger->debug(sprintf('[CMD] Call "%s" command (cmd: "%s", opts: "%s", pid: %s)', $command, $cmd, $opts, $$)) if ($command);
+
+  # Check running slackman instance and block certain commands
+  #
+  # NOTE: only informational commands are available
+  #
   if ($lock_check && grep(/^$command/, @lock_commands)) {
 
     my $message = sprintf("%s Another instance of slackman is running (pid: $lock_check). " .
@@ -92,8 +104,8 @@ sub run {
 
   }
 
-  # Always create lock if pid not exists
-  create_lock() unless(get_lock_pid());
+  # Always create lock if PID not exists (excluding "log" command)
+  create_lock() if ( ! get_lock_pid() && $command ne 'log' );
 
   # Check repository option
   if ($command && $slackman_opts->{'repo'}) {
@@ -151,6 +163,11 @@ sub run {
     'list::orphan'      => \&Slackware::SlackMan::Command::List::call_list_orphan,
     'list::packages'    => \&Slackware::SlackMan::Command::List::call_list_packages,
     'list::variables'   => \&Slackware::SlackMan::Command::List::call_list_variables,
+
+    'log'               => \&Slackware::SlackMan::Command::Log::call_log_help,
+    'log::help'         => \&Slackware::SlackMan::Command::Log::call_log_help,
+    'log::clean'        => \&Slackware::SlackMan::Command::Log::call_log_clean,
+    'log::tail'         => \&Slackware::SlackMan::Command::Log::call_log_tail,
 
     'repo'              => \&Slackware::SlackMan::Command::Repo::call_repo_help,
     'repo::disable'     => \&Slackware::SlackMan::Command::Repo::call_repo_disable,
@@ -227,6 +244,12 @@ sub _show_help {
 }
 
 1;
+
+END {
+  # Delete lock file at the END of script (excluding "log" command)
+  delete_lock() if (! $lock_check && defined($command) && $command ne 'log');
+}
+
 __END__
 
 =head1 NAME
@@ -289,7 +312,3 @@ This module is free software, you may distribute it under the same terms
 as Perl.
 
 =cut
-
-END {
-  delete_lock() unless ($lock_check);
-}

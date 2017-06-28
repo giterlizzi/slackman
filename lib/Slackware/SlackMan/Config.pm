@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta4';
+  $VERSION     = 'v1.1.0-beta5';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -60,6 +60,15 @@ $slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
 # Set default logger values
 $slackman_conf{'logger'}->{'level'} ||= 'debug';
 $slackman_conf{'logger'}->{'file'}  ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+
+# Set default value for color output
+$slackman_conf{'main'}->{'color'} ||= 'always';
+
+# Verify terminal color capability using tput(1) utility
+if ($slackman_conf{'main'}->{'color'} eq 'auto') {
+  qx { tput colors > /dev/null 2>&1 };
+  $ENV{ANSI_COLORS_DISABLED} = 1 if ( $? > 0 );
+}
 
 1;
 __END__

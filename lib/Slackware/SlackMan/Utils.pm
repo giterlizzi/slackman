@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta4';
+  $VERSION     = 'v1.1.0-beta5';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -83,13 +83,44 @@ $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 our $slackman_opts = {};
 
 GetOptions( $slackman_opts,
-            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s',
-            'limit=i', 'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority',
-            'config=s', 'force|f', 'download-only', 'new-packages', 'no-deps',
-            'obsolete-packages', 'summary', 'show-files', 'exclude-installed' );
+  'config=s',
+  'color=s',
+  'download-only',
+  'exclude-installed',
+  'exclude|x=s',
+  'force|f',
+  'help|h',
+  'limit=i',
+  'man',
+  'new-packages',
+  'no-deps',
+  'no-excludes',
+  'no-priority',
+  'no|n',
+  'obsolete-packages',
+  'quiet',
+  'repo=s',
+  'root=s',
+  'show-files',
+  'summary',
+  'version',
+  'yes|y',
+);
 
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
+$slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+
+# Verify terminal color capability using tput(1) utility
+if ($slackman_opts->{'color'} eq 'auto') {
+  qx { tput colors > /dev/null 2>&1 };
+  $ENV{ANSI_COLORS_DISABLED} = 1 if ($? > 0); 
+}
+
+# Disable color output
+if ($slackman_opts->{'color'} eq 'never') {
+  $ENV{ANSI_COLORS_DISABLED} = 1;
+}
 
 # Get proxy flags for cURL
 #
@@ -130,7 +161,12 @@ sub get_conf {
   my ($key) = @_;
 
   return %Slackware::SlackMan::Config::slackman_conf unless ($key);
-  return $Slackware::SlackMan::Config::slackman_conf{$key};
+
+  if (defined($Slackware::SlackMan::Config::slackman_conf{$key})) {
+    return $Slackware::SlackMan::Config::slackman_conf{$key};
+  }
+
+  return undef;
 
 }
 
