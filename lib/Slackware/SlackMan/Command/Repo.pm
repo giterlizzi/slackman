@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -26,6 +26,16 @@ use Slackware::SlackMan::Utils  qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
+use constant COMMANDS_DISPATCHER => {
+  'help:repo'    => \&call_repo_help,
+  'repo'         => \&call_repo_help,
+  'repo:disable' => \&call_repo_disable,
+  'repo:enable'  => \&call_repo_enable,
+  'repo:help'    => \&call_repo_help,
+  'repo:info'    => \&call_repo_info,
+  'repo:list'    => \&call_repo_list,
+};
 
 sub call_repo_help {
 

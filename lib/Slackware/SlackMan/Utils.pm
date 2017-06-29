@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -563,23 +563,25 @@ sub read_config {
 
 sub set_config {
 
-  my ( $input, $section, $keyname, $new_value ) = @_;
+  my ( $input, $section, $param, $new_value ) = @_;
 
   my $current_section = '';
   my @lines  = split(/\n/, $input);
   my $output = '';
 
-  foreach (@lines) { 
+  foreach (@lines) {
 
-    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
+    #if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
+    if ( $_ =~ /^(\[.*\])$/ ) {
+
       $current_section = $1;
 
     } elsif ( $current_section eq $section )  {
 
       my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
 
-      if ( $key and $key eq $keyname  ) { 
-        $output .= "$keyname = $new_value\n";
+      if ( $key and $key eq $param  ) { 
+        $output .= "$param = $new_value\n";
         next;
       }
 

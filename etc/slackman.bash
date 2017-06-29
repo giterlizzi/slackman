@@ -50,6 +50,9 @@ __slackman_subcommands() {
 
 }
 
+__slackman_list_config() {
+  echo $(slackman config | awk -F "=" '{ print $1 }')
+}
 
 __slackman_list_installed_packages() {
   echo $(slackman list installed | grep ":" | awk '{ print $1 }')
@@ -109,13 +112,17 @@ __slackman_complete_repos() {
   __ltrim_colon_completions "$cur"
 }
 
+__slackman_complete_config() {
+  COMPREPLY=( $(compgen -W "$(__slackman_list_config "$@")" -- "$cur") )
+  __ltrim_colon_completions "$cur"
+}
 
 _slackman_slackman() {
 
   local slackman_options slackman_commands
 
   slackman_options="-h --help --man --version -c --config --root --color"
-  slackman_commands="update upgrade install reinstall remove repo db log
+  slackman_commands="update upgrade install reinstall remove repo db log config
                      changelog search file-search history config help clean list"
 
   if [[ "$cur" == -* ]]; then
@@ -161,6 +168,9 @@ _slackman_log() {
 
 }
 
+_slackman_config() {
+  __slackman_complete_config
+}
 
 _slackman_info() {
 

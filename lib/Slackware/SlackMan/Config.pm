@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -69,6 +69,9 @@ if ($slackman_conf{'main'}->{'color'} eq 'auto') {
   qx { tput colors > /dev/null 2>&1 };
   $ENV{ANSI_COLORS_DISABLED} = 1 if ( $? > 0 );
 }
+
+# Set config file location
+$slackman_conf{'config'}->{'file'} = $config_file;
 
 1;
 __END__

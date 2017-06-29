@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -25,6 +25,14 @@ use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
+use constant COMMANDS_DISPATCHER => {
+  'help:db'     => \&call_db_help,
+  'db'          => \&call_db_help,
+  'db:help'     => \&call_db_help,
+  'db:info'     => \&call_db_info,
+  'db:optimize' => \&call_db_optimize,
+};
 
 sub call_db_help {
 

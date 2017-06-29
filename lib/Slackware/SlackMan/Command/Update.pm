@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -27,6 +27,18 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
+use constant COMMANDS_DISPATCHER => {
+  'help:update'      => \&call_update_help,
+  'update'           => \&call_update_metadata,
+  'update:all'       => \&call_update_all_metadata,
+  'update:changelog' => \&call_update_repo_changelog,
+  'update:gpg-key'   => \&call_update_repo_gpg_key,
+  'update:help'      => \&call_update_help,
+  'update:history'   => \&call_update_history,
+  'update:manifest'  => \&call_update_repo_manifest,
+  'update:packages'  => \&call_update_repo_packages,
+};
 
 sub call_update_help {
 

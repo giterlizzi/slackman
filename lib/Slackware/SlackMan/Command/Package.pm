@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -29,6 +29,18 @@ use Slackware::SlackMan::Repo    qw(:all);
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use File::Basename;
+
+use constant COMMANDS_DISPATCHER => {
+  'changelog'   => \&call_package_changelog,
+  'file-search' => \&call_package_file_search,
+  'history'     => \&call_package_history,
+  'info'        => \&call_package_info,
+  'install'     => \&call_package_install,
+  'reinstall'   => \&call_package_reinstall,
+  'remove'      => \&call_package_remove,
+  'search'      => \&call_package_search,
+  'upgrade'     => \&call_package_upgrade,
+};
 
 sub call_package_info {
 
@@ -292,9 +304,13 @@ sub call_package_install {
 
   my (@install_packages) = @_;
 
-  if (! @install_packages && ! $slackman_opts->{'repo'}) {
+  if (   ! @install_packages
+      && ! $slackman_opts->{'repo'}
+      && ! $slackman_opts->{'new-packages'}) {
+
     print "Usage: slackman install PACKAGE\n";
     exit(255);
+
   }
 
   _check_last_metadata_update();

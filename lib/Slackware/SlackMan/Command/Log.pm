@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -24,6 +24,14 @@ use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
+use constant COMMANDS_DISPATCHER => {
+  'help:log'  => \&call_log_help,
+  'log'       => \&call_log_help,
+  'log:help'  => \&call_log_help,
+  'log:clean' => \&call_log_clean,
+  'log:tail'  => \&call_log_tail,
+};
 
 my $log_file = get_conf('logger')->{'file'};
 

@@ -35,8 +35,9 @@ update Slackware packages from a standard Slackware repository (official and 3th
   search PATTERN               Search packages using PATTERN
   file-search PATTERN          Search files into packages using PATTERN
 
-  config                       Display configuration
-  help COMMAND                 Display command usage
+  version                      Display version information
+  help                         Display help
+  help [COMMAND]               Display command help usage
 
 =head2 REPOSITORY COMMANDS
 
@@ -44,6 +45,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   repo enable REPOSITORY       Enable repository
   repo disable REPOSITORY      Disable repository
   repo info REPOSITORY         Display repository information
+  repo help                    Display repo command help usage
 
 =head2 LIST COMMANDS
 
@@ -53,6 +55,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   list repo                    List available repositories
   list orphan                  List orphan packages installed from unknown repository
   list variables               List variables for ".repo" configurations
+  list help                    Display list command help usage
 
 =head2 UPDATE COMMANDS
 
@@ -63,6 +66,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   update manifest              Update repository Manifest (using MANIFEST.bz2)
   update gpg-key               Update repository GPG-KEY
   update all                   Update all metadata (packages, gpg-key, changelog, etc.)
+  update help                  Display update command help usage
 
 =head2 CLEAN COMMANDS
 
@@ -70,16 +74,26 @@ update Slackware packages from a standard Slackware repository (official and 3th
   clean metadata               Clean database metadata (packages, changelog, manifest)
   clean db                     Clean database file
   clean all                    Clean database file and cache directory
+  clean help                   Display clean command help usage
 
 =head2 DATABASE COMMANDS
 
   db optimize                  Optimize slackman database
   db info                      Display information about SlackMan database
+  db help                      Display db command help usage
 
 =head2 LOG COMMANDS
 
   log clean                    Clean log file
   log tail                     Display log file in real time
+  log help                     Display log command help usage
+
+=head2 CONFIG COMMANDS
+
+  config                       Display SlackMan configuration
+  config [OPTION]              Query SlackMan config option
+  config [OPTION] [VALUE]      Set SlackMan config option
+  config help                  Display config command help usage
 
 =head2 OPTIONS
 
@@ -90,7 +104,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --root                       Set Slackware root directory
   --color=[always|auto|never]  Colorize the output
 
-=head3 COMMAND SPECIFIC OPTIONS
+=head3 COMMANDS OPTIONS
 
   --repo                       Use specified repo during update or install packages
   -f, --force                  Force action

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -29,6 +29,17 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
+use constant COMMANDS_DISPATCHER => {
+  'help:list'      => \&call_list_help,
+  'list'           => \&call_list_help,
+  'list:help'      => \&call_list_help,
+  'list:installed' => \&call_list_installed,
+  'list:obsoletes' => \&call_list_obsoletes,
+  'list:orphan'    => \&call_list_orphan,
+  'list:packages'  => \&call_list_packages,
+  'list:variables' => \&call_list_variables,
+};
 
 sub call_list_help {
 

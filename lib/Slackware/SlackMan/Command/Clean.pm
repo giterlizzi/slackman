@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -27,6 +27,16 @@ use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
 
+use constant COMMANDS_DISPATCHER => {
+  'help:clean'      => \&call_clean_help,
+  'clean'           => \&call_clean_help,
+  'clean:cache'     => \&call_clean_cache,
+  'clean:db'        => \&call_clean_db,
+  'clean:help'      => \&call_clean_help,
+  'clean:manifest'  => \&call_clean_metadata_manifest,
+  'clean:metadata'  => \&call_clean_metadata,
+  'clean:all'       => \&call_clean_all,
+};
 
 sub call_clean_help {
 

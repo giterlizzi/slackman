@@ -12,7 +12,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta5';
+  $VERSION     = 'v1.1.0-beta6';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -31,16 +31,11 @@ use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
+use Module::Load;
 
 use Slackware::SlackMan qw(:all);
 
-use Slackware::SlackMan::Command::Clean;
-use Slackware::SlackMan::Command::DB;
-use Slackware::SlackMan::Command::List;
-use Slackware::SlackMan::Command::Log;
-use Slackware::SlackMan::Command::Package;
-use Slackware::SlackMan::Command::Update;
-use Slackware::SlackMan::Command::Repo;
+my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
 my $lock_check  = get_lock_pid();
 my $command     = $ARGV[0] || undef;
@@ -70,9 +65,6 @@ $SIG{__WARN__} = sub {
   logger->warning(trim($_[0]));
   warn @_;
 };
-
-# Prevent Insecure $ENV{PATH} while running with -T switch
-$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
 sub run {
 
@@ -122,85 +114,40 @@ sub run {
 
   }
 
-  my $dispatch = {
+  # Load Commands Modules
+  foreach (@command_modules) {
+    load "Slackware::SlackMan::Command::$_";
+  }
 
-    'changelog'         => \&Slackware::SlackMan::Command::Package::call_package_changelog,
-    'file-search'       => \&Slackware::SlackMan::Command::Package::call_package_file_search,
-    'history'           => \&Slackware::SlackMan::Command::Package::call_package_history,
-    'info'              => \&Slackware::SlackMan::Command::Package::call_package_info,
-    'install'           => \&Slackware::SlackMan::Command::Package::call_package_install,
-    'reinstall'         => \&Slackware::SlackMan::Command::Package::call_package_reinstall,
-    'remove'            => \&Slackware::SlackMan::Command::Package::call_package_remove,
-    'search'            => \&Slackware::SlackMan::Command::Package::call_package_search,
-    'upgrade'           => \&Slackware::SlackMan::Command::Package::call_package_upgrade,
-
-    'config'            => \&_show_config,
-    'help'              => \&_show_help,
-
-    'clean'             => \&Slackware::SlackMan::Command::Clean::call_clean_help,
-    'clean::cache'      => \&Slackware::SlackMan::Command::Clean::call_clean_cache,
-    'clean::db'         => \&Slackware::SlackMan::Command::Clean::call_clean_db,
-    'clean::help'       => \&Slackware::SlackMan::Command::Clean::call_clean_help,
-    'clean::manifest'   => \&Slackware::SlackMan::Command::Clean::call_clean_metadata_manifest,
-    'clean::metadata'   => \&Slackware::SlackMan::Command::Clean::call_clean_metadata,
-    'clen::all'         => \&Slackware::SlackMan::Command::Clean::call_clean_all,
-
-    'db'                => \&Slackware::SlackMan::Command::DB::call_db_help,
-    'db::help'          => \&Slackware::SlackMan::Command::DB::call_db_help,
-    'db::info'          => \&Slackware::SlackMan::Command::DB::call_db_info,
-    'db::optimize'      => \&Slackware::SlackMan::Command::DB::call_db_optimize,
-
-    'help::clean'       => \&Slackware::SlackMan::Command::Clean::call_clean_help,
-    'help::db'          => \&Slackware::SlackMan::Command::DB::call_db_help,
-    'help::list'        => \&Slackware::SlackMan::Command::List::call_list_help,
-    'help::repo'        => \&Slackware::SlackMan::Command::Repo::call_repo_help,
-    'help::update'      => \&Slackware::SlackMan::Command::Update::call_update_help,
-
-    'list'              => \&Slackware::SlackMan::Command::List::call_list_help,
-    'list::help'        => \&Slackware::SlackMan::Command::List::call_list_help,
-    'list::installed'   => \&Slackware::SlackMan::Command::List::call_list_installed,
-    'list::obsoletes'   => \&Slackware::SlackMan::Command::List::call_list_obsoletes,
-    'list::orphan'      => \&Slackware::SlackMan::Command::List::call_list_orphan,
-    'list::packages'    => \&Slackware::SlackMan::Command::List::call_list_packages,
-    'list::variables'   => \&Slackware::SlackMan::Command::List::call_list_variables,
-
-    'log'               => \&Slackware::SlackMan::Command::Log::call_log_help,
-    'log::help'         => \&Slackware::SlackMan::Command::Log::call_log_help,
-    'log::clean'        => \&Slackware::SlackMan::Command::Log::call_log_clean,
-    'log::tail'         => \&Slackware::SlackMan::Command::Log::call_log_tail,
-
-    'repo'              => \&Slackware::SlackMan::Command::Repo::call_repo_help,
-    'repo::disable'     => \&Slackware::SlackMan::Command::Repo::call_repo_disable,
-    'repo::enable'      => \&Slackware::SlackMan::Command::Repo::call_repo_enable,
-    'repo::help'        => \&Slackware::SlackMan::Command::Repo::call_repo_help,
-    'repo::info'        => \&Slackware::SlackMan::Command::Repo::call_repo_info,
-    'repo::list'        => \&Slackware::SlackMan::Command::Repo::call_repo_list,
-
-    'update'            => \&Slackware::SlackMan::Command::Update::call_update_metadata,
-    'update::all'       => \&Slackware::SlackMan::Command::Update::call_update_all_metadata,
-    'update::changelog' => \&Slackware::SlackMan::Command::Update::call_update_repo_changelog,
-    'update::gpg-key'   => \&Slackware::SlackMan::Command::Update::call_update_repo_gpg_key,
-    'update::help'      => \&Slackware::SlackMan::Command::Update::call_update_help,
-    'update::history'   => \&Slackware::SlackMan::Command::Update::call_update_history,
-    'update::manifest'  => \&Slackware::SlackMan::Command::Update::call_update_repo_manifest,
-    'update::packages'  => \&Slackware::SlackMan::Command::Update::call_update_repo_packages,
-
-
+  # Commands dispatch table
+  my $commands_dispatcher = {
+    'version' => \&show_version,
+    'help'    => \&show_help,
   };
+
+  foreach (@command_modules) {
+
+    my $module = "Slackware::SlackMan::Command::$_";
+    my $module_dispatcher = $module->COMMANDS_DISPATCHER;
+
+    # Merge all submodules dispatch table into main dispatch table
+    $commands_dispatcher = { %$commands_dispatcher, %$module_dispatcher };
+
+  }
 
   my $dispatch_key = undef;
 
-  if ($sub_command && exists($dispatch->{"$command::$sub_command"})) {
-    $dispatch_key =  "$command::$sub_command";      # Command + Sub Command
+  if ($sub_command && exists($commands_dispatcher->{"$command:$sub_command"})) {
+    $dispatch_key =  "$command:$sub_command";       # Command + Sub Command
     @arguments    = @arguments[ 1 .. $#arguments ]; # Shift 1st argument (aka sub_command)
   }
 
-  if ($command && ! $dispatch_key && exists($dispatch->{"$command"})) {
+  if ($command && ! $dispatch_key && exists($commands_dispatcher->{"$command"})) {
     $dispatch_key = "$command";
   }
 
   if ($dispatch_key) {
-    $dispatch->{$dispatch_key}->(@arguments);
+    $commands_dispatcher->{$dispatch_key}->(@arguments);
   } else {
     print "slackman: '$command' is not a slackman command. See 'slackman help'\n\n";
     exit(1);
@@ -211,27 +158,13 @@ sub run {
 }
 
 
-sub _show_version {
+sub show_version {
   print sprintf("SlackMan - Slackware Package Manager %s\n\n", $VERSION);
   exit(0);
 }
 
-sub _show_config {
 
-  my %slackman_conf = get_conf();
-
-  foreach my $section (sort keys %slackman_conf) {
-    foreach my $parameter (sort keys %{$slackman_conf{$section}}) {
-      my $value = $slackman_conf{$section}->{$parameter};
-      print sprintf("%s=%s\n", "$section.$parameter", $value);
-    }
-  }
-
-  exit(0);
-
-}
-
-sub _show_help {
+sub show_help {
 
   print "SlackMan - Slackware Package Manager $VERSION\n\n";
 
