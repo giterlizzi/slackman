@@ -44,8 +44,8 @@ my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
 
-exit _show_help()    if $slackman_opts->{'help'};
-exit _show_version() if $slackman_opts->{'version'};
+exit show_help()    if $slackman_opts->{'help'};
+exit show_version() if $slackman_opts->{'version'};
 
 pod2usage(-exitval => 0, -verbose => 2) if $slackman_opts->{'man'};
 
@@ -70,7 +70,7 @@ sub run {
 
   db_init();
 
-  _show_help() unless ($command);
+  show_help() unless ($command);
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
 
