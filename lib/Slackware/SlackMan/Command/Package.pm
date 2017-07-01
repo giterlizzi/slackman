@@ -893,19 +893,81 @@ sub _packages_errors {
 
 sub _kernel_update_message {
 
-  my $new_kernel_version = qx( (basename /var/log/packages/kernel-modules-* | awk -F '-' '{ print \$3 }') );
-  chomp($new_kernel_version);
+  # Detect the EFI System Partition (ESP)
+  my $efi_partition = qx{ mount | grep vfat | grep efi };
 
-  my $message = "@{[ BLINK BOLD RED ]}Kernel upgrade detected !@{[ RESET ]}\n"
-              . "Remember to reinstall the new kernel with @{[ BOLD ]}lilo@{[ RESET ]} "
-              . "(or @{[ BOLD ]}eliloconfig@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
-              . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
-              . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
-              . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}";
+  # lilo is default command on x86 arch or machine can't have UEFI bios (generally x86_64 arch)
+  my $lilo_command  = 'lilo';
+     $lilo_command  = 'eliloconfig' if ($efi_partition);
+
+  # Follow vmlinuz file symlink
+  my $vmlinuz_file  = readlink('/boot/vmlinuz');
+
+  my ($vmlinux, $kernel_type, $kernel_version) = split(/-/, $vmlinuz_file);
+
+  my $message = "@{[ BLINK BOLD RED ]}Linux kernel upgrade detected !@{[ RESET ]}\n\n"
+              . "Before the reboot, remember to ";
+
+  $message .= "recreate a new @{[ BOLD ]}initrd@{[ RESET ]} file and " if (-e '/boot/initrd.gz');
+  $message .= "reinstall the new kernel ";
+  $message .= "in your EFI System Partition " if ($efi_partition);
+  $message .= "with @{[ BOLD ]}$lilo_command@{[ RESET ]} command.\n\n";
+
+  $message .= "For more information read:\n\n"
+           .  "  * /boot/README.initrd\n"
+           .  "  * mkinitrd(8)\n\n";
 
   print "\n";
   print wrap("", "\t", $message);
   print "\n\n";
+
+  # Update the initrd file
+  _create_initrd($kernel_version) if (-e '/boot/initrd.gz');
+  print "\n";
+
+  # Install the kernel via lilo or eliloconfig command
+  _install_kernel($lilo_command);
+  print "\n";
+
+}
+
+sub _install_kernel {
+
+  my ($lilo_command) = @_;
+
+  if (confirm("Do you want execute @{[ BOLD ]}$lilo_command@{[ RESET ]} command now [Y/N] ? ")) {
+
+    $lilo_command .= " -v" if ($lilo_command eq 'lilo');
+    system("$lilo_command");
+
+    print "\n\n";
+
+  }
+
+}
+
+sub _create_initrd {
+
+  my ($kernel_version) = @_;
+
+  if (confirm("Do you want recreate a new initrd file now [Y/N] ? ")) {
+
+    my $mkinitrd_command_generator_cmd = "/usr/share/mkinitrd/mkinitrd_command_generator.sh -k $kernel_version";
+
+    print "Running @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} to detect the required kernel modules for build a correct initrd file:\n\n";
+    print "\t$mkinitrd_command_generator_cmd\n\n";
+
+    my $mkinitrd_cmd = qx { sh $mkinitrd_command_generator_cmd -r };
+    chomp($mkinitrd_cmd);
+
+    print "Executing @{[ BOLD ]}mkinitrd@{[ RESET ]} command:\n\n";
+    print "\t$mkinitrd_cmd\n\n";
+
+    system("$mkinitrd_cmd");
+
+    print "\n\n";
+
+  }
 
 }
 
