@@ -559,15 +559,18 @@ sub call_package_history {
   foreach (sort keys %$rows_ref) {
 
     my $row       = $rows_ref->{$_};
-    my $status    = $row->{status};
-    my $version   = $row->{version} . '-' . $row->{build};
-    my $timestamp = $row->{timestamp};
-    my $upgraded  = $row->{upgraded};
+    my $status    = $row->{'status'};
+    my $version   = $row->{'version'} . '-' . $row->{'build'};
+    my $timestamp = $row->{'timestamp'};
+    my $upgraded  = $row->{'upgraded'};
 
     $status_history = $status;
-    $status_history = 'upgraded'     if ($status eq 'installed');
-    $status_history = 'installed'    if (! $prev_status);
-    $status_history = $row->{status} if ($row_nums == 1);
+    $status_history = 'upgraded'       if ($status eq 'installed');
+    $status_history = 'installed'      if (! $prev_status);
+    $status_history = $row->{'status'} if ($row_nums == 1);
+    $status_history = 'installed'      if ($prev_status eq 'removed');
+    $prev_version   = ''               if ($status_history eq 'removed');
+    $prev_version   = ''               if ($status_history eq 'installed');
 
     print sprintf("%-10s %-15s %-25s %-15s %-25s\n",
       $status_history,
@@ -894,8 +897,8 @@ sub _kernel_update_message {
   chomp($new_kernel_version);
 
   my $message = "@{[ BLINK BOLD RED ]}Kernel upgrade detected !@{[ RESET ]}\n"
-              . "Remember to reinstall the new kernel with @{[ BOLD ]}LILO@{[ RESET ]} "
-              . "(or @{[ BOLD ]}ELILO@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
+              . "Remember to reinstall the new kernel with @{[ BOLD ]}lilo@{[ RESET ]} "
+              . "(or @{[ BOLD ]}eliloconfig@{[ RESET ]} if you have @{[ BOLD ]}EFI@{[ RESET ]} bios) command. "
               . "If you have a generic kernel, remember to create a new @{[ BOLD ]}initrd@{[ RESET ]} "
               . "file using @{[ BOLD ]}mkinitrd_command_generator@{[ RESET ]} command:\n\n"
               . "@{[ BOLD ]}\$(sh /usr/share/mkinitrd/mkinitrd_command_generator.sh -k $new_kernel_version -r)@{[ RESET ]}";
