@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -41,6 +41,7 @@ use Sort::Versions;
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 
+use constant SLACKMAN_SCHEMA_VERSION => 1;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -142,6 +143,33 @@ use constant SLACKMAN_INDEXES => ( 'history_idx', 'packages_idx' );
 
 our $dbh = dbh();
 
+my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
+
+# init database if "user_version" pragma is not defined
+#
+unless ($slackman_schema_version) {
+  db_init();
+}
+
+if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
+
+  logger->debug(sprintf('[DB] Detected previous SlackMan schema version (actual: %s, required: %s)',
+    $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
+
+  foreach (SLACKMAN_INDEXES) {
+    logger->debug(qq/[DB] Drop index "$_"/);
+    $dbh->do("DROP INDEX $_");
+  }
+
+  foreach (SLACKMAN_TABLES) {
+    logger->debug(qq/[DB] Drop table "$_"/);
+    $dbh->do("DROP TABLE $_");
+  }
+
+  db_compact();
+  db_init();
+
+}
 
 sub dbh {
 
@@ -158,7 +186,6 @@ sub dbh {
   $dbh->do('PRAGMA synchronous  = OFF');
   $dbh->do('PRAGMA journal_mode = MEMORY');
   $dbh->do('PRAGMA temp_store   = MEMORY');
-  $dbh->do('PRAGMA user_version = 1');
 
   $dbh->sqlite_create_function('version_compare', -1, sub {
     my ($old, $new) = @_;
@@ -181,6 +208,7 @@ sub db_init {
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
+  $dbh->do(sprintf('PRAGMA user_version = %s', SLACKMAN_SCHEMA_VERSION));
 
 }
 

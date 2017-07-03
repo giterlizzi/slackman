@@ -12,7 +12,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -49,26 +49,25 @@ exit show_version() if $slackman_opts->{'version'};
 
 pod2usage(-exitval => 0, -verbose => 2) if $slackman_opts->{'man'};
 
-# Force exit on CTRL-C
+# Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
+  warn ("\n\nAction cancelled by user!\n");
   exit(1);
 };
 
-# Write all die to log
+# Write all "die" signal to log
 $SIG{__DIE__} = sub {
   logger->critical(trim($_[0]));
   die @_;
 };
 
-# Write all warn to log
+# Write all "warn" signal to log
 $SIG{__WARN__} = sub {
   logger->warning(trim($_[0]));
   warn @_;
 };
 
 sub run {
-
-  db_init();
 
   show_help() unless ($command);
 
