@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -26,9 +26,13 @@ use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Parser  qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
 
-use Term::ANSIColor qw(color colored :constants);
-use Text::Wrap;
 use File::Basename;
+use File::Copy;
+use File::Find qw( find );
+use Term::ANSIColor qw(color colored :constants);
+use Term::ReadLine;
+use Text::Wrap;
+
 
 use constant COMMANDS_DISPATCHER => {
   'changelog'   => \&call_package_changelog,
@@ -40,6 +44,7 @@ use constant COMMANDS_DISPATCHER => {
   'remove'      => \&call_package_remove,
   'search'      => \&call_package_search,
   'upgrade'     => \&call_package_upgrade,
+  'new-config'  => \&call_package_new_config,
 };
 
 sub call_package_info {
@@ -187,7 +192,7 @@ sub call_package_reinstall {
   print "\n\n";
 
   unless ($slackman_opts->{'yes'}) {
-    exit(0) unless(confirm("Are you sure? [Y/N] "));
+    exit(0) unless(confirm("Are you sure? [Y/N]"));
   }
 
   my @filters = ();
@@ -286,7 +291,7 @@ sub call_package_remove {
   exit(0) if ($slackman_opts->{'no'});
 
   unless ($slackman_opts->{'yes'}) {
-    exit(0) unless(confirm("Are you sure? [Y/N] "));
+    exit(0) unless(confirm("Are you sure? [Y/N]"));
   }
 
   _check_root();
@@ -415,7 +420,7 @@ sub call_package_install {
   exit(0) unless (@packages_to_downloads);
 
   unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-    exit(0) unless(confirm("Install selected packages? [Y/N] "));
+    exit(0) unless(confirm("Install selected packages? [Y/N]"));
   }
 
   print "\n\n";
@@ -442,7 +447,8 @@ sub call_package_install {
 
   _packages_errors($packages_errors);
   _packages_installed(\@packages_for_pkgtool);
-  _fork_update_history();
+
+  _fork_update_history() if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -691,7 +697,7 @@ sub call_package_upgrade {
   if (@packages_to_downloads) {
 
     unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-      exit(0) unless(confirm("Perform update of selected packages? [Y/N] "));
+      exit(0) unless(confirm("Perform update of selected packages? [Y/N]"));
     }
 
     print "\n\n";
@@ -727,7 +733,10 @@ sub call_package_upgrade {
     _kernel_update_message() if ($kernel_upgrade);
 
     # Update history metadata in background
-    _fork_update_history();
+    _fork_update_history() if (@packages_for_pkgtool);
+
+    # Search new configuration files (same as 'slackman new-config' command)
+    call_package_new_config() if (@packages_for_pkgtool);
 
   }
 
@@ -740,36 +749,18 @@ sub call_package_file_search {
 
   my ($file) = @_;
 
-  my $dir = undef;
-
   unless($file) {
     print "Usage: slackman file-search FILE\n";
     exit(1);
   }
 
-  $file =~ s/\*/%/g;
+  my $rows = package_search_files($file);
 
-  my $query = 'SELECT * FROM manifest WHERE file LIKE ?';
+  foreach my $row (@$rows) {
 
-  if ($file =~ /\//) {
-
-    $dir    = dirname($file);
-    $file   = basename($file);
-    $query .= ' AND directory LIKE ?';
-
-  }
-
-  my $sth = $dbh->prepare($query);
-
-  if ($dir) {
-    $sth->execute($file, $dir);
-  } else {
-    $sth->execute($file);
-  }
-
-  while (my $row = $sth->fetchrow_hashref()) {
     print sprintf("%s/@{[ BOLD ]}%s@{[ RESET ]}: %s (%s)\n",
       $row->{'directory'}, $row->{'file'}, $row->{'package'}, $row->{'repository'});
+
   }
 
   exit(0);
@@ -795,6 +786,204 @@ sub call_package_changelog {
       ($row->{'timestamp'}    || ''),
       ($row->{'repository'}   || '')
     );
+  }
+
+}
+
+
+sub call_package_new_config {
+
+  my @new_config_files = ();
+
+  my $etc_directory = '/etc';
+
+  if (defined($ENV{ROOT})) {
+    $etc_directory = $ENV{ROOT} . '/etc';
+  }
+
+  print "Search for new configuration files... ";
+
+  # Find .new files in /etc directory excluding files listed in UPGRADE.TXT doc:
+  #
+  #  * /etc/rc.d/rc.inet1.conf.new
+  #  * /etc/rc.d/rc.local.new
+  #  * /etc/group.new
+  #  * /etc/passwd.new
+  #  * /etc/shadow.new
+  #  * /etc/gshadow.new
+  #
+
+  find({
+    no_chdir   => 1,
+    wanted     => sub { push(@new_config_files, $_) if /\.new$/ },
+    preprocess => sub { grep( !/(rc.local|rc.inet1.conf|group|passwd|shadow|gshadow)\.new/, @_) }
+  }, $etc_directory );
+
+  unless (@new_config_files) {
+    print "no files found!\n\n";
+    exit(0);
+  }
+
+  print "done!\n\n";
+
+  foreach my $new_config_file (@new_config_files) {
+
+    my $manifest = package_search_files($new_config_file);
+    my $package  = '';
+    use Data::Dumper;
+
+    if (defined($manifest->[0]->{'package'})) {
+      $package = "(" . $manifest->[0]->{'package'} . ")";
+    }
+
+    print "  * $new_config_file\t\t$package\n";
+
+  }
+
+  print "\n\n";
+
+  print "Actions:\n\n"
+        . sprintf("\t%seep the old files and consider .new files later\n",
+            colored('K', 'bold'))
+        . sprintf("\t%sverwrite all old files with the new ones. The old files will be stored with the suffix .orig\n",
+            colored('O', 'bold'))
+        . sprintf("\t%semove all .new files\n",
+            colored('R', 'bold'))
+        . sprintf("\t%srompt K, O, R selection for every single file\n\n",
+            colored('P', 'bold'));
+
+  my $choice = confirm_choice("What do you want [K/O/R/P] ?", qr/(K|O|R|P)/i);
+
+  if ($choice eq 'K') {
+    print "Edit and merge this configuration files manually or check later!\n\n";
+    exit(0);
+  }
+
+  _new_config_files_delete(\@new_config_files)    if ($choice eq 'R');
+  _new_config_files_overwrite(\@new_config_files) if ($choice eq 'O');
+  _new_config_files_manual(\@new_config_files)    if ($choice eq 'P');
+
+  print "\n\n";
+
+}
+
+sub _new_config_files_manual {
+
+  my ($new_config_files) = @_;
+  _new_config_file_manual($_) foreach(@$new_config_files);
+
+}
+
+
+sub _new_config_files_delete {
+
+  my ($new_config_files) = @_;
+
+  if (confirm('Are you sure [Y/N] ?')) {
+    foreach my $file (@$new_config_files) {
+      logger->debug("Delete new config file $file");
+      unlink($file);
+    }
+  }
+
+}
+
+
+sub _new_config_files_overwrite {
+
+  my ($new_config_files) = @_;
+
+  if (confirm('Are you sure [Y/N] ?')) {
+
+    print "Overwrite configuration with new configuration files\n";
+
+    foreach my $new_config_file (@$new_config_files) {
+
+      my $file = basename($new_config_file, '.new');
+      my $path = dirname($new_config_file);
+
+      my $config_file = "$path/$file";
+
+      move($config_file, "$config_file.orig");
+      logger->debug("Configuration file renamed from $config_file to $config_file.orig");
+
+      move($new_config_file, $config_file);
+      logger->debug("Configuration file renamed from $new_config_file to $config_file");
+
+    }
+
+  }
+
+
+}
+
+
+sub _new_config_file_manual {
+
+  my ($new_config_file) = @_;
+
+  print "\n\n$new_config_file\n";
+
+  my $answer = sprintf("What do you want [%seep/%svervrite/%semove/%siff/%serge] ?", 
+                        colored('K', 'bold'),
+                        colored('O', 'bold'),
+                        colored('R', 'bold'),
+                        colored('D', 'bold'),
+                        colored('M', 'bold')
+                      );
+
+  my $choice = confirm_choice($answer, qr/(K|O|R|D|M)/i);
+
+  my $file = basename($new_config_file, '.new');
+  my $path = dirname($new_config_file);
+  my $config_file = "$path/$file";
+
+  # Display diff(1) command output
+  #
+  if ($choice eq 'D') {
+
+    system("diff -u $config_file $new_config_file | more");
+    _new_config_file_manual($new_config_file);
+
+  }
+
+  # Overwrite new with old configuration file
+  #
+  if ($choice eq 'O') {
+
+    move($config_file, "$config_file.orig");
+    logger->debug("Configuration file renamed from $config_file to $config_file.orig");
+
+    move($new_config_file, $config_file);
+    logger->debug("Configuration file renamed from $new_config_file to $config_file");
+  }
+
+  # Delete new configuration file
+  #
+  if ($choice eq 'R') {
+    if (confirm('Are you sure [Y/N] ?')) {
+      unlink($new_config_file);
+      logger->debug("Deleted new configuration file $new_config_file");
+    }
+  }
+
+  # Merge file using git-merge-file(1)
+  #
+  if ($choice eq 'M') {
+
+    system("git merge-file -p $config_file $config_file $new_config_file > $config_file.merged");
+
+    if ($? > 0) {
+      print "Merge failed! Manually check new and old configuration file.";
+    } else {
+      copy("$config_file", "$config_file.orig");
+      copy("$config_file.merged", $config_file);
+      unlink($new_config_file);
+      logger->debug("New configuration file merged into $config_file");
+    }
+
+    unlink("$config_file.merged");
+
   }
 
 }
@@ -891,6 +1080,7 @@ sub _packages_errors {
 
 }
 
+
 sub _kernel_update_message {
 
   # Detect the EFI System Partition (ESP)
@@ -898,7 +1088,7 @@ sub _kernel_update_message {
 
   # lilo is default command on x86 arch or machine can't have UEFI bios (generally x86_64 arch)
   my $lilo_command  = 'lilo';
-     $lilo_command  = 'eliloconfig' if ($efi_partition);
+#      $lilo_command  = 'eliloconfig' if ($efi_partition);
 
   # Follow vmlinuz file symlink
   my $vmlinuz_file  = readlink('/boot/vmlinuz');
@@ -935,7 +1125,7 @@ sub _install_kernel {
 
   my ($lilo_command) = @_;
 
-  if (confirm("Do you want execute @{[ BOLD ]}$lilo_command@{[ RESET ]} command now [Y/N] ? ")) {
+  if (confirm("Do you want execute @{[ BOLD ]}$lilo_command@{[ RESET ]} command now [Y/N] ?")) {
 
     $lilo_command .= " -v" if ($lilo_command eq 'lilo');
     system("$lilo_command");
@@ -950,7 +1140,7 @@ sub _create_initrd {
 
   my ($kernel_version) = @_;
 
-  if (confirm("Do you want recreate a new initrd file now [Y/N] ? ")) {
+  if (confirm("Do you want recreate a new initrd file now [Y/N] ?")) {
 
     my $mkinitrd_command_generator_cmd = "/usr/share/mkinitrd/mkinitrd_command_generator.sh -k $kernel_version";
 
