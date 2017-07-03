@@ -34,6 +34,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   changelog [PACKAGE]          Display repository or package ChangeLog
   search PATTERN               Search packages using PATTERN
   file-search PATTERN          Search files into packages using PATTERN
+  new-config                   Find new configuration files
 
   version                      Display version information
   help                         Display help

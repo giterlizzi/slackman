@@ -122,8 +122,8 @@ _slackman_slackman() {
   local slackman_options slackman_commands
 
   slackman_options="-h --help --man --version -c --config --root --color"
-  slackman_commands="update upgrade install reinstall remove repo db log config
-                     changelog search file-search history config help clean list"
+  slackman_commands="changelog clean config db file-search help history install
+                     list log new-config reinstall remove repo search update upgrade"
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )

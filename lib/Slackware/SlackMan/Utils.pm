@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw(
@@ -21,6 +21,7 @@ BEGIN {
     changelog_date_to_time
     check_perl_module
     confirm
+    confirm_choice
     create_lock
     curl_cmd
     delete_lock
@@ -333,13 +334,29 @@ sub confirm {
   my $term   = Term::ReadLine->new('prompt');
   my $answer = undef;
 
-  while ( defined ($_ = $term->readline($prompt)) ) {
+  while ( defined ($_ = $term->readline("$prompt ")) ) {
     $answer = $_;
     last if ($answer =~ /^(y|n)$/i);
   }
 
   return 1 if ($answer =~ /y/i);
   return 0 if ($answer =~ /n/i);
+
+}
+
+sub confirm_choice {
+
+  my ($prompt, $regex) = @_; 
+
+  my $term   = Term::ReadLine->new('prompt');
+  my $answer = undef;
+
+  while ( defined ($_ = $term->readline("$prompt ")) ) {
+    $answer = $_;
+    last if ($answer =~ /^($regex)$/);
+  }
+
+  return uc($answer);
 
 }
 

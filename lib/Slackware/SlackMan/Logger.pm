@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.1.0-beta6';
+  $VERSION   = 'v1.1.0-beta7';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
@@ -63,7 +63,7 @@ sub log {
 
   return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
 
-  file_append($file, sprintf("%s %s - %s\n", time_to_timestamp(time), uc($level), $message), 1);
+  file_append($file, sprintf("%s [%5s] %5s : %s\n", time_to_timestamp(time), uc($level), $$, $message), 1);
 
 }
 

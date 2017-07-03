@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -47,7 +47,7 @@ sub call_log_help {
 
 sub call_log_clean {
 
-  if (confirm('Are you sure? [Y/N] ')) {
+  if (confirm('Are you sure? [Y/N]')) {
 
     STDOUT->printflush("\nClean $log_file...");
     qx { >$log_file > /dev/null 2>&1 };

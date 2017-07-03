@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta6';
+  $VERSION     = 'v1.1.0-beta7';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -30,6 +30,7 @@ BEGIN {
     package_changelogs
     package_check_updates
     package_check_install
+    package_search_files
   };
 
   %EXPORT_TAGS = (
@@ -717,7 +718,7 @@ sub package_download {
     }
 
     unless ($pkg->{'checksum'}) {
-      exit(0) unless(confirm(sprintf("%s %s package don't have a valid checksum. Do you want continue ? [Y/N] ", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
+      exit(0) unless(confirm(sprintf("%s %s package don't have a valid checksum. Do you want continue ? [Y/N]", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
       $skip_check = 1;
     }
 
@@ -792,6 +793,38 @@ sub package_list_obsoletes {
 
 }
 
+
+sub package_search_files {
+
+  my ($file) = @_;
+
+  $file =~ s/\*/%/g;
+
+  my $dir = '';
+
+  my $query = qq{ SELECT *, directory || '/' || file AS fullpath FROM manifest WHERE file LIKE ? };
+
+  if ($file =~ /\//) {
+
+    $dir    = dirname($file);
+    $file   = basename($file);
+    $query .= ' AND directory LIKE ?';
+
+  }
+
+  my $sth = $dbh->prepare($query);
+
+  if ($dir) {
+    $sth->execute($file, $dir);
+  } else {
+    $sth->execute($file);
+  }
+
+  return $sth->fetchall_arrayref({});
+
+}
+
+
 1;
 __END__
 
@@ -832,6 +865,8 @@ No subs are exported by default.
 =head2 package_metadata
 
 =head2 package_remove
+
+=head2 package_search_files
 
 =head2 package_update
 
