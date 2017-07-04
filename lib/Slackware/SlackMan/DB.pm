@@ -11,10 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0-beta7';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK = qw{
     dbh
     db_init
     db_wipe_table
@@ -145,12 +145,14 @@ our $dbh = dbh();
 
 my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
 
-# init database if "user_version" pragma is not defined
+# Init database if "user_version" pragma is not defined
 #
 unless ($slackman_schema_version) {
   db_init();
 }
 
+# Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
+#
 if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
 
   logger->debug(sprintf('[DB] Detected previous SlackMan schema version (actual: %s, required: %s)',
@@ -166,6 +168,7 @@ if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
     $dbh->do("DROP TABLE $_");
   }
 
+  logger->debug('[DB] Re-create SlackMan database');
   db_compact();
   db_init();
 

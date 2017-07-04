@@ -165,12 +165,11 @@ sub show_version {
 
 sub show_help {
 
-  print "SlackMan - Slackware Package Manager $VERSION\n\n";
-
   pod2usage(
-  -exitval  => 0,
-  -verbose  => 99,
-  -sections => 'SYNOPSIS|COMMANDS|OPTIONS',
+    -message  => "SlackMan - Slackware Package Manager $VERSION\n",
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => 'SYNOPSIS|COMMANDS|OPTIONS',
   );
 
 }

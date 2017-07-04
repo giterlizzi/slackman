@@ -219,7 +219,7 @@ sub call_package_reinstall {
 
   print "\n\n";
   print "Download package(s)\n\n";
-  print sprintf("%s\n", "-"x132);
+  print sprintf("%s\n", "-"x80);
 
   _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
@@ -425,7 +425,7 @@ sub call_package_install {
 
   print "\n\n";
   print "Download package(s)\n";
-  print sprintf("%s\n\n", "-"x132);
+  print sprintf("%s\n\n", "-"x80);
 
   _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
@@ -702,7 +702,7 @@ sub call_package_upgrade {
 
     print "\n\n";
     print "Download package(s)\n";
-    print sprintf("%s\n\n", "-"x132);
+    print sprintf("%s\n\n", "-"x80);
 
     _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
