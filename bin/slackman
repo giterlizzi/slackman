@@ -169,9 +169,13 @@ Enable a repository:
 
 =head1 SEE ALSO
 
-L<slackman.conf(5)>, L<installpkg(8)>, L<makepkg(8)>, L<removepkg(8)>, L<explodepkg(8)>, L<pkgtool(8)>, L<upgradepkg(8)>
+L<slackman.conf(5)>, L<slackman.repo(5)>, L<installpkg(8)>, L<makepkg(8)>,
+L<removepkg(8)>, L<explodepkg(8)>, L<pkgtool(8)>, L<upgradepkg(8)>
 
 =head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
 
 =head1 AUTHOR
 

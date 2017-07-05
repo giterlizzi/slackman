@@ -161,7 +161,7 @@ B<Example>
 
 =back
 
-B<chechsums>
+B<checksums>
 
 =over
 

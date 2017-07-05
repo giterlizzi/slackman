@@ -6,7 +6,7 @@
  - SlackOnly
  - Slackers (Conraid)
  - Slacky (Italian Slackware Community)
- - AlienBob
+ - AlienBob (and **restricted** repository)
  - ktown (KDE5)
  - Cinnamon SlackBuilds
  - MATE SlackBuilds
@@ -18,7 +18,7 @@
 
 This is a sample .repo configuration
 
-    [repository]
+    [repository-id]
 
     # Short description of repository
     #

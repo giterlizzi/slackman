@@ -40,6 +40,20 @@ If you want exclude kernels and all KDE l10n packages:
 
 =back
 
+B<color> (default: C<always>)
+
+=over
+
+Control output color.
+
+The possible values are:
+
+  always
+  auto
+  never
+
+=back
+
 =head1 [logger] SECTION
 
 B<level> (default: C<info>)
