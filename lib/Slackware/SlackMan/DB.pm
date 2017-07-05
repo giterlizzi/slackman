@@ -107,6 +107,10 @@ use constant SLACKMAN_MANIFEST_TABLE => qq/CREATE TABLE IF NOT EXISTS "manifest"
   "directory"         VARCHAR,
   "file"              VARCHAR)/;
 
+use constant SLACKMAN_MANIFEST_INDEX => qq/CREATE INDEX IF NOT EXISTS "manifest_idx" ON "manifest" (
+  "directory"         ASC,
+  "file"              ASC)/;
+
 use constant SLACKMAN_CHANGELOGS_TABLE => qq/CREATE TABLE IF NOT EXISTS "changelogs" (
   "id"                INTEGER PRIMARY KEY,
   "repository"        VARCHAR,
@@ -137,9 +141,8 @@ use constant SLACKMAN_SCHEMA => {
   'packages_idx' => SLACKMAN_PACKAGES_INDEX,
 };
 
-use constant SLACKMAN_TABLES  => ( 'packages', 'metadata', 'changelogs', 'history', 'manifest' );
-use constant SLACKMAN_INDEXES => ( 'history_idx', 'packages_idx' );
-
+use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );
+use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
 our $dbh = dbh();
 
