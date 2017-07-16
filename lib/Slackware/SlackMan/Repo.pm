@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -34,13 +34,15 @@ BEGIN {
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 
 my %repository = ();
 
-my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', get_conf('directory')->{'conf'}));
+my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', $slackman_conf{'directory'}->{'conf'}));
 
 foreach my $file (@files) {
 
@@ -98,7 +100,7 @@ sub _write_repository_config {
   my ($repo_id, $key, $value) = @_;
 
   my ($repo_conf, $repo_section) = split(/:/, $repo_id);
-  my $repo_file = sprintf('%s/repos.d/%s.repo', get_conf('directory')->{'conf'}, $repo_conf);
+  my $repo_file = sprintf('%s/repos.d/%s.repo', $slackman_conf{'directory'}->{'conf'}, $repo_conf);
 
   unless (-f $repo_file) {
     warn qq/Repository configuration file ($repo_conf.repo) not found!\n/;
@@ -182,7 +184,7 @@ sub download_repository_metadata {
   my ($repo_id, $metadata, $callback_status) = @_;
 
   my $metadata_url  = $repository{$repo_id}->{$metadata};
-  my $metadata_file = sprintf("%s/%s/%s", get_conf('directory')->{'cache'}, $repo_id, basename($metadata_url));
+  my $metadata_file = sprintf("%s/%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id, basename($metadata_url));
 
   unless($metadata_url) {
     logger->debug(sprintf('[REPO/%s] "%s" metadata disabled', $repo_id, $metadata));
@@ -202,7 +204,7 @@ sub download_repository_metadata {
   # Force update
   if ($slackman_opts->{'force'}) {
     logger->debug(sprintf('[REPO/%s] Force "%s" metadata last update', $repo_id, $metadata));
-    $db_meta_last_modified = 0;
+    $db_meta_last_modified = -1;
     unlink($metadata_file);
   }
 
@@ -212,16 +214,12 @@ sub download_repository_metadata {
     time_to_timestamp($db_meta_last_modified)));
 
   if ($metadata_last_modified == $db_meta_last_modified) {
-
     logger->debug(sprintf('[REPO/%s] Skip "%s" metadata download', $repo_id, $metadata));
     return (0);
-
-  } else {
-
-    logger->debug(sprintf('[REPO/%s] Delete "%s" metadata file', $repo_id, $metadata));
-    unlink($metadata_file);
-
   }
+
+  logger->debug(sprintf('[REPO/%s] Delete "%s" metadata file', $repo_id, $metadata));
+  unlink($metadata_file);
 
   # Create repo cache directory if not exists
   make_path(dirname($metadata_file)) unless (-d dirname($metadata_file));

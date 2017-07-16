@@ -11,10 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0_08';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK = qw{
     package_info
     package_version_compare
     package_install
@@ -44,10 +44,14 @@ use File::Path qw(make_path remove_tree);
 use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config;
+
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
+
 
 sub package_changelogs {
 
@@ -81,6 +85,13 @@ sub package_changelogs {
     push(@query_filters, sprintf('name LIKE %s', $dbh->quote($package)));
   }
 
+  if (my $timestamp_options = parse_timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  if ($slackman_opts->{'security-fix'}) {
+    push(@query_filters, 'security_fix = 1');
+  }
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
      $query = sprintf($query, join(' AND ', @query_filters), $slackman_opts->{'limit'});
@@ -316,7 +327,7 @@ sub package_is_installed {
   my ($package) = @_;
 
   $package = parse_module_name($package);
-  
+
   my $row = $dbh->selectrow_hashref('SELECT * FROM history WHERE name = ? AND status = "installed"', undef, $package);
 
   return $row;
@@ -673,7 +684,7 @@ sub package_download {
   my ($pkg) = @_;
 
   my $package_url    = sprintf('%s/%s/%s', $pkg->{'mirror'}, $pkg->{'location'}, $pkg->{'package'});
-  my $save_path      = sprintf('%s/%s/%s', get_conf('directory')->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
+  my $save_path      = sprintf('%s/%s/%s', $slackman_conf{'directory'}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
   my $package_path   = sprintf('%s/%s', $save_path, $pkg->{'package'});
   my @package_errors = ();
 
@@ -709,11 +720,11 @@ sub package_download {
     my $gpg_verify = 0;
     my $skip_check = 0;
 
-    unless (get_conf('main')->{'checkmd5'}) {
+    unless ($slackman_conf{'main'}->{'checkmd5'}) {
       $md5_check = 1;
     }
 
-    unless (get_conf('main')->{'checkgpg'}) {
+    unless ($slackman_conf{'main'}->{'checkgpg'}) {
       $gpg_verify = 1;
     }
 
@@ -754,7 +765,25 @@ sub package_download {
 
 
 sub package_list_installed {
-  return $dbh->selectall_hashref(qq/SELECT * FROM history WHERE status = 'installed' ORDER BY name/, 'name', undef);
+
+  my (@search) = @_;
+
+  my @filters      = ();
+  my $query_filter = '';
+
+  foreach my $item (@search) {
+    $item =~ s/\*/%/g;
+    push(@filters, sprintf('(name LIKE %s)', $dbh->quote($item)));
+  }
+
+  if (@filters) {
+    $query_filter = sprintf('AND (%s)', join(' OR ', @filters));
+  }
+
+  my $query = sprintf("SELECT * FROM history WHERE status = 'installed' %s ORDER BY name", $query_filter);
+
+  return $dbh->selectall_hashref($query, 'name', undef)
+
 }
 
 

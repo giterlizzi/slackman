@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,6 +20,7 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
@@ -33,6 +34,7 @@ use constant COMMANDS_DISPATCHER => {
   'db:info'     => \&call_db_info,
   'db:optimize' => \&call_db_optimize,
 };
+
 
 sub call_db_help {
 
@@ -60,7 +62,7 @@ sub call_db_optimize {
 
 sub call_db_info {
 
-  my $db_path = get_conf('directory')->{lib} . '/db.sqlite';
+  my $db_path = $slackman_conf{'directory'}->{lib} . '/db.sqlite';
 
   my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
       $atime, $mtime, $ctime, $blksize, $blocks) = stat($db_path);

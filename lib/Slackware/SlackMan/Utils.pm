@@ -11,10 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0_08';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw(
+  @EXPORT_OK = qw(
 
     callback_spinner
     callback_status
@@ -24,6 +24,7 @@ BEGIN {
     confirm_choice
     create_lock
     curl_cmd
+    datetime_calc
     delete_lock
     directory_files
     download_file
@@ -34,9 +35,6 @@ BEGIN {
     file_write
     filesize_h
     get_arch
-    get_conf
-    get_option
-    get_options
     get_last_modified
     get_lock_pid
     get_slackware_release
@@ -45,14 +43,11 @@ BEGIN {
     ldd
     logger
     md5_check
-    read_config
-    set_config
     time_to_timestamp
+    timestamp_to_time
     trim
     uniq
     w3c_date_to_time
-
-    $slackman_opts
 
   );
 
@@ -69,8 +64,10 @@ use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
-use Getopt::Long qw(:config);
+use Time::Seconds;
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
 
 my $curl_useragent    = "SlackMan/$VERSION";
@@ -81,53 +78,11 @@ my $logger;
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
-our $slackman_opts = {};
-
-GetOptions( $slackman_opts,
-  'config=s',
-  'color=s',
-  'download-only',
-  'exclude-installed',
-  'exclude|x=s',
-  'force|f',
-  'help|h',
-  'limit=i',
-  'man',
-  'new-packages',
-  'no-deps',
-  'no-excludes',
-  'no-priority',
-  'no|n',
-  'obsolete-packages',
-  'quiet',
-  'repo=s',
-  'root=s',
-  'show-files',
-  'summary',
-  'version',
-  'yes|y',
-);
-
-# Set default options
-$slackman_opts->{'limit'} ||= 25;
-$slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
-
-# Verify terminal color capability using tput(1) utility
-if ($slackman_opts->{'color'} eq 'auto') {
-  qx { tput colors > /dev/null 2>&1 };
-  $ENV{ANSI_COLORS_DISABLED} = 1 if ($? > 0); 
-}
-
-# Disable color output
-if ($slackman_opts->{'color'} eq 'never') {
-  $ENV{ANSI_COLORS_DISABLED} = 1;
-}
-
 # Get proxy flags for cURL
 #
 sub _get_curl_proxy_flags {
 
-  my $proxy_conf = get_conf('proxy');
+  my $proxy_conf = $slackman_conf{'proxy'};
 
   return '' unless ($proxy_conf->{'enable'});
 
@@ -153,31 +108,6 @@ sub _get_curl_proxy_flags {
 
   return $curl_proxy_flags;
 
-}
-
-# Get SlackMan config
-#
-sub get_conf {
-
-  my ($key) = @_;
-
-  return %Slackware::SlackMan::Config::slackman_conf unless ($key);
-
-  if (defined($Slackware::SlackMan::Config::slackman_conf{$key})) {
-    return $Slackware::SlackMan::Config::slackman_conf{$key};
-  }
-
-  return undef;
-
-}
-
-sub get_options {
-  return $slackman_opts;
-}
-
-sub get_option {
-  my ($option) = @_;
-  return $slackman_opts->{$option} || undef;
 }
 
 sub uniq {
@@ -218,6 +148,32 @@ sub filesize_h {
   }
 
   return $size_h;
+
+}
+
+sub datetime_calc {
+
+  my ($string) = @_;
+
+  my ($sign, $digit, $order) = ($string =~ /^(\+|-|)(\d+)\s(days?|hours?|months?|years?)$/i);
+
+  my $time = 0;
+
+     $time = ONE_DAY   * $digit  if (lc($order) =~ /day/);
+     $time = ONE_HOUR  * $digit  if (lc($order) =~ /hour/);
+     $time = ONE_MONTH * $digit  if (lc($order) =~ /month/);
+     $time = ONE_YEAR  * $digit  if (lc($order) =~ /year/);
+
+  my $datetime = Time::Piece->new();
+
+  if ($sign eq '' || $sign eq '+') {
+    $datetime += $time;
+  }
+  if ($sign eq '-') {
+    $datetime -= $time;
+  }
+
+  return $datetime;
 
 }
 
@@ -384,6 +340,15 @@ sub changelog_date_to_time {
 
 }
 
+sub timestamp_to_time {
+
+  my ($timestamp) = @_;
+
+  my $t = Time::Piece->strptime($timestamp, "%Y-%m-%d %H:%M:%S");
+  return $t->epoch;
+
+}
+
 sub w3c_date_to_time {
 
   my $timestamp = shift;
@@ -456,9 +421,11 @@ sub get_arch {
   return (POSIX::uname())[4];
 }
 
-sub get_slackware_release {
+my $slackware_release;
 
-  my $slackware_version_file = get_conf('directory')->{'root'} . '/etc/slackware-version';
+sub _get_slackware_release {
+
+  my $slackware_version_file = $slackman_conf{'directory'}->{'root'} . '/etc/slackware-version';
   my $slackware_version      = file_read($slackware_version_file);
 
   chomp($slackware_version);
@@ -466,6 +433,10 @@ sub get_slackware_release {
   $slackware_version =~ /Slackware (.*)/;
   return $1;
 
+}
+
+sub get_slackware_release {
+  return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
 
 sub md5_check {
@@ -488,7 +459,7 @@ sub check_perl_module {
 
 sub logger {
 
-  my $logger_conf = get_conf('logger');
+  my $logger_conf = $slackman_conf{'logger'};
 
   $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_conf->{'file'},
                                                 'level' => $logger_conf->{'level'} );
@@ -499,7 +470,7 @@ sub logger {
 sub create_lock {
 
   my $pid = $$;
-  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
 
   file_write($lock_file, $pid);
 
@@ -507,7 +478,7 @@ sub create_lock {
 
 sub get_lock_pid {
 
-  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
 
   open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
@@ -524,91 +495,8 @@ sub get_lock_pid {
 
 sub delete_lock {
 
-  my $lock_file = get_conf('directory')->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
-
-}
-
-sub read_config {
-
-  my $file = shift;
-  my $fh   = file_handler($file, '<');
-
-  my $section;
-  my %config;
-
-  while (my $line = <$fh>) {
-
-    chomp($line);
-
-    # skip comments
-    next if ($line =~ /^\s*#/);
-
-    # skip empty lines
-    next if ($line =~ /^\s*$/);
-
-    if ($line =~ /^\[(.*)\]\s*$/) {
-      $section = $1;
-      next;
-    }
-
-    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
-
-      my ($field, $value) = ($1, $2);
-
-      if (not defined $section) {
-
-        $value = 1 if ($value =~ /^(yes|true)$/);
-        $value = 0 if ($value =~ /^(no|false)$/);
-
-        $config{$field} = $value;
-        next;
-
-      }
-
-      $value = 1 if ($value =~ /^(yes|true)$/);
-      $value = 0 if ($value =~ /^(no|false)$/);
-
-      $config{$section}{$field} = $value;
-
-    }
-  }
-
-  return %config;
-
-}
-
-sub set_config {
-
-  my ( $input, $section, $param, $new_value ) = @_;
-
-  my $current_section = '';
-  my @lines  = split(/\n/, $input);
-  my $output = '';
-
-  foreach (@lines) {
-
-    #if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
-    if ( $_ =~ /^(\[.*\])$/ ) {
-
-      $current_section = $1;
-
-    } elsif ( $current_section eq $section )  {
-
-      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
-
-      if ( $key and $key eq $param  ) { 
-        $output .= "$param = $new_value\n";
-        next;
-      }
-
-    }
-
-    $output .= "$_\n";
-
-  }
-
-  return $output;
 
 }
 

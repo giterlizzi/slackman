@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,6 +20,8 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config;
 use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
@@ -33,10 +35,11 @@ use constant COMMANDS_DISPATCHER => {
   'log:tail'  => \&call_log_tail,
 };
 
-my $log_file = get_conf('logger')->{'file'};
+
+my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_log_help {
-
+print colored('foo', 'red');
   pod2usage(
     -exitval  => 0,
     -verbose  => 99,

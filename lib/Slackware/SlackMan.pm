@@ -5,14 +5,7 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
-use Slackware::SlackMan::Config  qw(:all);
-use Slackware::SlackMan::DB      qw(:all);
-use Slackware::SlackMan::Package qw(:all);
-use Slackware::SlackMan::Parser  qw(:all);
-use Slackware::SlackMan::Repo    qw(:all);
-use Slackware::SlackMan::Utils   qw(:all);
-
-our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
+our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 BEGIN {
 
@@ -20,32 +13,27 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION = 'v1.1.0-beta7';
-
-  @EXPORT_OK = (
-    @Slackware::SlackMan::Config::EXPORT_OK,
-    @Slackware::SlackMan::DB::EXPORT_OK,
-    @Slackware::SlackMan::Logger::EXPORT_OK,
-    @Slackware::SlackMan::Package::EXPORT_OK,
-    @Slackware::SlackMan::Parser::EXPORT_OK,
-    @Slackware::SlackMan::Repo::EXPORT_OK,
-    @Slackware::SlackMan::Utils::EXPORT_OK,
+  $VERSION   = 'v1.1.0_08';
+  @EXPORT_OK = ();
+  @EXPORT    = qw(
+    $slackman_opts
+    %slackman_conf
   );
 
   %EXPORT_TAGS = (
-
-    'all'     => \@EXPORT_OK,
-    'config'  => \@Slackware::SlackMan::Config::EXPORT_OK,
-    'db'      => \@Slackware::SlackMan::DB::EXPORT_OK,
-    'logger'  => \@Slackware::SlackMan::Logger::EXPORT_OK,
-    'package' => \@Slackware::SlackMan::Package::EXPORT_OK,
-    'parser'  => \@Slackware::SlackMan::Parser::EXPORT_OK,
-    'repo'    => \@Slackware::SlackMan::Repo::EXPORT_OK,
-    'utils'   => \@Slackware::SlackMan::Utils::EXPORT_OK,
-
+    'all' => \@EXPORT_OK,
   );
 
 }
+
+use Slackware::SlackMan::Config qw(:all);
+
+our %slackman_conf = load_config();
+our $slackman_opts = {};
+
+# Set default options
+$slackman_opts->{'limit'} ||= 25;
+
 
 1;
 __END__

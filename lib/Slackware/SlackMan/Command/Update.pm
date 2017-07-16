@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,6 +20,9 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config;
+
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
@@ -27,6 +30,7 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
 
 use constant COMMANDS_DISPATCHER => {
   'help:update'      => \&call_update_help,
@@ -39,6 +43,7 @@ use constant COMMANDS_DISPATCHER => {
   'update:manifest'  => \&call_update_repo_manifest,
   'update:packages'  => \&call_update_repo_packages,
 };
+
 
 sub call_update_help {
 
@@ -97,7 +102,7 @@ sub call_update_repo_gpg_key {
 
     STDOUT->printflush(sprintf("  * %-30s", $repo));
 
-    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', get_conf('directory')->{'cache'}, $repo);
+    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf{'directory'}->{'cache'}, $repo);
 
     if (download_repository_metadata($repo, 'gpgkey')) {
       gpg_import_key($gpg_key_path) if (-e $gpg_key_path);

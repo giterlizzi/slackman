@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,12 +20,14 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
 use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+
 
 use constant COMMANDS_DISPATCHER => {
   'help:clean'      => \&call_clean_help,
@@ -59,7 +61,7 @@ sub call_clean_all {
 
 sub call_clean_db {
 
-  my $lib_dir = get_conf('directory')->{'lib'};
+  my $lib_dir = $slackman_conf{'directory'}->{'lib'};
   my $db_file = "$lib_dir/db.sqlite";
 
   logger->debug(qq/Clear database file "$db_file"/);
@@ -72,7 +74,7 @@ sub call_clean_db {
 
 sub call_clean_cache {
 
-  my $cache_dir = get_conf('directory')->{'cache'};
+  my $cache_dir = $slackman_conf{'directory'}->{'cache'};
   logger->debug(qq/Clear packages cache directory "$cache_dir"/);
 
   STDOUT->printflush("\nClean packages download cache... ");

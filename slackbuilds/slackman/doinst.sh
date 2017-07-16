@@ -12,6 +12,7 @@ config() {
 }
 
 config etc/slackman/slackman.conf.new
+config etc/slackman/slackman-cron.conf.new
 
 for cfg in etc/slackman/repos.d/*.new; do
   config $cfg

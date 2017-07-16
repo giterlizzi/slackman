@@ -1,0 +1,4 @@
+[D-BUS Service]
+User=root
+Name=org.lotarproject.slackman
+Exec=/usr/libexec/slackman/slackman-service

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -19,6 +19,8 @@ BEGIN {
   );
 
 }
+
+use Slackware::SlackMan;
 
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
@@ -46,6 +48,7 @@ use constant COMMANDS_DISPATCHER => {
   'upgrade'     => \&call_package_upgrade,
   'new-config'  => \&call_package_new_config,
 };
+
 
 sub call_package_info {
 
@@ -773,19 +776,41 @@ sub call_package_changelog {
   my ($package) = @_;
   my $changelogs = package_changelogs($package);
 
-  print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
-  print sprintf("%s\n", "-"x132);
+  unless ($slackman_opts->{'details'}) {
 
-  foreach my $row (@{$changelogs}) {
+    print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
+    print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
-      ($row->{'package'}      || ''),
-      ($row->{'version'}      || ''),
-      ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
-      ($row->{'status'}       || ''),
-      ($row->{'timestamp'}    || ''),
-      ($row->{'repository'}   || '')
-    );
+    foreach my $row (@{$changelogs}) {
+
+      print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
+        ($row->{'package'}      || ''),
+        ($row->{'version'}      || ''),
+        ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
+        ($row->{'status'}       || ''),
+        ($row->{'timestamp'}    || ''),
+        ($row->{'repository'}   || '')
+      );
+    }
+
+  }
+
+  if ($slackman_opts->{'details'}) {
+
+    foreach my $row (@{$changelogs}) {
+
+      my $description = $row->{'description'};
+         $description =~ s/\(\* Security fix \*\)/colored("(* Security fix *)", 'red')/ge if $row->{'security_fix'};
+
+      print sprintf("%s (%s)\n%s:  %s\n%s\n",
+        colored($row->{'timestamp'}, 'green'),
+        $row->{'repository'},
+        colored($row->{'package'}, 'bold'),
+        ucfirst($row->{'status'}),
+        (($description) ? wrap("  ", "  ", $description) . "\n" : '')
+      );
+    }
+
   }
 
 }
@@ -830,7 +855,6 @@ sub call_package_new_config {
 
     my $manifest = package_search_files($new_config_file);
     my $package  = '';
-    use Data::Dumper;
 
     if (defined($manifest->[0]->{'package'})) {
       $package = "(" . $manifest->[0]->{'package'} . ")";
@@ -1088,7 +1112,7 @@ sub _kernel_update_message {
 
   # lilo is default command on x86 arch or machine can't have UEFI bios (generally x86_64 arch)
   my $lilo_command  = 'lilo';
-#      $lilo_command  = 'eliloconfig' if ($efi_partition);
+     $lilo_command  = 'eliloconfig' if ($efi_partition);
 
   # Follow vmlinuz file symlink
   my $vmlinuz_file  = readlink('/boot/vmlinuz');

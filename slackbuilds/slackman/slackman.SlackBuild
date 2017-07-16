@@ -40,8 +40,8 @@ rm -rf $PKG
 mkdir -p $TMP $PKG $OUTPUT
 cd $TMP
 rm -rf $PRGNAM-$VERSION
-tar xvf $CWD/$PRGNAM-$VERSION.tar.gz || tar xvf $CWD/v$VERSION
-cd $PRGNAM-$VERSION
+tar xvf $CWD/$PRGNAM-$VERSION.tar.gz || tar xvf $CWD/v$VERSION || tar xvf $CWD/Slackware-SlackMan-v$VERSION.tar.gz
+cd $PRGNAM-$VERSION || cd Slackware-SlackMan-v$VERSION
 chown -R root:root .
 find -L . \
  \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 \
@@ -57,7 +57,6 @@ perl Makefile.PL \
 make
 make test
 make install DESTDIR=$PKG
-make man DESTDIR=$PKG
 
 # Move slackman script to sbin
 mv $PKG/usr/bin $PKG/usr/sbin
@@ -75,29 +74,16 @@ find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs" | xargs rm -f
 
 find $PKG -depth -type d -empty -delete || true
 
-# Create bash_completion directory
-mkdir -p $PKG/etc/bash_completion.d
+# Preserve slackman.conf
+mv $PKG/etc/slackman/slackman.conf $PKG/etc/slackman/slackman.conf.new
 
-# Copy bash_completion facility
-cp -a etc/slackman.bash $PKG/etc/bash_completion.d
+# Preserver slackman-cron.conf
+mv $PKG/etc/slackman/slackman-cron.conf $PKG/etc/slackman/slackman-cron.conf.new
 
-# Create slackman config directory
-mkdir -p $PKG/etc/slackman/repos.d
-
-# Copy default slackman config
-cp -a etc/slackman.conf $PKG/etc/slackman/slackman.conf.new
-
-# Copy repo configuration
-for cfg in $(cd etc/repos.d; ls *.repo); do
-  cp -a etc/repos.d/$cfg $PKG/etc/slackman/repos.d/$cfg.new
+# Preserve repo config
+for cfg in $(cd $PKG/etc/slackman/repos.d; ls *.repo); do
+  mv $PKG/etc/slackman/repos.d/$cfg $PKG/etc/slackman/repos.d/$cfg.new
 done
-
-# Copy extra repo configuration
-cp -a etc/repos.d/extra $PKG/etc/slackman/repos.d
-
-# Create and copy logrotate config
-mkdir -p $PKG/etc/logrotate.d
-cat etc/slackman.logrotate > $PKG/etc/logrotate.d/slackman
 
 # Create slackman cache directory
 mkdir -p $PKG/var/cache/slackman

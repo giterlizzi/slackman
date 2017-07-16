@@ -14,16 +14,17 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0_08';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK = qw{
     parse_packages
     parse_history
     parse_variables
     parse_manifest
     parse_changelog
     parse_module_name
+    parse_timestamp_options_to_sql
   };
 
   %EXPORT_TAGS = (
@@ -35,10 +36,13 @@ BEGIN {
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use File::Basename;
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
+
 
 sub parse_changelog {
 
@@ -49,7 +53,7 @@ sub parse_changelog {
 
   return(0) unless(download_repository_metadata($repository, 'changelog', \&$callback_status));
 
-  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", get_conf('directory')->{'cache'}, $repository);
+  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf{'directory'}->{'cache'}, $repository);
   return(0) unless (-e $changelog_file);
 
   my $changelog_contents = file_read($changelog_file);
@@ -69,7 +73,7 @@ sub parse_changelog {
 
   foreach my $changelog (@changelogs) {
 
-    callback_spinner($i++);
+    callback_spinner($i++) if ($callback_status);
 
     chomp($changelog);
 
@@ -231,7 +235,7 @@ sub parse_checksums {
 
   return(0) unless(download_repository_metadata($repo->{'id'}, 'checksums', \&$callback_status));
 
-  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", get_conf('directory')->{'cache'}, $repo->{'id'});
+  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf{'directory'}->{'cache'}, $repo->{'id'});
   return(0) unless (-e $checksums_file);
 
   my $checksums_contents = file_read($checksums_file);
@@ -259,7 +263,7 @@ sub parse_packages {
   my $repository = $repo->{'id'};
   my $mirror     = $repo->{'mirror'};
 
-  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", get_conf('directory')->{'cache'}, $repository);
+  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf{'directory'}->{'cache'}, $repository);
 
   return(0) unless (-e $packages_file);
 
@@ -287,7 +291,7 @@ sub parse_packages {
 
     my $data = package_metadata($metadata);
 
-    callback_spinner($i++);
+    callback_spinner($i++) if ($callback_status);
 
     next unless ($data->{'name'});
 
@@ -346,7 +350,7 @@ sub parse_manifest {
 
   return(0) unless(download_repository_metadata($repository, 'manifest', \&$callback_status));
 
-  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", get_conf('directory')->{'cache'}, $repository);
+  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf{'directory'}->{'cache'}, $repository);
   return(0) unless(-e $manifest_file);
 
   my $manifest_input = file_read($manifest_file);
@@ -370,7 +374,7 @@ sub parse_manifest {
 
   foreach my $manifest (@manifest) {
 
-    callback_spinner($i++);
+    callback_spinner($i++) if ($callback_status);
 
     my @lines = split(/\n/, $manifest);
 
@@ -386,7 +390,7 @@ sub parse_manifest {
 
     foreach my $line (@lines) {
 
-      callback_spinner($i++);
+      callback_spinner($i++) if ($callback_status);
 
       next unless ($line =~ /^(d|-)/);
 
@@ -491,7 +495,7 @@ sub parse_history {
 
   foreach my $file (@files) {
 
-    callback_spinner($i++);
+    callback_spinner($i++) if ($callback_status);
 
     my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
         $atime, $mtime, $ctime, $blksize, $blocks) = stat($file);
@@ -558,7 +562,7 @@ sub parse_variables {
   my $release_conf   = $release;
   my $release_suffix = '';
 
-  $release_conf = get_conf('slackware')->{'version'} if (defined get_conf('slackware'));
+  $release_conf = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }
@@ -581,6 +585,49 @@ sub parse_variables {
   $string =~ s/\$release/$release_conf/g;
 
   return $string;
+
+}
+
+
+sub parse_timestamp_options_to_sql {
+
+  my $option_after  = $slackman_opts->{'after'};
+  my $option_before = $slackman_opts->{'before'};
+
+  my $parsed_after  = undef;
+  my $parsed_before = undef;
+
+  my @timestamp_filter = ();
+
+  if ($option_after) {
+
+    if ($option_after && $option_after =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_after  = datetime_calc($option_after)->ymd;
+    }
+
+    if (! $parsed_after && $option_after =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_after = $option_after;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp > "%s")', $parsed_after))  if ($parsed_after);
+
+  }
+
+  if ($option_before) {
+
+    if ($option_before && $option_before =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_before = datetime_calc($option_before)->ymd;
+    }
+
+    if (! $parsed_before && $option_before =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_before = $option_before;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp < "%s")', $parsed_before)) if ($parsed_before);
+
+  }
+
+  return sprintf('( %s )', join(' AND ', @timestamp_filter)) if ($parsed_after || $parsed_before);
 
 }
 

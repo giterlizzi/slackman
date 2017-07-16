@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,6 +20,7 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
@@ -40,6 +41,7 @@ use constant COMMANDS_DISPATCHER => {
   'list:packages'  => \&call_list_packages,
   'list:variables' => \&call_list_variables,
 };
+
 
 sub call_list_help {
 
@@ -134,12 +136,14 @@ sub call_list_orphan {
 
 sub call_list_installed {
 
+  my (@search) = @_;
+
   print "\nInstalled packages\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
   print sprintf("%s\n", "-"x132);
 
-  my $rows_ref = package_list_installed;
+  my $rows_ref = package_list_installed(@search);
 
   foreach (sort keys %$rows_ref) {
 
@@ -160,6 +164,8 @@ sub call_list_installed {
 
 sub call_list_packages {
 
+  my (@search) = @_;
+
   print "\nAvailable packages\n\n";
   print sprintf("%s\n", "-"x132);
   print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Repository");
@@ -177,6 +183,20 @@ sub call_list_packages {
   if ($slackman_opts->{'exclude-installed'}) {
     $filter .= ' AND name NOT IN (SELECT name FROM history WHERE status = "installed")';
   }
+
+  my @search_filters      = ();
+  my $query_search_filter = '';
+
+  foreach my $item (@search) {
+    $item =~ s/\*/%/g;
+    push(@search_filters, sprintf('(name LIKE %s)', $dbh->quote($item)));
+  }
+
+  if (@search_filters) {
+    $query_search_filter = sprintf(' AND (%s)', join(' OR ', @search_filters));
+  }
+
+  $filter .= $query_search_filter;
 
   my $query = 'SELECT * FROM packages WHERE %s ORDER BY name';
      $query = sprintf($query, $filter);

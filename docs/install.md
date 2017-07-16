@@ -1,4 +1,4 @@
-# SlackMan Install & Build
+# SlackMan Install & SlackBuild
 
 ## Installation
 
@@ -11,9 +11,9 @@ To install SlackMan, run the following commands:
 
 ## Create SlackBuild package
 
-To automate a creation of SlackBuild package use `Build.PL` script:
+To automate a creation of SlackBuild package, run the following commands:
 
-    # cd slackbuilds
-    # perl Build.pl
-    [...]
-    # upgradepkg --install-new slackman-x.y.z-noarch-1_lotar.tgz
+    perl Makefile.PL
+    make
+    make slackbuild
+    upgradepkg --install-new /tmp/slackman-x.y.z-noarch-1_lotar.tgz

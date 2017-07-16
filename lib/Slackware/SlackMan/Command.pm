@@ -12,7 +12,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -33,7 +33,59 @@ use Text::Wrap;
 use Pod::Usage;
 use Module::Load;
 
-use Slackware::SlackMan qw(:all);
+use Slackware::SlackMan;
+use Slackware::SlackMan::Utils qw(:all);
+use Slackware::SlackMan::Repo  qw(:all);
+
+use Getopt::Long qw(:config);
+
+GetOptions( $slackman_opts,
+  'after=s',
+  'before=s',
+  'config=s',
+  'color=s',
+  'details',
+  'download-only',
+  'exclude-installed',
+  'exclude|x=s',
+  'force|f',
+  'help|h',
+  'limit=i',
+  'man',
+  'new-packages',
+  'no-deps',
+  'no-excludes',
+  'no-priority',
+  'no|n',
+  'obsolete-packages',
+  'quiet',
+  'repo=s',
+  'root=s',
+  'security-fix',
+  'show-files',
+  'summary',
+  'version',
+  'yes|y',
+);
+
+
+$slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+
+# Verify terminal color capability using tput(1) utility
+if ($slackman_opts->{'color'} eq 'auto') {
+  qx { tput colors > /dev/null 2>&1 };
+  $ENV{ANSI_COLORS_DISABLED} = 1 if ($? > 0); 
+}
+
+# Disable color output if "--color=never"
+if ($slackman_opts->{'color'} eq 'never') {
+  $ENV{ANSI_COLORS_DISABLED} = 1;
+}
+
+# Disable color if slackman STDOUT are in "pipe" (eg. slackman changelog --details | more)
+unless (-t STDOUT) {
+  $ENV{ANSI_COLORS_DISABLED} = 1;
+}
 
 my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
@@ -137,8 +189,8 @@ sub run {
   my $dispatch_key = undef;
 
   if ($sub_command && exists($commands_dispatcher->{"$command:$sub_command"})) {
-    $dispatch_key =  "$command:$sub_command";       # Command + Sub Command
-    @arguments    = @arguments[ 1 .. $#arguments ]; # Shift 1st argument (aka sub_command)
+    $dispatch_key =  "$command:$sub_command";        # Command + Sub Command
+    @arguments    = @arguments[ 1 .. $#arguments ];  # Shift 1st argument (aka sub_command)
   }
 
   if ($command && ! $dispatch_key && exists($commands_dispatcher->{"$command"})) {

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.0-beta7';
+  $VERSION = 'v1.1.0_08';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -38,8 +38,8 @@ BEGIN {
 use DBI;
 use Sort::Versions;
 
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Utils  qw(:all);
+use Slackware::SlackMan::Utils   qw(:all);
+use Slackware::SlackMan::Config;
 
 use constant SLACKMAN_SCHEMA_VERSION => 1;
 
@@ -139,6 +139,7 @@ use constant SLACKMAN_SCHEMA => {
   'manifest'     => SLACKMAN_MANIFEST_TABLE,
   'history_idx'  => SLACKMAN_HISTORY_INDEX,
   'packages_idx' => SLACKMAN_PACKAGES_INDEX,
+  'manifest_idx' => SLACKMAN_MANIFEST_INDEX,
 };
 
 use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );

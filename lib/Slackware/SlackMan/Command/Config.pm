@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0-beta7';
+  $VERSION     = 'v1.1.0_08';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,7 +20,8 @@ BEGIN {
 
 }
 
-use Slackware::SlackMan::Utils qw(:all);
+use Slackware::SlackMan::Config qw(:all);
+use Slackware::SlackMan::Utils  qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
@@ -31,7 +32,8 @@ use constant COMMANDS_DISPATCHER => {
   'config:help'  => \&call_config_help,
 };
 
-my $log_file = get_conf('logger')->{'file'};
+my %slackman_conf = load_config();
+my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_config_help {
 
@@ -50,7 +52,7 @@ sub call_config {
   # Set SlackMan config value
   if ($config_key && $config_value) {
 
-    my $slackman_conf_file = get_conf('config')->{'file'};
+    my $slackman_conf_file = $slackman_conf{'config'}->{'file'};
 
     my ($section, $parameter) = split(/\./, $config_key);
     file_write($slackman_conf_file, set_config(file_read($slackman_conf_file), "[$section]", $parameter, $config_value));
@@ -60,7 +62,6 @@ sub call_config {
   }
 
   # Get or display all SlackMan config values
-  my %slackman_conf = get_conf();
 
   foreach my $section (sort keys %slackman_conf) {
     foreach my $parameter (sort keys %{$slackman_conf{$section}}) {

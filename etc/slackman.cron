@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Extra SlackMan params
+SLACKMAN_PARAMS=""
+
+# Update new packages and changelog metadata from the repositories
+UPDATE_METADATA="yes"
+
+# Update new manifest metadata from the repositories
+UPDATE_MANIFEST_METADATA="no"
+
+# Download upgraded packages
+DOWNLOAD_UPGRADED_PACKAGES="no"
+
+if [ -f /etc/slackman/slackman-cron.conf ]; then
+  source /etc/slackman/slackman-cron.conf
+fi
+
+if [ "$UPDATE_METADATA" == "yes" ]; then
+  /usr/sbin/slackman update $SLACKMAN_PARAMS > /dev/null 2&>1
+fi
+
+if [ "$UPDATE_MANIFEST_METADATA" == "yes" ]; then
+  /usr/sbin/slackman update manifest $SLACKMAN_PARAMS > /dev/null 2&>1
+fi
+
+if [ "$DOWNLOAD_PACKAGES" == "yes" ]; then
+  /usr/sbin/slackman upgrade --download-only $SLACKMAN_PARAMS > /dev/null 2&>1
+fi
+
+exit 0

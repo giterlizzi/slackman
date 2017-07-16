@@ -174,6 +174,15 @@ _slackman_config() {
 
 _slackman_info() {
 
+  local slackman_options="--show-files"
+
+  __slackman_complete_options "$cur" "$prev" && return
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
   COMPREPLY=( $(compgen -W "$(__slackman_list_packages "$@")" -- "$cur") )
   __ltrim_colon_completions "$cur"
 
@@ -185,7 +194,7 @@ _slackman_update() {
   local subcommands="help packages history changelog manifest gpg-key all"
 
   if [[ "$cur" == -* ]]; then
-    COMPREPLY=( $( compgen -W "--repo" -- "$cur" ) )
+    COMPREPLY=( $( compgen -W "--repo --force" -- "$cur" ) )
     return 0
   fi
 
@@ -216,7 +225,7 @@ _slackman_upgrade() {
 
 _slackman_changelog() {
 
-  local slackman_options="--repo --limit"
+  local slackman_options="--repo --limit --details --security-fix"
 
   __slackman_complete_options "$cur" "$prev" && return
 

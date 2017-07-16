@@ -1,0 +1,244 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings FATAL => 'all';
+
+use 5.010;
+
+use Net::DBus;
+use Net::DBus::Reactor;
+use POSIX;
+
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config  qw(:all);
+use Slackware::SlackMan::Utils   qw(:all);
+
+use Getopt::Long qw(:config);
+
+my $VERSION = "v1.1.0_08";
+
+my $options = {};
+
+GetOptions( $options,
+  'daemon|d',
+  'help|h',
+  'version|v'
+);
+
+show_help()    if ($options->{'help'});
+show_version() if ($options->{'version'});
+
+my $home_dir         = $ENV{'HOME'};
+my $user_config_file = "$home_dir/.slackman-notifier";
+
+create_user_config() unless (-e $user_config_file);
+
+print STDOUT "SlackMan Notifier ($VERSION)\n";
+
+# Daemonize the script
+if ($options->{'daemon'}) {
+
+  print STDOUT "Run in background mode... ";
+
+  my $pid = daemonize();
+
+  unless($pid) {
+    print STDOUT "failed\n";
+    exit(255);
+  }
+
+  print STDOUT "done (pid:$$)\n";
+
+}
+
+while (1) {
+
+  # Check latest security fix from all Slackware repository ChangeLogs
+  check_security_fix();
+
+  sleep(3600);
+
+}
+
+print STDOUT "Exit from SlackMan Notifier (pid:$$)\n";
+exit(0);
+
+
+# SlackMan DBus interface
+#
+sub SlackMan {
+  return Net::DBus->system
+  ->get_service('org.lotarproject.slackman')
+  ->get_object('/org/lotarproject/slackman');
+}
+
+
+# Notification DBus interface
+#
+sub Notifications {
+  return Net::DBus->session
+  ->get_service('org.freedesktop.Notifications')
+  ->get_object('/org/freedesktop/Notifications');
+}
+
+
+# Notify via freedesktop.org Notification service
+#
+sub notify {
+
+  my (%params) = @_;
+
+  my $app_name = 'SlackMan';
+  my $id       = time();
+  my $app_icon = $params{'icon'}    || '';
+  my $summary  = $params{'summary'} || '';
+  my $body     = $params{'body'}    || '';
+  my $timeout  = $params{'timeout'} || 0;
+  my %actions  = $params{'actions'} || ();
+
+  print STDOUT sprintf("Send notification via org.freedesktop.Notify (id:%s)\n", $id);
+
+  my $reactor = Net::DBus::Reactor->main;
+
+  if (keys %actions) {
+
+    Notifications->connect_to_signal("ActionInvoked" => sub {
+      my ($to_id, $action_key) = @_;
+      print STDOUT "org.freedesktop.Notify->ActionInvoked: action invoked $to_id $action_key\n";
+      $reactor->shutdown();
+    });
+
+  }
+
+  Notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
+
+  if (keys %actions) {
+    $reactor->add_timeout(30*1_000, sub {
+      print STDOUT "timeout";
+      $reactor->shutdown();
+    }, 1);
+
+    $reactor->run();
+
+  }
+
+}
+
+
+# Create a simple UNIX daemon
+#
+sub daemonize {
+
+  chdir("/")                  || die "can't chdir to /: $!";
+  open(STDIN,  "< /dev/null") || die "can't read /dev/null: $!";
+  #open(STDOUT, "> /dev/null") || die "can't write to /dev/null: $!";
+  defined(my $pid = fork())   || die "can't fork: $!";
+  exit if $pid;               # non-zero now means I am the parent
+  (setsid() != -1)            || die "Can't start a new session: $!";
+  open(STDERR, ">&STDOUT")    || die "can't dup stdout: $!";
+
+  return $$; # Return effective PID
+
+}
+
+
+# Check latest security fix from all Slackware repository ChangeLogs and notify via DBus
+#
+sub check_security_fix {
+
+  my $security_fix  = SlackMan->SecurityFix();
+  my $max_timestamp = 0; # Max ChangeLog entry timestamp
+
+  return unless ( keys %{$security_fix} );
+
+  my $security_fix_hash = {};
+  my $security_fix_body = '';
+
+  foreach my $repo (keys %{$security_fix}) {
+    foreach ( @{$security_fix->{$repo}} ) {
+      push(@{ $security_fix_hash->{$repo}->{ $_->{'timestamp'} } }, $_);
+      $max_timestamp = timestamp_to_time($_->{'timestamp'}) if ($max_timestamp < timestamp_to_time($_->{'timestamp'}));
+    }
+  }
+
+  my %current_config = read_config($user_config_file);
+  my $current_last_update = $current_config{'last_update'}->{'security_fix'} || 0;
+
+  return unless ($max_timestamp > $current_last_update);
+
+  # Set and write new config with new max timestamp
+  $current_config{'last_update'}->{'security_fix'} = $max_timestamp;
+
+  file_write($user_config_file, stringify_config(%current_config));
+
+  foreach my $repo (keys %{$security_fix_hash}) {
+    foreach my $timestamp (keys %{$security_fix_hash->{$repo}}) {
+
+      $security_fix_body .= sprintf("<b>%s repository</b>\n<i>%s</i>\n", $repo, $timestamp);
+
+      foreach my $changelog (@{$security_fix_hash->{$repo}->{$timestamp}}) {
+
+        my $package = $changelog->{'package'};
+
+        my $description = $changelog->{'description'};
+           $description = "\n<i>$description</i>" if ($description);
+
+        $security_fix_body .= sprintf("\n%s\n ● %s\n%s\n",
+          "-"x32, $package, $description);
+
+      }
+
+      $security_fix_body .= sprintf("\n%s\n", "-"x32);
+
+    }
+  }
+
+  notify(
+    'icon'    => 'package-new',
+    'summary' => 'Slackware Security',
+    'body'    => $security_fix_body,
+  );
+
+}
+
+
+# Create an empty config file
+#
+sub create_user_config {
+
+  my %user_config = (
+    'last_update' => {
+      'changelog'    => 0,
+      'security_fix' => 0,
+    }
+  );
+
+  file_write($user_config_file, stringify_config(%user_config));
+
+}
+
+
+# Show version
+#
+sub show_version {
+
+  print "SlackMan Notifier ($VERSION)\n\n";
+  exit(0);
+
+}
+
+
+# Show help
+#
+sub show_help {
+
+  print   "SlackMan Notifier ($VERSION)\n\n"
+        . "Notify Slackware Security Fix, ChangeLog and package upgrade via DBus.\n\n"
+        . "  --daemon, -d     Run slackman-notifier in background\n"
+        . "  --help, -h       Show this help\n"
+        . "  --version, -v    Display slackman-notifier version\n\n";
+
+  exit(0);
+
+}
+

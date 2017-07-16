@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+# SlackMan - Package Manager DBus service interface
+
+use Net::DBus;
+use Net::DBus::Reactor;
+
+use Slackware::SlackMan::DBus;
+
+my $slackman_service = Net::DBus->system->export_service('org.lotarproject.slackman');
+my $slackman_object  = Slackware::SlackMan::DBus->new($slackman_service);
+
+Net::DBus::Reactor->main->run();
+
+exit(0);
