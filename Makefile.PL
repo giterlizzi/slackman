@@ -23,7 +23,6 @@ WriteMakefile(
         'DBD::SQLite'    => '0',
         'Sort::Versions' => '0',
         'Net::DBus'      => '0',
-        'JSON::PP'       => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Slackware-Slackman-*' },
