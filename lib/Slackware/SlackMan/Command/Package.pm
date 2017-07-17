@@ -75,28 +75,31 @@ sub call_package_info {
   foreach (keys %$installed_rows) {
 
     my $row = $installed_rows->{$_};
+    my $description = $row->{description};
+       $description =~ s/\n/\n    /g;
 
     push @packages_to_installed, $row->{name};
 
     my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
 
-    print sprintf("%-10s : %s\n",     'Name',    $row->{name});
-    print sprintf("%-10s : %s\n",     'Arch',    $row->{arch});
-    print sprintf("%-10s : %s\n",     'Tag',     $row->{tag}) if ($row->{tag});
-    print sprintf("%-10s : %s\n",     'Version', $row->{version});
-    print sprintf("%-10s : %s\n",     'Size',    filesize_h(($row->{size_uncompressed} * 1024), 1));
-    print sprintf("%-10s : %s\n",     'Require', $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
-    print sprintf("%-10s : %s\n",     'Summary', $row->{description});
+    print sprintf("%-15s : %s\n", 'Name',          $row->{name});
+    print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
+    print sprintf("%-15s : %s\n", 'Tag',           $row->{tag}) if ($row->{tag});
+    print sprintf("%-15s : %s\n", 'Version',       $row->{version});
+    print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
+    print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
+    print sprintf("%-15s : %s\n", 'Require',       $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
+    print sprintf("%-15s : %s\n", 'Summary',       $description);
 
     if ($slackman_opts->{'show-files'}) {
 
-      print sprintf("\n%-10s :\n", 'File lists');
+      print sprintf("\n%-15s :\n\n", 'File lists');
 
       my $package_meta = package_metadata(file_read("/var/log/packages/".$row->{'package'}));
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
-        print "\t/$_\n";
+        print "    /$_\n";
       }
 
     }
@@ -105,7 +108,7 @@ sub call_package_info {
 
   }
 
-  print "No packages installed found\n" unless (scalar keys %$installed_rows);
+  print "No installed packages found\n" unless (scalar keys %$installed_rows);
 
   my $available_query = sprintf('SELECT * FROM packages WHERE name LIKE ? AND name NOT IN (%s) AND repository NOT IN (%s)',
     '"' . join('","', @packages_to_installed) . '"',
@@ -120,26 +123,29 @@ sub call_package_info {
   foreach (keys %$available_rows) {
 
     my $row = $available_rows->{$_};
+    my $description = $row->{description};
+       $description =~ s/\n/\n    /g;
 
-    print sprintf("%-10s : %s\n",     'Name',     $row->{name});
-    print sprintf("%-10s : %s\n",     'Arch',     $row->{arch});
-    print sprintf("%-10s : %s\n",     'Tag',      $row->{tag})      if ($row->{tag});
-    print sprintf("%-10s : %s\n",     'Category', $row->{category}) if ($row->{category});
-    print sprintf("%-10s : %s\n",     'Version',  $row->{version});
-    print sprintf("%-10s : %s\n",     'Size',     filesize_h(($row->{size_uncompressed} * 1024), 1));
-    print sprintf("%-10s : %s\n",     'Require',  $row->{required}) if ($row->{required});
-    print sprintf("%-10s : %s\n",     'Repo',     $row->{repository});
-    print sprintf("%-10s : %s\n",     'Summary',  $row->{description});
+    print sprintf("%-15s : %s\n", 'Name',          $row->{name});
+    print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
+    print sprintf("%-15s : %s\n", 'Tag',           $row->{tag})      if ($row->{tag});
+    print sprintf("%-15s : %s\n", 'Category',      $row->{category}) if ($row->{category});
+    print sprintf("%-15s : %s\n", 'Version',       $row->{version});
+    print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
+    print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
+    print sprintf("%-15s : %s\n", 'Require',       $row->{required}) if ($row->{required});
+    print sprintf("%-15s : %s\n", 'Repo',          $row->{repository});
+    print sprintf("%-15s : %s\n", 'Summary',       $description);
 
     if ($slackman_opts->{'show-files'}) {
 
-      print sprintf("\n%-10s :\n", 'File lists');
+      print sprintf("\n%-15s :\n\n", 'File lists');
 
       my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY directory, file');
       $sth->execute($row->{'package'});
 
       while(my $row = $sth->fetchrow_hashref()) {
-        print sprintf("\t%s%s\n", $row->{'directory'}, ($row->{'file'} || ''));
+        print sprintf("    %s%s\n", $row->{'directory'}, ($row->{'file'} || ''));
       }
 
     }
@@ -613,7 +619,7 @@ sub call_package_upgrade {
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
 
-  STDOUT->printflush('Search packages update... ');
+  STDOUT->printflush('Search upgraded packages... ');
 
   update_repo_data();
 
@@ -623,7 +629,7 @@ sub call_package_upgrade {
 
   if (scalar keys %$packages_to_update) {
 
-    print "Package(s) to update\n\n";
+    print "Package(s) to upgrade\n\n";
     print sprintf("%s\n", "-"x132);
 
     print sprintf("%-30s %-8s %-40s %-40s %s\n",
@@ -686,7 +692,7 @@ sub call_package_upgrade {
   }
 
   print "\n\n";
-  print "Update summary\n";
+  print "Upgrade summary\n";
   print sprintf("%s\n", "-"x40);
   print sprintf("%-20s %s package(s)\n", 'Install', scalar keys %$packages_to_install) if (scalar keys %$packages_to_install);
   print sprintf("%-20s %s package(s)\n", 'Update',  scalar keys %$packages_to_update);
@@ -700,7 +706,7 @@ sub call_package_upgrade {
   if (@packages_to_downloads) {
 
     unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-      exit(0) unless(confirm("Perform update of selected packages? [Y/N]"));
+      exit(0) unless(confirm("Perform upgrade of selected packages? [Y/N]"));
     }
 
     print "\n\n";
@@ -716,7 +722,7 @@ sub call_package_upgrade {
     if (@packages_for_pkgtool) {
 
       print "\n\n";
-      print "Update package(s)\n";
+      print "Upgrade package(s)\n";
       print sprintf("%s\n\n", "-"x132);
 
       foreach my $package_path (@packages_for_pkgtool) {

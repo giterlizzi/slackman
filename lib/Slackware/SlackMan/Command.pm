@@ -78,14 +78,10 @@ if ($slackman_opts->{'color'} eq 'auto') {
 }
 
 # Disable color output if "--color=never"
-if ($slackman_opts->{'color'} eq 'never') {
-  $ENV{ANSI_COLORS_DISABLED} = 1;
-}
+$ENV{ANSI_COLORS_DISABLED} = 1 if ($slackman_opts->{'color'} eq 'never');
 
 # Disable color if slackman STDOUT are in "pipe" (eg. slackman changelog --details | more)
-unless (-t STDOUT) {
-  $ENV{ANSI_COLORS_DISABLED} = 1;
-}
+$ENV{ANSI_COLORS_DISABLED} = 1 unless (-t STDOUT);
 
 my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
