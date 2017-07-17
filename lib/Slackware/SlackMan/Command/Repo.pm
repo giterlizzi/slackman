@@ -80,14 +80,42 @@ sub call_repo_disable {
 
   my ($repo_id) = @_;
 
+  if ($repo_id =~ /\*/) {
+
+    foreach (get_enabled_repositories()) {
+      if ($_ =~ /$repo_id/) {
+        disable_repository($_);
+        print sprintf("Repository '%s' disabled\n", $_);
+      }
+    }
+
+    exit(0);
+
+  }
+
   disable_repository($repo_id);
-  print qq/Repository "$repo_id" disabled\n/;
+  print "Repository '$repo_id' disabled\n";
 
 }
 
 sub call_repo_enable {
 
   my ($repo_id) = @_;
+
+  if ($repo_id =~ /\*/) {
+
+    foreach (get_disabled_repositories()) {
+      if ($_ =~ /$repo_id/) {
+        enable_repository($_);
+        print sprintf("Repository '%s' enabled\n", $_);
+      }
+    }
+
+    print sprintf("\n%s: Remember to launch 'slackman update' command!\n", colored('NOTE', 'bold'));
+
+    exit(0);
+
+  }
 
   enable_repository($repo_id);
   print qq/Repository "$repo_id" enabled\n\n/;
