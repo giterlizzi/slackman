@@ -19,6 +19,7 @@ BEGIN {
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Package qw(:all);
+use Slackware::SlackMan::Utils   qw(:all);
 
 use Net::DBus::Exporter 'org.lotarproject.slackman';
 use base qw(Net::DBus::Object);
@@ -46,6 +47,8 @@ sub ChangeLog {
 
   my $self = shift;
 
+  logger->debug('[D-BUS] Call org.lotarproject.slackman.ChangeLog method');
+
   my $changelogs = package_changelogs();
   my $result     = {};
 
@@ -60,6 +63,8 @@ sub ChangeLog {
 sub SecurityFix {
 
   my $self = shift;
+
+  logger->debug('[D-BUS] Call org.lotarproject.slackman.SecurityFix method');
 
   $slackman_opts->{'repo'}         = 'slackware';
   $slackman_opts->{'after'}        = '-7 days';
@@ -82,8 +87,9 @@ sub CheckUpgrade {
 
   my $self = shift;
 
+  logger->debug('[D-BUS] Call org.lotarproject.slackman.CheckUpgrade method');
+
   my ($update_pkgs, $install_pkgs) = package_check_updates();
-  print Dumper($update_pkgs);
   return $update_pkgs;
 
 }
