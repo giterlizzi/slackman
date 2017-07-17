@@ -18,7 +18,7 @@ BEGIN {
     package_info
     package_version_compare
     package_install
-    package_update
+    package_upgrade
     package_remove
     package_metadata
     package_is_installed
@@ -295,7 +295,7 @@ sub package_install {
 }
 
 
-sub package_update {
+sub package_upgrade {
 
   my $package = shift;
 
@@ -897,7 +897,7 @@ No subs are exported by default.
 
 =head2 package_search_files
 
-=head2 package_update
+=head2 package_upgrade
 
 =head2 package_version_compare
 

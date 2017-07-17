@@ -243,7 +243,7 @@ sub call_package_reinstall {
     print sprintf("%s\n", "-"x132);
 
     foreach (@packages_for_pkgtool) {
-      package_update($_);
+      package_upgrade($_);
     }
 
   }
@@ -472,6 +472,8 @@ sub call_package_search {
     exit(255);
   }
 
+  $search = parse_module_name($search);
+
   _check_last_metadata_update();
 
   $search =~ s/\*/%/g;
@@ -490,6 +492,7 @@ sub call_package_search {
                  FROM packages p1
                 WHERE (    p1.name    LIKE ?
                         OR p1.summary LIKE ? )
+                      AND p1.repository IN (%s)
                 UNION
                SELECT h2.name,
                       h2.version,
@@ -506,6 +509,9 @@ sub call_package_search {
                                    WHERE p2.name    = h2.name
                                      AND p2.version = h2.version
                                      AND p2.tag     = h2.tag)';
+
+  # Query only enabled repository
+  $query = sprintf($query, '"' . join('","', get_enabled_repositories()) . '"');
 
   my $sth = $dbh->prepare($query);
   $sth->execute($search, $search, $search, $search);
@@ -564,8 +570,8 @@ sub call_package_history {
   }
 
   print sprintf("History of @{[ BOLD ]}%s@{[ RESET ]} package:\n\n", $package);
-  print sprintf("%-10s %-15s %-25s %-15s %-25s\n", "Status", "Version", "Timestamp", "Previous", "Upgraded");
-  print sprintf("%s\n", "-"x100);
+  print sprintf("%-10s %-20s %-25s %-20s %-25s\n", "Status", "Version", "Timestamp", "Previous", "Upgraded");
+  print sprintf("%s\n", "-"x132);
 
   my $prev_version   = '';
   my $prev_status    = '';
@@ -587,7 +593,7 @@ sub call_package_history {
     $prev_version   = ''               if ($status_history eq 'removed');
     $prev_version   = ''               if ($status_history eq 'installed');
 
-    print sprintf("%-10s %-15s %-25s %-15s %-25s\n",
+    print sprintf("%-10s %-20s %-25s %-20s %-25s\n",
       $status_history,
       $version,  $timestamp,
       $prev_version, $upgraded);
@@ -727,7 +733,7 @@ sub call_package_upgrade {
 
       foreach my $package_path (@packages_for_pkgtool) {
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
-        package_update($package_path);
+        package_upgrade($package_path);
       }
 
     }
