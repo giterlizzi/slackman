@@ -1,7 +1,7 @@
 # SlackMan Usage
 
     Usage:
-      slackman [options] [commands] [...]
+          slackman [options] [commands] [...]
 
     Commands:
           install PACKAGE [...]        Install one or more packages
@@ -11,7 +11,7 @@
           history PACKAGE              Display package history information
           info PACKAGE                 Display information about installed or available packages
 
-          changelog [PACKAGE]          Display repository or package ChangeLog
+          changelog [PACKAGE]          Display general or package ChangeLog
           search PATTERN               Search packages using PATTERN
           file-search PATTERN          Search files into packages using PATTERN
           new-config                   Find new configuration files
@@ -28,7 +28,7 @@
           repo help                    Display repo command help usage
 
       List Commands:
-          list obsolete                List obsolete packages
+          list obsoletes               List obsolete packages
           list installed               List installed packages
           list packages                List available packages
           list repo                    List available repositories
@@ -79,6 +79,8 @@
 
       Commands Options:
           --repo                       Use specified repo during update or install packages
+          --details                    Display ChangeLog details
+          --security-fix               Display only ChangeLog Security Fix
           -f, --force                  Force action
           --download-only              Download only
           --new-packages               Check for new packages

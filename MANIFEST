@@ -1,5 +1,4 @@
 .gitignore
-Changes
 lib/Slackware/SlackMan.pm
 lib/Slackware/SlackMan/Command.pm
 lib/Slackware/SlackMan/Command/Clean.pm
@@ -24,6 +23,7 @@ MANIFEST			This list of files
 README.md
 INSTALL.md
 LICENSE.md
+RELEASE.md
 t/00-fake-root.t
 t/00-load.t
 t/01-package-info.t

@@ -27,6 +27,10 @@ Enable a repository:
 
     # slackman repo enable slackware:multilib
 
+Display the ChangeLog:
+
+    # slackman changelog --repo slackware:packages
+
 Bash Completion:
 
     # slackman repo info sla<TAB><TAB>

@@ -2,6 +2,8 @@
 
 ## Supported Repository
 
+SlackMan support different SlackWare repository including:
+
  - Slackware stable and **-current**
  - SlackOnly
  - Slackers (Conraid)
@@ -13,6 +15,7 @@
  - Salix
  - Microlinux
  - ... and more
+
 
 ## Sample configuration
 

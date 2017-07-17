@@ -14,6 +14,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - Bash Completion support
  - More configurable
  - Flexible configuration via variables
+ - DBus interface
+ - Userspace DBus client to notify update & changelogs (via org.freedesktop.Notification)
  - ... and more
 
 ## Read more
