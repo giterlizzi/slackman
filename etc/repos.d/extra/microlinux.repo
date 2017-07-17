@@ -1,4 +1,4 @@
-# Microlinux Enterprise Desktop
+http://slackware.uk/microlinux/# Microlinux Enterprise Desktop
 
 # MLED is a full-blown production desktop based on Slackware Linux and the Xfce
 # desktop environment, with many enhancements.
@@ -17,14 +17,14 @@
 [desktop]
 name    = Microlinux Enterprise - Desktop
 enabled = false
-mirror  = http://www.microlinux.fr/microlinux/desktop-$release.real-${arch.bit}bit/
+mirror  = http://slackware.uk/microlinux/desktop-$release.real-${arch.bit}bit/
 
 [extras]
 name    = Microlinux Enterprise - Extras
 enabled = false
-mirror  = http://www.microlinux.fr/microlinux/extras-$release.real-${arch.bit}bit/
+mirror  = http://slackware.uk/microlinux/extras-$release.real-${arch.bit}bit/
 
 [server]
 name    = Microlinux Enterprise - Server
 enabled = false
-mirror  = http://www.microlinux.fr/microlinux/server-$release.real-${arch.bit}bit/
+mirror  = http://slackware.uk/microlinux/server-$release.real-${arch.bit}bit/
