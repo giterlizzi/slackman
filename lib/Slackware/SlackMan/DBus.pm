@@ -18,6 +18,7 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
+use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
@@ -49,6 +50,9 @@ sub ChangeLog {
 
   logger->debug('[D-BUS] Call org.lotarproject.slackman.ChangeLog method');
 
+  # Re-Init DB Connection
+  our $dbh = Slackware::SlackMan::DB::dbh();
+
   my $changelogs = package_changelogs();
   my $result     = {};
 
@@ -71,6 +75,9 @@ sub SecurityFix {
   $slackman_opts->{'limits'}       = 1000;
   $slackman_opts->{'security-fix'} = 1;
 
+  # Re-Init DB Connection
+  our $dbh = Slackware::SlackMan::DB::dbh();
+
   my $changelogs = package_changelogs();
 
   my $security_fix = {};
@@ -88,6 +95,9 @@ sub CheckUpgrade {
   my $self = shift;
 
   logger->debug('[D-BUS] Call org.lotarproject.slackman.CheckUpgrade method');
+
+  # Re-Init DB Connection
+  our $dbh = Slackware::SlackMan::DB::dbh();
 
   my ($update_pkgs, $install_pkgs) = package_check_updates();
   return $update_pkgs;
