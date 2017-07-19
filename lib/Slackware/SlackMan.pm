@@ -13,7 +13,7 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION   = 'v1.1.0_08';
+  $VERSION   = 'v1.1.0_09';
   @EXPORT_OK = ();
   @EXPORT    = qw(
     $slackman_opts

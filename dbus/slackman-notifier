@@ -15,7 +15,7 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use Getopt::Long qw(:config);
 
-my $VERSION = "v1.1.0_08";
+my $VERSION = "v1.1.0_09";
 
 my $options = {};
 
@@ -68,8 +68,8 @@ exit(0);
 #
 sub SlackMan {
   return Net::DBus->system
-  ->get_service('org.lotarproject.slackman')
-  ->get_object('/org/lotarproject/slackman');
+    ->get_service('org.lotarproject.slackman')
+    ->get_object('/org/lotarproject/slackman');
 }
 
 
@@ -77,8 +77,8 @@ sub SlackMan {
 #
 sub Notifications {
   return Net::DBus->session
-  ->get_service('org.freedesktop.Notifications')
-  ->get_object('/org/freedesktop/Notifications');
+    ->get_service('org.freedesktop.Notifications')
+    ->get_object('/org/freedesktop/Notifications');
 }
 
 
@@ -113,6 +113,7 @@ sub notify {
   Notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
 
   if (keys %actions) {
+
     $reactor->add_timeout(30*1_000, sub {
       print STDOUT "timeout";
       $reactor->shutdown();
