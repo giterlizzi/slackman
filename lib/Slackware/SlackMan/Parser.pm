@@ -24,7 +24,6 @@ BEGIN {
     parse_manifest
     parse_changelog
     parse_module_name
-    parse_timestamp_options_to_sql
   };
 
   %EXPORT_TAGS = (
@@ -585,49 +584,6 @@ sub parse_variables {
   $string =~ s/\$release/$release_conf/g;
 
   return $string;
-
-}
-
-
-sub parse_timestamp_options_to_sql {
-
-  my $option_after  = $slackman_opts->{'after'};
-  my $option_before = $slackman_opts->{'before'};
-
-  my $parsed_after  = undef;
-  my $parsed_before = undef;
-
-  my @timestamp_filter = ();
-
-  if ($option_after) {
-
-    if ($option_after && $option_after =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
-      $parsed_after  = datetime_calc($option_after)->ymd;
-    }
-
-    if (! $parsed_after && $option_after =~ /^\d{4}-\d{2}-\d{2}/) {
-      $parsed_after = $option_after;
-    }
-
-    push(@timestamp_filter, sprintf('(timestamp > "%s")', $parsed_after))  if ($parsed_after);
-
-  }
-
-  if ($option_before) {
-
-    if ($option_before && $option_before =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
-      $parsed_before = datetime_calc($option_before)->ymd;
-    }
-
-    if (! $parsed_before && $option_before =~ /^\d{4}-\d{2}-\d{2}/) {
-      $parsed_before = $option_before;
-    }
-
-    push(@timestamp_filter, sprintf('(timestamp < "%s")', $parsed_before)) if ($parsed_before);
-
-  }
-
-  return sprintf('( %s )', join(' AND ', @timestamp_filter)) if ($parsed_after || $parsed_before);
 
 }
 

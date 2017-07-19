@@ -85,7 +85,7 @@ sub package_changelogs {
     push(@query_filters, sprintf('name LIKE %s', $dbh->quote($package)));
   }
 
-  if (my $timestamp_options = parse_timestamp_options_to_sql()) {
+  if (my $timestamp_options = timestamp_options_to_sql()) {
     push(@query_filters, $timestamp_options);
   }
 
