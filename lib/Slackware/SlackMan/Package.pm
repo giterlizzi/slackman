@@ -694,14 +694,28 @@ sub package_download {
 
     $package_url =~ s/\/\/\.//;
 
-    logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
+    if ($package_url =~ /^file/) {
 
-    if (download_file($package_url, "$package_path.part")) {
-      rename("$package_path.part", $package_path);
-      logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
+      my $local_file = $package_url;
+         $local_file =~ s/file:\/\///;
+
+      logger->info(sprintf("Create link of %s package and .asc file", $pkg->{'package'}));
+
+      symlink($local_file, $package_path);
+      symlink("$local_file.asc", "$package_path.asc");
+
     } else {
-      logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-      push(@package_errors, 'download');
+
+      logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
+
+      if (download_file($package_url, "$package_path.part")) {
+        rename("$package_path.part", $package_path);
+        logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
+      } else {
+        logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
+        push(@package_errors, 'download');
+      }
+
     }
 
   }
