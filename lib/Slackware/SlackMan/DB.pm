@@ -26,6 +26,8 @@ BEGIN {
     db_meta_set
     db_meta_delete
     db_reindex
+    db_drop
+    db_check
     $dbh
   };
 
@@ -147,42 +149,11 @@ use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
 our $dbh = dbh();
 
-my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
-
-# Init database if "user_version" pragma is not defined
-#
-unless ($slackman_schema_version) {
-  db_init();
-}
-
-# Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
-#
-if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
-
-  logger->debug(sprintf('[DB] Detected previous SlackMan schema version (actual: %s, required: %s)',
-    $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
-
-  foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Drop index "$_"/);
-    $dbh->do("DROP INDEX $_");
-  }
-
-  foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Drop table "$_"/);
-    $dbh->do("DROP TABLE $_");
-  }
-
-  logger->debug('[DB] Re-create SlackMan database');
-  db_compact();
-  db_init();
-
-}
-
 sub dbh {
 
   my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf{'directory'}->{'lib'});
 
-  my $dbh = DBI->connect($dsn,'', '', {
+  our $dbh = DBI->connect($dsn, '', '', {
     PrintError       => 1,
     RaiseError       => 1,
     AutoCommit       => 1,
@@ -193,13 +164,60 @@ sub dbh {
   $dbh->do('PRAGMA synchronous  = OFF');
   $dbh->do('PRAGMA journal_mode = MEMORY');
   $dbh->do('PRAGMA temp_store   = MEMORY');
+  $dbh->do('PRAGMA cache_size   = 800000');
 
   $dbh->sqlite_create_function('version_compare', -1, sub {
     my ($old, $new) = @_;
     return versioncmp($old, $new);
   });
 
+  logger->debug("[DB] Connected to $dsn");
+
+  db_check();
+
   return $dbh;
+
+}
+
+sub db_check {
+
+  my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
+  
+  # Init database if "user_version" pragma is not defined
+  #
+  unless ($slackman_schema_version) {
+    db_init();
+    $slackman_schema_version = SLACKMAN_SCHEMA_VERSION;
+  }
+
+  # Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
+  #
+  if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
+  
+    logger->debug(sprintf('[DB] Detected previous SlackMan schema version (actual: %s, required: %s)',
+      $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
+    
+    logger->debug('[DB] Re-create SlackMan database');
+
+    db_drop();
+    db_compact();
+    db_init();
+  
+  }
+
+}
+
+sub db_drop {
+
+  foreach (SLACKMAN_INDEXES) {
+    logger->debug(qq/[DB] Drop index "$_"/);
+    $dbh->do("DROP INDEX $_");
+  }
+
+  foreach (SLACKMAN_TABLES) {
+    logger->debug(qq/[DB] Drop table "$_"/);
+    $dbh->do("DROP TABLE $_");
+  }
 
 }
 
