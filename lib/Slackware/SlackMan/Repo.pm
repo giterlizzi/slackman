@@ -198,8 +198,7 @@ sub download_repository_metadata {
   logger->debug(sprintf('[REPO/%s] Check "%s" metadata last update', $repo_id, $metadata));
 
   my $metadata_last_modified = get_last_modified($metadata_url);
-  my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata");
-     $db_meta_last_modified  = 0 unless($db_meta_last_modified);
+  my $db_meta_last_modified  = db_meta_get("last-update.$repo_id.$metadata") || 0;
 
   # Force update
   if ($slackman_opts->{'force'}) {
@@ -226,10 +225,20 @@ sub download_repository_metadata {
 
   unless ( -e $metadata_file) {
 
-    &$callback_status(sprintf("download %s", basename($metadata_file))) if ($callback_status);
-    logger->debug(sprintf('[REPO/%s] Download %s metadata file', $repo_id, $metadata));
+    &$callback_status(sprintf("%s %s", (($metadata_url =~ /^file/) ? 'linking' : 'downloading'), basename($metadata_file))) if ($callback_status);
 
-    download_file($metadata_url, $metadata_file, "-s");
+    if ($metadata_url =~ /^file/) {
+
+      my $local_file = $metadata_url;
+         $local_file =~ s/file:\/\///;
+
+      logger->debug(sprintf('[REPO/%s] Create link of %s metadata file', $repo_id, $metadata));
+      symlink($local_file, $metadata_file);
+
+    } else {
+      logger->debug(sprintf('[REPO/%s] Download %s metadata file', $repo_id, $metadata));
+      download_file($metadata_url, $metadata_file, "-s");
+    }
 
   }
 

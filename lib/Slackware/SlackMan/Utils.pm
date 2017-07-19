@@ -45,6 +45,7 @@ BEGIN {
     md5_check
     time_to_timestamp
     timestamp_to_time
+    timestamp_options_to_sql
     trim
     uniq
     w3c_date_to_time
@@ -257,7 +258,20 @@ sub download_file {
 
 sub get_last_modified {
 
-  my $url      = shift;
+  my ($url) = @_;
+
+  if ($url =~ /^file/) {
+
+    my $local_file = $url;
+       $local_file =~ s/file:\/\///;
+
+    my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
+        $atime, $mtime, $ctime, $blksize, $blocks) = stat($local_file);
+
+    return $mtime;
+
+  }
+
   my $curl_cmd = curl_cmd("-s -I $url");
 
   logger->debug(qq/[CURL] Get "Last-Modified" date of $url/);
@@ -377,6 +391,48 @@ sub time_to_timestamp {
 
 }
 
+sub timestamp_options_to_sql {
+
+  my $option_after  = $slackman_opts->{'after'};
+  my $option_before = $slackman_opts->{'before'};
+
+  my $parsed_after  = undef;
+  my $parsed_before = undef;
+
+  my @timestamp_filter = ();
+
+  if ($option_after) {
+
+    if ($option_after && $option_after =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_after  = datetime_calc($option_after)->ymd;
+    }
+
+    if (! $parsed_after && $option_after =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_after = $option_after;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp > "%s")', $parsed_after))  if ($parsed_after);
+
+  }
+
+  if ($option_before) {
+
+    if ($option_before && $option_before =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_before = datetime_calc($option_before)->ymd;
+    }
+
+    if (! $parsed_before && $option_before =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_before = $option_before;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp < "%s")', $parsed_before)) if ($parsed_before);
+
+  }
+
+  return sprintf('( %s )', join(' AND ', @timestamp_filter)) if ($parsed_after || $parsed_before);
+
+}
+
 sub callback_status {
   STDOUT->printflush(sprintf("%s... ", shift));
 }
@@ -396,7 +452,7 @@ sub gpg_verify {
 
   my $file = shift;
 
-  logger->debug(qq/[GPG] verify file "$file" width "$file.asc"/);
+  logger->debug(qq/[GPG] verify file "$file" with "$file.asc"/);
 
   system("gpg --verify $file.asc $file 2>/dev/null");
   return ($?) ? 0 : 1;
