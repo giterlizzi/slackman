@@ -18,6 +18,7 @@ BEGIN {
   @EXPORT    = qw(
     $slackman_opts
     %slackman_conf
+    logger
   );
 
   %EXPORT_TAGS = (
@@ -26,7 +27,14 @@ BEGIN {
 
 }
 
+use Data::Dumper;
+use Carp 'confess';
+
 use Slackware::SlackMan::Config qw(:all);
+use Slackware::SlackMan::Logger;
+
+# FIX Can't locate Term/ReadLine/Perl.pm message
+$ENV{PERL_RL} = 'Stub';
 
 our %slackman_conf = load_config();
 our $slackman_opts = {};
@@ -34,8 +42,30 @@ our $slackman_opts = {};
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
 
+my $logger_conf = $slackman_conf{'logger'};
+
+my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
+    $is_require, $hints, $bitmask, $hinthash) = caller(0);
+
+my $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
+                                                'level'    => $logger_conf->{'level'},
+                                                'category' => $subroutine );
+
+$SIG{'__DIE__'} = sub {
+  $logger->error(@_);
+  confess(@_);
+};
+
+$SIG{'__WARN__'} = sub {
+  $logger->warning(@_);
+};
+
+sub logger {
+  return $logger->get_logger(caller(0));
+}
 
 1;
+
 __END__
 
 =head1 NAME

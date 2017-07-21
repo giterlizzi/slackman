@@ -20,6 +20,7 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 
@@ -32,7 +33,6 @@ use constant COMMANDS_DISPATCHER => {
   'config:help'  => \&call_config_help,
 };
 
-my %slackman_conf = load_config();
 my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_config_help {

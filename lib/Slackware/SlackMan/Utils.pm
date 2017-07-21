@@ -41,7 +41,6 @@ BEGIN {
     gpg_import_key
     gpg_verify
     ldd
-    logger
     md5_check
     time_to_timestamp
     timestamp_to_time
@@ -511,16 +510,6 @@ sub check_perl_module {
   my ($module) = @_;
   return 1 if (eval "require $module");
   return 0;
-}
-
-sub logger {
-
-  my $logger_conf = $slackman_conf{'logger'};
-
-  $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_conf->{'file'},
-                                                'level' => $logger_conf->{'level'} );
-  return $logger;
-
 }
 
 sub create_lock {

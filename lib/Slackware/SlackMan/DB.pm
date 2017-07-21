@@ -40,6 +40,7 @@ BEGIN {
 use DBI;
 use Sort::Versions;
 
+use Slackware::SlackMan;
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Config;
 
@@ -171,7 +172,7 @@ sub dbh {
     return versioncmp($old, $new);
   });
 
-  logger->debug("[DB] Connected to $dsn");
+  logger->debug("Connected to $dsn");
 
   db_check();
 
@@ -194,10 +195,10 @@ sub db_check {
   #
   if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
   
-    logger->debug(sprintf('[DB] Detected previous SlackMan schema version (actual: %s, required: %s)',
+    logger->debug(sprintf('Detected previous SlackMan schema version (actual: %s, required: %s)',
       $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
     
-    logger->debug('[DB] Re-create SlackMan database');
+    logger->debug('Re-create SlackMan database');
 
     db_drop();
     db_compact();
@@ -210,12 +211,12 @@ sub db_check {
 sub db_drop {
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Drop index "$_"/);
+    logger->debug(qq/Drop index "$_"/);
     $dbh->do("DROP INDEX $_");
   }
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Drop table "$_"/);
+    logger->debug(qq/Drop table "$_"/);
     $dbh->do("DROP TABLE $_");
   }
 
@@ -224,12 +225,12 @@ sub db_drop {
 sub db_init {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Init table "$_"/);
+    logger->debug(qq/Init table "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Init index "$_"/);
+    logger->debug(qq/Init index "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
@@ -246,7 +247,7 @@ sub db_wipe_tables {
 }
 
 sub db_wipe_table {
-  logger->debug(qq/[DB] Wipe "$_" table/);
+  logger->debug(qq/Wipe "$_" table/);
   $dbh->do("DELETE FROM $_");
 }
 
@@ -265,19 +266,19 @@ sub db_insert {
 }
 
 sub db_compact {
-  logger->debug('[DB] Compact database');
+  logger->debug('Compact database');
   $dbh->do('PRAGMA VACUUM');
 }
 
 sub db_reindex {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Reindex "$_" table/);
+    logger->debug(qq/Reindex "$_" table/);
     $dbh->do("REINDEX $_");
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Reindex "$_" index/);
+    logger->debug(qq/Reindex "$_" index/);
     $dbh->do("REINDEX $_");
   }
 
@@ -293,7 +294,7 @@ sub db_bulk_insert {
 
   my $n_rows  = scalar(@$values);
 
-  logger->debug(qq/[DB] Insert $n_rows rows into "$table" table/);
+  logger->debug(qq/Insert $n_rows rows into "$table" table/);
 
   my $query = sprintf("INSERT INTO %s(%s) VALUES(%s)",
     $table,
@@ -305,7 +306,7 @@ sub db_bulk_insert {
 
   my $sth = $dbh->prepare($query);
 
-  logger->debug(qq/[DB] $query/);
+  logger->debug(qq/$query/);
 
   foreach my $row (@$values) {
     $sth->execute(@$row);
@@ -318,7 +319,7 @@ sub db_bulk_insert {
 sub db_meta_get {
 
   my ($key) = @_;
-  logger->debug(qq/[DB] Get key "$key" value/);
+  logger->debug(qq/Get key "$key" value/);
 
   return $dbh->selectrow_array(qq/SELECT value FROM metadata WHERE key = ?/, undef, $key);
 
@@ -327,7 +328,7 @@ sub db_meta_get {
 sub db_meta_set {
 
   my ($key, $value) = @_;
-  logger->debug(qq/[DB] Set key "$key" value "$value"/);
+  logger->debug(qq/Set key "$key" value "$value"/);
 
   $dbh->do(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
   $dbh->do(qq/INSERT INTO metadata(key, value) VALUES(?, ?)/, undef, $key, $value);
@@ -340,7 +341,7 @@ sub db_meta_delete {
 
   my ($key) = @_;
 
-  logger->debug(qq/[DB] Delete key "$key"/);
+  logger->debug(qq/Delete key "$key"/);
 
   return $dbh->selectrow_array(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
 

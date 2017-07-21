@@ -48,10 +48,11 @@ sub ChangeLog {
 
   my $self = shift;
 
-  logger->debug('[D-BUS] Call org.lotarproject.slackman.ChangeLog method');
+  logger->debug('Call org.lotarproject.slackman.ChangeLog method');
 
   # Re-Init DB Connection
-  our $dbh = Slackware::SlackMan::DB::dbh();
+  our $dbh = undef;
+      $dbh = Slackware::SlackMan::DB::dbh();
 
   my $changelogs = package_changelogs();
   my $result     = {};
@@ -68,7 +69,7 @@ sub SecurityFix {
 
   my $self = shift;
 
-  logger->debug('[D-BUS] Call org.lotarproject.slackman.SecurityFix method');
+  logger->debug('Call org.lotarproject.slackman.SecurityFix method');
 
   $slackman_opts->{'repo'}         = 'slackware';
   $slackman_opts->{'after'}        = '-7 days';
@@ -76,7 +77,8 @@ sub SecurityFix {
   $slackman_opts->{'security-fix'} = 1;
 
   # Re-Init DB Connection
-  our $dbh = Slackware::SlackMan::DB::dbh();
+  our $dbh = undef;
+      $dbh = Slackware::SlackMan::DB::dbh();
 
   my $changelogs = package_changelogs();
 
@@ -94,10 +96,11 @@ sub CheckUpgrade {
 
   my $self = shift;
 
-  logger->debug('[D-BUS] Call org.lotarproject.slackman.CheckUpgrade method');
+  logger->debug('Call org.lotarproject.slackman.CheckUpgrade method');
 
   # Re-Init DB Connection
-  our $dbh = Slackware::SlackMan::DB::dbh();
+  our $dbh = undef;
+      $dbh = Slackware::SlackMan::DB::dbh();
 
   my ($update_pkgs, $install_pkgs) = package_check_updates();
   return $update_pkgs;

@@ -103,18 +103,6 @@ $SIG{INT} = sub {
   exit(1);
 };
 
-# Write all "die" signal to log
-$SIG{__DIE__} = sub {
-  logger->critical(trim($_[0]));
-  die @_;
-};
-
-# Write all "warn" signal to log
-$SIG{__WARN__} = sub {
-  logger->warning(trim($_[0]));
-  warn @_;
-};
-
 sub run {
 
   show_help() unless ($command);
@@ -124,7 +112,7 @@ sub run {
   my $cmd  = join( " ", $0, @ARGV );
   my $opts = join( ', ', map { $_ . '=' . $slackman_opts->{$_} } keys %$slackman_opts);
 
-  logger->debug(sprintf('[CMD] Call "%s" command (cmd: "%s", opts: "%s", pid: %s)', $command, $cmd, $opts, $$)) if ($command);
+  logger->debug(sprintf('Call "%s" command (cmd: "%s", opts: "%s", pid: %s)', $command, $cmd, $opts, $$)) if ($command);
 
   # Check running slackman instance and block certain commands
   #

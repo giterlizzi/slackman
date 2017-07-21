@@ -53,7 +53,6 @@ update Slackware packages from a standard Slackware repository (official and 3th
   list obsoletes               List obsolete packages
   list installed               List installed packages
   list packages                List available packages
-  list repo                    List available repositories
   list orphan                  List orphan packages installed from unknown repository
   list variables               List variables for ".repo" configurations
   list help                    Display list command help usage
