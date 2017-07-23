@@ -42,6 +42,7 @@ use Getopt::Long qw(:config);
 GetOptions( $slackman_opts,
   'after=s',
   'before=s',
+  'category=s',
   'config=s',
   'color=s',
   'details',

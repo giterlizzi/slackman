@@ -320,6 +320,7 @@ sub call_package_install {
 
   if (   ! @install_packages
       && ! $slackman_opts->{'repo'}
+      && ! $slackman_opts->{'category'}
       && ! $slackman_opts->{'new-packages'}) {
 
     print "Usage: slackman install PACKAGE\n";

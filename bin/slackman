@@ -106,7 +106,10 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 =head3 COMMANDS OPTIONS
 
-  --repo                       Use specified repo during update or install packages
+  --after=DATE                 Filter changelog after date
+  --before=DATE                Filter changelog before date
+  --repo=REPOSITORY            Use specified repo during update or install packages
+  --category=CATEGORY          Use specified category during update or install packages
   --details                    Display ChangeLog details
   --security-fix               Display only ChangeLog Security Fix
   -f, --force                  Force action
@@ -114,7 +117,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --new-packages               Check for new packages
   --obsolete-packages          Check for obsolete packages
   --exclude-installed          Exclude installed packages from list
-  -x, --exclude PACKAGE        Exclude package
+  -x, --exclude=PACKAGE        Exclude package
   --show-files                 Show file lists
   --no-priority                Disable repository priority check
   --no-excludes                Disable exclude repo configuration

@@ -468,6 +468,7 @@ sub package_check_install {
     push(@query_filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
   }
 
+  push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
   push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
 
   my $query_packages = qq/SELECT *
@@ -606,7 +607,13 @@ sub package_check_updates {
     push(@query_filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
   }
 
+  # Skip excluded packages
   push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
+
+  # Upgrade only packages in category
+  push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
+
+  # Exclude disabled repository
   push(@query_filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
   @update_packages = map { parse_module_name($_) } @update_packages if (@update_packages);
