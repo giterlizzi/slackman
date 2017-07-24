@@ -294,8 +294,10 @@ sub parse_packages {
 
     next unless ($data->{'name'});
 
-    my $package_grep = quotemeta(sprintf('%s/%s', $data->{'location'}, $data->{'package'}));
-    my $checksum     = ( grep { $_ =~ /$package_grep$/} @checksums )[0] || '';
+    my $package_grep = sprintf('(%s|%s)', quotemeta(sprintf('%s/%s', $data->{'location'}, $data->{'package'})),
+                                          $data->{'package'});
+
+    my $checksum     = ( grep { $_ =~ /$package_grep/} @checksums )[0] || '';
     my ($md5, $file) = split(/\s/, $checksum);
 
     my @row = (
