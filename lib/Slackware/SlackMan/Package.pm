@@ -210,16 +210,15 @@ sub package_metadata {
 
   return undef unless($package_basename);
 
-  # SlackBuilds category
-  {
-    $location =~ /(academic|accessibility|audio|business|desktop|development|games|gis|graphics|ham|haskell|libraries|misc|multimedia|network|office|perl|python|ruby|system)/;
-
+  # SlackBuilds + extra Slackware category
+  if ($location =~ /(\/academic|\/accessibility|\/audio|\/business|\/desktop|\/development|\/games|\/gis|\/graphics|\/ham|\/haskell|\/libraries\/|\/misc|\/multimedia|\/network|\/office|\/perl|\/python|\/ruby|\/system|\/extra)/) {
     $package_category = $1;
+    $package_category =~ s/\/// if ($package_category);
+
   }
 
   # Slackware standard series
-  {
-    $location =~ /(\/a|\/ap|\/d|\/e|\/f|\/k|\/kdei|\/kde|\/l|\/n|\/t|\/tcl|\/x|\/xap|\/xfce|\/y)$/;
+  if ($location =~ /(\/a|\/ap|\/d|\/e|\/f|\/k|\/kdei|\/kde|\/l|\/n|\/t|\/tcl|\/x|\/xap|\/xfce|\/y|\/patches|\/pasture)$/) {
     $package_category = $1;
     $package_category =~ s/\/// if ($package_category);
   }
@@ -690,9 +689,11 @@ sub package_download {
 
   my ($pkg) = @_;
 
+  my $repo = get_repository($pkg->{'repository'});
+
   my $package_url    = sprintf('%s/%s/%s', $pkg->{'mirror'}, $pkg->{'location'}, $pkg->{'package'});
-  my $save_path      = sprintf('%s/%s/%s', $slackman_conf{'directory'}->{'cache'}, $pkg->{'repository'}, $pkg->{'location'});
-  my $package_path   = sprintf('%s/%s', $save_path, $pkg->{'package'});
+  my $save_path      = sprintf('%s/%s',    $repo->{'cache_directory'}, $pkg->{'location'});
+  my $package_path   = sprintf('%s/%s',    $save_path, $pkg->{'package'});
   my @package_errors = ();
 
   make_path($save_path) unless (-d $save_path);
