@@ -109,7 +109,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --after=DATE                 Filter changelog after date
   --before=DATE                Filter changelog before date
   --repo=REPOSITORY            Use specified repo during update or install packages
-  --category=CATEGORY          Use specified category during update or install packages
+  --category=CATEGORY          Use a category
   --details                    Display ChangeLog details
   --security-fix               Display only ChangeLog Security Fix
   -f, --force                  Force action
