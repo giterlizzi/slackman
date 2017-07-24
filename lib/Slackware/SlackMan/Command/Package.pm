@@ -171,6 +171,14 @@ sub call_package_reinstall {
   my @packages_for_pkgtool  = ();
   my $packages_errors       = {};
 
+  if ($slackman_opts->{'category'}) {
+
+    my $packages_ref = $dbh->selectall_hashref('SELECT name FROM packages WHERE category = ?', 'name', undef, $slackman_opts->{'category'});
+
+    @packages = sort keys %$packages_ref;
+
+  }
+
   unless (@packages) {
     print "Usage: slackman reinstall PACKAGE [...]\n";
     exit(255);
@@ -179,9 +187,9 @@ sub call_package_reinstall {
   _check_last_metadata_update();
 
   print "\nReinstall package(s)\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-20s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
-  print sprintf("%s\n", "-"x132);
+  print sprintf("%s\n", "-"x80);
+  print sprintf("%-25s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
+  print sprintf("%s\n", "-"x80);
 
   foreach (@packages) {
 
@@ -189,9 +197,9 @@ sub call_package_reinstall {
 
     if ($pkg) {
       push(@is_installed, $pkg);
-      print sprintf("%-20s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{tag}, $pkg->{timestamp});
+      print sprintf("%-25s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{tag}, $pkg->{timestamp});
     } else {
-      print sprintf("%-20s not installed\n", $_);
+      print sprintf("%-25s not installed\n", $_);
     }
 
   }
@@ -268,24 +276,32 @@ sub call_package_remove {
 
   } else {
 
+    if ($slackman_opts->{'category'}) {
+
+      my $packages_ref = $dbh->selectall_hashref('SELECT name FROM packages WHERE category = ?', 'name', undef, $slackman_opts->{'category'});
+
+      @packages = sort keys %$packages_ref;
+
+    }
+
     print "Remove package(s)\n\n";
-    print sprintf("%s\n", "-"x132);
-    print sprintf("%-20s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
-    print sprintf("%s\n", "-"x132);
+    print sprintf("%s\n", "-"x80);
+    print sprintf("%-25s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
+    print sprintf("%s\n", "-"x80);
 
     foreach (@packages) {
 
       if ($_ =~ /^aaa\_(base|elflibs|terminfo)/) {
-        print sprintf("%-20s Never remove this package !!!\n", colored(sprintf('%-20s', $_), 'red bold'));
+        print sprintf("%-25s Never remove this package !!!\n", colored(sprintf('%-20s', $_), 'red bold'));
       } else {
 
         my $pkg = package_is_installed($_);
 
         if ($pkg) {
-          print sprintf("%-20s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'});
+          print sprintf("%-25s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'});
           push(@is_installed, $_);
         } else {
-          print sprintf("%-50s   not installed\n", colored(sprintf('%-50s', $_), 'red bold'));
+          print sprintf("%-55s   %s\n", $_, colored('not installed', 'red bold'));
         }
 
       }
