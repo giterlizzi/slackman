@@ -20,6 +20,7 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
 use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
