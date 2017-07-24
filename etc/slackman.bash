@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --download-only --summary --no-deps"
+  local slackman_options="--repo --exclude --download-only --summary --no-deps --category"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,7 +239,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --download-only --new-packages --no-deps"
+  local slackman_options="--repo --exclude --download-only --new-packages --no-deps --category"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -258,7 +258,7 @@ _slackman_install() {
 
 _slackman_reinstall() {
 
-  local slackman_options="--repo --exclude --download-only"
+  local slackman_options="--repo --exclude --download-only --category"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -275,7 +275,7 @@ _slackman_reinstall() {
 
 _slackman_remove() {
 
-  local slackman_options="--obsolete-packages"
+  local slackman_options="--obsolete-packages --category"
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
