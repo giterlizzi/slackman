@@ -20,6 +20,7 @@ BEGIN {
 
 }
 
+use Slackware::SlackMan;
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
@@ -150,20 +151,21 @@ sub call_repo_info {
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-20s %s\n", "Name:",          $repo_data->{name});
-  print sprintf("%-20s %s\n", "ID:",            $repo_data->{id});
-  print sprintf("%-20s %s\n", "Configuration:", $repo_data->{config_file});
-  print sprintf("%-20s %s\n", "Mirror:",        $repo_data->{mirror});
-  print sprintf("%-20s %s\n", "Status:",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-20s %s\n", "Last Update:",   ($last_update || ''));
-  print sprintf("%-20s %s\n", "Priority:",      $repo_data->{priority});
-  print sprintf("%-20s %s\n", "Packages:",      $package_nums);
+  print sprintf("%-15s : %s\n",    "Name",          $repo_data->{name});
+  print sprintf("%-15s : %s\n",    "ID",            $repo_data->{id});
+  print sprintf("%-15s : %s\n",    "Configuration", $repo_data->{config_file});
+  print sprintf("%-15s : %s\n",    "Mirror",        $repo_data->{mirror});
+  print sprintf("%-15s : %s\n",    "Status",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
+  print sprintf("%-15s : %s\n",    "Last Update",   ($last_update || ''));
+  print sprintf("%-15s : %s\n",    "Priority",      $repo_data->{priority});
+  print sprintf("%-15s : %s\n",    "Packages",      $package_nums);
+  print sprintf("%-15s : %s/%s\n", "Directory",     $slackman_conf{directory}->{cache}, $repo_data->{id});
 
-  print "\nRepository URLs:\n";
+  print "\nRepository URLs :\n";
 
   foreach (@urls) {
     next unless($repo_data->{$_});
-    print sprintf("%-20s %s\n", "  * $_", $repo_data->{$_});
+    print sprintf("  * %-15s : %s\n", $_, $repo_data->{$_});
   }
 
   print "\n";

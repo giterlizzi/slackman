@@ -86,8 +86,9 @@ foreach my $file (@files) {
       $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
     }
 
-    $repo_cfg->{'priority'} += 0;
-    $repo_cfg->{'id'}        = $repo_id;
+    $repo_cfg->{'priority'}       += 0;
+    $repo_cfg->{'id'}              = $repo_id;
+    $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id);
 
     $repository{"$config_name:$repo"} = $repo_cfg;
 
