@@ -50,6 +50,11 @@ sub ChangeLog {
 
   logger->debug('Call org.lotarproject.slackman.ChangeLog method');
 
+  $slackman_opts = {};
+
+  $slackman_opts->{'after'}  = '-7 days';
+  $slackman_opts->{'limits'} = 100;
+
   # Re-Init DB Connection
   our $dbh = undef;
       $dbh = Slackware::SlackMan::DB::dbh();
@@ -70,6 +75,8 @@ sub SecurityFix {
   my $self = shift;
 
   logger->debug('Call org.lotarproject.slackman.SecurityFix method');
+
+  $slackman_opts = {};
 
   $slackman_opts->{'repo'}         = 'slackware';
   $slackman_opts->{'after'}        = '-7 days';
@@ -101,6 +108,8 @@ sub CheckUpgrade {
   # Re-Init DB Connection
   our $dbh = undef;
       $dbh = Slackware::SlackMan::DB::dbh();
+
+  $slackman_opts = {};
 
   my ($update_pkgs, $install_pkgs) = package_check_updates();
   return $update_pkgs;
