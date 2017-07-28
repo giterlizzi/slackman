@@ -27,13 +27,12 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use Carp 'confess';
 
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
 
-# FIX Can't locate Term/ReadLine/Perl.pm message
+# FIX "Can't locate Term/ReadLine/Perl.pm [...]" message
 $ENV{PERL_RL} = 'Stub';
 
 our %slackman_conf = load_config();
@@ -47,15 +46,17 @@ my $logger_conf = $slackman_conf{'logger'};
 my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
     $is_require, $hints, $bitmask, $hinthash) = caller(0);
 
-my $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
-                                                'level'    => $logger_conf->{'level'},
-                                                'category' => $subroutine );
+our $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
+                                                 'level'    => $logger_conf->{'level'},
+                                                 'category' => $subroutine );
 
+# "die" signal trap
 $SIG{'__DIE__'} = sub {
   $logger->error(@_);
   confess(@_);
 };
 
+# "warn" signal trap
 $SIG{'__WARN__'} = sub {
   $logger->warning(@_);
 };
