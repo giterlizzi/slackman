@@ -32,14 +32,14 @@ use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
 
 use constant COMMANDS_DISPATCHER => {
-  'help:list'      => \&call_list_help,
+  'help.list'      => \&call_list_help,
   'list'           => \&call_list_help,
-  'list:help'      => \&call_list_help,
-  'list:installed' => \&call_list_installed,
-  'list:obsoletes' => \&call_list_obsoletes,
-  'list:orphan'    => \&call_list_orphan,
-  'list:packages'  => \&call_list_packages,
-  'list:variables' => \&call_list_variables,
+  'list.help'      => \&call_list_help,
+  'list.installed' => \&call_list_installed,
+  'list.obsoletes' => \&call_list_obsoletes,
+  'list.orphan'    => \&call_list_orphan,
+  'list.packages'  => \&call_list_packages,
+  'list.variables' => \&call_list_variables,
 };
 
 

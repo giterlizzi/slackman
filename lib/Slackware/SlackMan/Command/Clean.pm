@@ -31,14 +31,14 @@ use Pod::Usage;
 
 
 use constant COMMANDS_DISPATCHER => {
-  'help:clean'      => \&call_clean_help,
+  'help.clean'      => \&call_clean_help,
   'clean'           => \&call_clean_help,
-  'clean:cache'     => \&call_clean_cache,
-  'clean:db'        => \&call_clean_db,
-  'clean:help'      => \&call_clean_help,
-  'clean:manifest'  => \&call_clean_metadata_manifest,
-  'clean:metadata'  => \&call_clean_metadata,
-  'clean:all'       => \&call_clean_all,
+  'clean.cache'     => \&call_clean_cache,
+  'clean.db'        => \&call_clean_db,
+  'clean.help'      => \&call_clean_help,
+  'clean.manifest'  => \&call_clean_metadata_manifest,
+  'clean.metadata'  => \&call_clean_metadata,
+  'clean.all'       => \&call_clean_all,
 };
 
 sub call_clean_help {

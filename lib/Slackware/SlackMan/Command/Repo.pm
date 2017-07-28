@@ -30,13 +30,13 @@ use Pod::Usage;
 
 
 use constant COMMANDS_DISPATCHER => {
-  'help:repo'    => \&call_repo_help,
+  'help.repo'    => \&call_repo_help,
   'repo'         => \&call_repo_help,
-  'repo:disable' => \&call_repo_disable,
-  'repo:enable'  => \&call_repo_enable,
-  'repo:help'    => \&call_repo_help,
-  'repo:info'    => \&call_repo_info,
-  'repo:list'    => \&call_repo_list,
+  'repo.disable' => \&call_repo_disable,
+  'repo.enable'  => \&call_repo_enable,
+  'repo.help'    => \&call_repo_help,
+  'repo.info'    => \&call_repo_info,
+  'repo.list'    => \&call_repo_list,
 };
 
 sub call_repo_help {

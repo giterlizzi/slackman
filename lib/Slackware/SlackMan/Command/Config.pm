@@ -28,9 +28,9 @@ use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
 
 use constant COMMANDS_DISPATCHER => {
-  'help:config'  => \&call_config_help,
+  'help.config'  => \&call_config_help,
   'config'       => \&call_config,
-  'config:help'  => \&call_config_help,
+  'config.help'  => \&call_config_help,
 };
 
 my $log_file = $slackman_conf{'logger'}->{'file'};

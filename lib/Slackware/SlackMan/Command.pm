@@ -109,6 +109,7 @@ sub run {
   show_help() unless ($command);
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
+  my @skip_lock     = qw(update.history update.installed log.tail);
 
   my $cmd  = join( " ", $0, @ARGV );
   my $opts = join( ', ', map { $_ . '=' . $slackman_opts->{$_} } keys %$slackman_opts);
@@ -119,7 +120,7 @@ sub run {
   #
   # NOTE: only informational commands are available
   #
-  if ($lock_check && grep(/^$command/, @lock_commands)) {
+  if ( $lock_check && grep(/^$command/, @lock_commands) && ! grep(/^$command.$sub_command/, @skip_lock) ) {
 
     my $message = sprintf("%s Another instance of slackman is running (pid: $lock_check). " .
                           "If this is not correct, you can remove /var/lock/slackman file and run slackman again.",
@@ -127,6 +128,8 @@ sub run {
 
     print wrap("", "\t", $message);
     print "\n\n";
+
+    logger->warning("Another instance of slackman is running (pid: $lock_check)");
 
     exit(255);
 
@@ -173,8 +176,8 @@ sub run {
 
   my $dispatch_key = undef;
 
-  if ($sub_command && exists($commands_dispatcher->{"$command:$sub_command"})) {
-    $dispatch_key =  "$command:$sub_command";        # Command + Sub Command
+  if ($sub_command && exists($commands_dispatcher->{"$command.$sub_command"})) {
+    $dispatch_key = "$command.$sub_command";         # Command + Sub Command
     @arguments    = @arguments[ 1 .. $#arguments ];  # Shift 1st argument (aka sub_command)
   }
 

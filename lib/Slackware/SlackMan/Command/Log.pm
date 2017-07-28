@@ -28,11 +28,11 @@ use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
 
 use constant COMMANDS_DISPATCHER => {
-  'help:log'  => \&call_log_help,
+  'help.log'  => \&call_log_help,
   'log'       => \&call_log_help,
-  'log:help'  => \&call_log_help,
-  'log:clean' => \&call_log_clean,
-  'log:tail'  => \&call_log_tail,
+  'log.help'  => \&call_log_help,
+  'log.clean' => \&call_log_clean,
+  'log.tail'  => \&call_log_tail,
 };
 
 
