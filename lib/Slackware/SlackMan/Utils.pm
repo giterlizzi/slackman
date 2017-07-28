@@ -25,6 +25,7 @@ BEGIN {
     create_lock
     curl_cmd
     datetime_calc
+    datetime_h
     delete_lock
     directory_files
     download_file
@@ -123,6 +124,40 @@ sub ldd {
           map { (abs_path($_) || $_) }
           map { $_ =~ m/(\/\S+)/ }
               ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
+
+}
+
+sub datetime_h {
+
+  my ($timestamp) = @_;
+
+  my $ago = time() - $timestamp;
+
+  if ($ago > 24 * 60 * 60 * 30 * 12 * 2) {
+    return sprintf('%d years ago', ($ago / (24 * 60 * 60 * 30 * 12)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 30 * 2) {
+    return sprintf('%d months ago', ($ago / (24 * 60 * 60 * 30)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 7 * 2) {
+    return sprintf('%d weeks ago', ($ago / (24 * 60 * 60 * 7)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 2) {
+    return sprintf('%d days ago', ($ago / (24 * 60 * 60)));
+  }
+
+  if ($ago > 60 * 60 * 2) {
+    return sprintf('%d hours ago', ($ago / (60 * 60)));
+  }
+
+  if ($ago > 60 * 2) {
+    return sprintf('%d minutes ago', ($ago / (60)));
+  }
+
+  return sprintf('%d seconds ago', $ago);
 
 }
 
