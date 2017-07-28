@@ -94,7 +94,9 @@ sub package_changelogs {
   }
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
-     $query = sprintf($query, join(' AND ', @query_filters), $slackman_opts->{'limit'});
+     $query = sprintf($query, join(' AND ', @query_filters), ($slackman_opts->{'limit'} || 25));
+
+  logger->debug($query);
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
