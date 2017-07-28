@@ -248,7 +248,7 @@ sub call_package_reinstall {
 
     print "\n\n";
     print "Reinstall package(s)\n\n";
-    print sprintf("%s\n", "-"x132);
+    print sprintf("%s\n", "-"x80);
 
     foreach (@packages_for_pkgtool) {
       package_upgrade($_);
@@ -258,7 +258,7 @@ sub call_package_reinstall {
 
   _packages_errors($packages_errors);
 
-  _fork_update_history();
+  _fork_update_local_database();
   exit(0);
 
 }
@@ -325,7 +325,7 @@ sub call_package_remove {
     package_remove($_);
   }
 
-  _fork_update_history();
+  _fork_update_local_database();
   exit(0);
 
 }
@@ -463,7 +463,7 @@ sub call_package_install {
 
     print "\n\n";
     print "Install package(s)\n";
-    print sprintf("%s\n\n", "-"x132);
+    print sprintf("%s\n\n", "-"x80);
 
     foreach (@packages_for_pkgtool) {
       package_install($_);
@@ -474,7 +474,7 @@ sub call_package_install {
   _packages_errors($packages_errors);
   _packages_installed(\@packages_for_pkgtool);
 
-  _fork_update_history() if (@packages_for_pkgtool);
+  _fork_update_local_database() if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -746,7 +746,7 @@ sub call_package_upgrade {
 
       print "\n\n";
       print "Upgrade package(s)\n";
-      print sprintf("%s\n\n", "-"x132);
+      print sprintf("%s\n\n", "-"x80);
 
       foreach my $package_path (@packages_for_pkgtool) {
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
@@ -765,7 +765,7 @@ sub call_package_upgrade {
     _kernel_update_message() if ($kernel_upgrade);
 
     # Update history metadata in background
-    _fork_update_history() if (@packages_for_pkgtool);
+    _fork_update_local_database() if (@packages_for_pkgtool);
 
     # Search new configuration files (same as 'slackman new-config' command)
     call_package_new_config() if (@packages_for_pkgtool);
@@ -1242,19 +1242,26 @@ sub _check_root {
 
 }
 
-sub _fork_update_history {
+sub _fork_update_local_database {
 
   # Delete all lock file
   delete_lock();
 
-  # Call update history command in background and set ROOT environment
-  my $update_history_cmd  = "slackman update history --force";
-     $update_history_cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
-     $update_history_cmd .= " > /dev/null &";
+  # Force update metadata of installed packages commands in background and set ROOT environment
+  my $cmd  = "slackman update %s --force";
+     $cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
+     $cmd .= " > /dev/null &";
 
-  logger->debug("Call update history command in background ($update_history_cmd)");
+  my $update_installed_cmd = sprintf($cmd, 'installed');
 
+  logger->debug("Call update metadata of installed packages in background ($update_installed_cmd)");
+  qx{ $update_installed_cmd };
+
+  my $update_history_cmd = sprintf($cmd, 'history');
+
+  logger->debug("Call update metadata of history packages in background ($update_history_cmd)");
   qx{ $update_history_cmd };
+
 
 }
 
