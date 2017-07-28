@@ -78,9 +78,11 @@ sub log {
 
   return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
 
-  open(LOG, '>>', $file) or die ("Can't open file: $?");
+  unless(open(LOG, '>>', $file)) {
+    open(LOG, '>&STDERR'); # Fallback to STDERR
+  }
 
-  print LOG sprintf("%s [%5s] %s [%s] : %s\n",
+  print LOG sprintf("%s [%5s] %s [pid:%s] %s\n",
                       $time->datetime, uc($level), $category, $$, $message);
 
 }
