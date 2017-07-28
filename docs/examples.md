@@ -4,14 +4,14 @@ Update repository packages and upgrade all packages:
 
     # slackman update && slackman upgrade -y
 
-Install, update and remove obsolete packages from specific repository:
+Install, upgrade and remove obsolete packages from specific repository:
 
     # slackman update
     # slackman install --new-packages --repo ktown
     # slackman upgrade --repo ktown
     # slackman remove --obsolete-packages --repo ktown
 
-Update package excluding kernels packages
+Upgrade package excluding kernels packages
 
     # slackman upgrade --exclude kernel-*
 
