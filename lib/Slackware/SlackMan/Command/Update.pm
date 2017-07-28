@@ -33,15 +33,16 @@ use Pod::Usage;
 
 
 use constant COMMANDS_DISPATCHER => {
-  'help:update'      => \&call_update_help,
+  'help.update'      => \&call_update_help,
   'update'           => \&call_update_metadata,
-  'update:all'       => \&call_update_all_metadata,
-  'update:changelog' => \&call_update_repo_changelog,
-  'update:gpg-key'   => \&call_update_repo_gpg_key,
-  'update:help'      => \&call_update_help,
-  'update:history'   => \&call_update_history,
-  'update:manifest'  => \&call_update_repo_manifest,
-  'update:packages'  => \&call_update_repo_packages,
+  'update.all'       => \&call_update_all_metadata,
+  'update.changelog' => \&call_update_repo_changelog,
+  'update.gpg-key'   => \&call_update_repo_gpg_key,
+  'update.help'      => \&call_update_help,
+  'update.history'   => \&call_update_history,
+  'update.installed' => \&call_update_installed,
+  'update.manifest'  => \&call_update_repo_manifest,
+  'update.packages'  => \&call_update_repo_packages,
 };
 
 
@@ -167,19 +168,19 @@ sub call_update_repo_manifest {
 
 }
 
-sub call_update_history {
+sub call_update_installed {
 
-  STDOUT->printflush("\nUpdate local packages metadata:\n\n");
-
-  STDOUT->printflush(sprintf("  * %-30s", 'installed'));
+  STDOUT->printflush("\nUpdate installed packages metadata: ");
   parse_history('installed', \&callback_status);
   STDOUT->printflush(colored("done\n", 'green'));
 
-  STDOUT->printflush(sprintf("  * %-30s", 'removed & updated'));
+}
+
+sub call_update_history {
+
+  STDOUT->printflush("\nUpdate history (upgraded & removed) packages metadata: ");
   parse_history('removed', \&callback_status);
   STDOUT->printflush(colored("done\n", 'green'));
-
-  print "\n";
 
 }
 
@@ -187,7 +188,11 @@ sub call_update_metadata {
 
   call_update_repo_packages();
   call_update_repo_changelog();
+
+  call_update_installed();
   call_update_history();
+
+  print "\n";
 
   # Set last-metadata-update
   db_meta_set('last-metadata-update', time());
@@ -202,7 +207,11 @@ sub call_update_all_metadata {
   call_update_repo_packages();
   call_update_repo_changelog();
   call_update_repo_manifest();
+
+  call_update_installed();
   call_update_history();
+
+  print "\n";
 
   # Set last-metadata-update
   db_meta_set('last-metadata-update', time());

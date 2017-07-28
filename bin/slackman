@@ -25,7 +25,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
 =head1 COMMANDS
 
   install PACKAGE [...]        Install one or more packages
-  upgrade [PACKAGE [...]]      Update installed packages
+  upgrade [PACKAGE [...]]      Upgrade installed packages
   reinstall PACKAGE [...]      Reinstall one or more packages
   remove PACKAGE [...]         Remove one or more packages
   history PACKAGE              Display package history information
@@ -60,6 +60,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
 =head2 UPDATE COMMANDS
 
   update                       Update repository and local history packages metadata
+  update installed             Update local installed metadata
   update history               Update local packages history metadata
   update packages              Update repository metadata (using PACKAGES.TXT file)
   update changelog             Update repository ChangeLog (using ChangeLog.txt)
@@ -128,7 +129,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 =head1 EXAMPLES
 
-Update repository packages and upgrade all packages:
+Update repository packages list and upgrade all packages:
 
   slackman update && slackman upgrade -y
 
@@ -136,14 +137,14 @@ Force update of specific repository:
 
   slackman update packages --repo slackware:packages --force
 
-Install, update and remove obsolete packages from specific repository:
+Install, upgrade and remove obsolete packages from specific repository:
 
   slackman update
   slackman install --new-packages --repo ktown
   slackman upgrade --repo ktown
   slackman remove --obsolete-packages --repo ktown
 
-Update package excluding kernels packages
+Upgrade package excluding kernels packages
 
   slackman upgrade --exclude kernel-*
 
