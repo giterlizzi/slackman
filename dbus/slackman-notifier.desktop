@@ -1,8 +1,8 @@
 [Desktop Entry]
-Comment=Slackware Security Fix, ChangeLog and package upgrade notifier
+Comment=Slackware Security Advisory, ChangeLog and package upgrade notifier
 Exec=/usr/libexec/slackman/slackman-notifier
 GenericName=
-Icon=package-available
+Icon=/usr/share/slackman/slackware.png
 MimeType=
 Name=SlackMan Notifier
 Path=
