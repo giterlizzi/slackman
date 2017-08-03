@@ -15,13 +15,13 @@ BEGIN {
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
-    package_info
+    package_parse_name
     package_version_compare
     package_install
     package_upgrade
     package_remove
     package_metadata
-    package_is_installed
+    package_info
     package_dependency
     package_available_update
     package_download
@@ -105,7 +105,7 @@ sub package_changelogs {
 
 }
 
-sub package_info {
+sub package_parse_name {
 
   my $package_name = shift;
 
@@ -207,7 +207,7 @@ sub package_metadata {
     @file_list = split(/\n/, $file_list) if ($file_list);
   }
 
-  my $package_info     = package_info($package_name);
+  my $package_info     = package_parse_name($package_name);
   my $package_basename = $package_info->{name};
 
   return undef unless($package_basename);
@@ -259,8 +259,8 @@ sub package_version_compare {
 
   my ($old, $new) = @_;
 
-  my $old_info = package_info($old);
-  my $new_info = package_info($new);
+  my $old_info = package_parse_name($old);
+  my $new_info = package_parse_name($new);
 
   my $old_version  = $old_info->{version};
   my $new_version  = $new_info->{version};
@@ -288,7 +288,7 @@ sub package_install {
   system('/sbin/upgradepkg', '--install-new', $package);
   unlink($package) or warn "Failed to delete file $package: $!";
 
-  my $pkg_info = package_info(basename($package));
+  my $pkg_info = package_parse_name(basename($package));
 
   logger->info(sprintf("Installed %s package with %s version",
     $pkg_info->{'name'}, $pkg_info->{'version'}));
@@ -305,7 +305,7 @@ sub package_upgrade {
   system('/sbin/upgradepkg', '--reinstall', '--install-new', $package);
   unlink($package) or warn "Failed to delete file: $!";
 
-  my $pkg_info = package_info(basename($package));
+  my $pkg_info = package_parse_name(basename($package));
 
   logger->info(sprintf("Upgraded %s package to %s version",
     $pkg_info->{'name'}, $pkg_info->{'version'}));
@@ -323,7 +323,7 @@ sub package_remove {
 }
 
 
-sub package_is_installed {
+sub package_info {
 
   my ($package) = @_;
 
@@ -525,7 +525,7 @@ sub package_check_install {
 
       next unless ($dependency_row->{'name'});
 
-      unless (package_is_installed($pkg_required)) {
+      unless (package_info($pkg_required)) {
 
         $dependency_pkgs->{$pkg_required} = $dependency_row;
         push(@{$dependency_pkgs->{$pkg_required}->{'needed_by'}}, $row->{'name'});
@@ -673,7 +673,7 @@ sub package_check_updates {
 
       next unless ($dependency_row->{name});
 
-      unless (package_is_installed($pkg_required)) {
+      unless (package_info($pkg_required)) {
         $install_pkgs->{$pkg_required} = $dependency_row;
         push(@{$install_pkgs->{$pkg_required}->{needed_by}}, $row->{name});
       }
@@ -889,7 +889,7 @@ Slackware::SlackMan::Package - SlackMan Package module
 
   use Slackware::SlackMan::Package qw(:all);
 
-  my $pkg_info = package_info('aaa_base-14.2-x86_64-1.tgz');
+  my $pkg_info = package_parse_name('aaa_base-14.2-x86_64-1.tgz');
 
 =head1 DESCRIPTION
 

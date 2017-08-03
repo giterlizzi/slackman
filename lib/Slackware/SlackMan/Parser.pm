@@ -105,7 +105,7 @@ sub parse_changelog {
         $description =~ s/\|/\n/g  if ($description);
         $description =~ s/^  //gm  if ($description);
 
-        my $package_info = package_info(basename($package));
+        my $package_info = package_parse_name(basename($package));
 
         $name    = $package_info->{'name'};
         $version = $package_info->{'version'};
@@ -172,7 +172,7 @@ sub parse_changelog {
 
         if (defined($package) && $package =~ /t?z/) {
 
-          my $package_info = package_info(basename($package));
+          my $package_info = package_parse_name(basename($package));
 
           $name    = $package_info->{'name'};
           $version = $package_info->{'version'};
@@ -382,7 +382,7 @@ sub parse_manifest {
     my ($package_location) = $manifest =~ /Package:\s+(.*)/;
     my $package            = basename($package_location);
     my $location           = dirname($package_location);
-    my $pkg_info           = package_info($package);
+    my $pkg_info           = package_parse_name($package);
     my $name               = $pkg_info->{'name'};
     my $version            = $pkg_info->{'version'};
     my $arch               = $pkg_info->{'arch'};

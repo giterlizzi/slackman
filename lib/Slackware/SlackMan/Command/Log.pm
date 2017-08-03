@@ -39,7 +39,7 @@ use constant COMMANDS_DISPATCHER => {
 my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_log_help {
-print colored('foo', 'red');
+
   pod2usage(
     -exitval  => 0,
     -verbose  => 99,

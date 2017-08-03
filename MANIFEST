@@ -56,6 +56,7 @@ dbus/Makefile
 dbus/org.lotarproject.slackman.conf
 dbus/slackman-notifier.desktop
 dbus/org.lotarproject.slackman.service
+dbus/slackware.png
 docs/repo.md
 docs/variables.md
 docs/examples.md

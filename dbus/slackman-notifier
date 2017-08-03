@@ -67,6 +67,7 @@ while (1) {
 
   sleep(5);
 
+  # Check local package upgrade
   check_upgrade();
 
   sleep(3600);
@@ -81,8 +82,8 @@ exit(0);
 #
 sub SlackMan {
   return Net::DBus->system
-    ->get_service('org.lotarproject.slackman')
-    ->get_object('/org/lotarproject/slackman');
+    ->get_service('org.lotarproject.SlackMan')
+    ->get_object('/org/lotarproject/SlackMan');
 }
 
 

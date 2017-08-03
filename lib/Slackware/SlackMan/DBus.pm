@@ -22,13 +22,8 @@ use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
-use Net::DBus::Exporter 'org.lotarproject.slackman';
+use Net::DBus::Exporter 'org.lotarproject.SlackMan';
 use base qw(Net::DBus::Object);
-
-
-dbus_method('ChangeLog',    [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
-dbus_method('SecurityFix',  [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
-dbus_method('CheckUpgrade', [], [[ 'dict', 'string', [ 'dict', 'string', 'string' ] ]]);
 
 
 sub new {
@@ -36,7 +31,7 @@ sub new {
   my $class   = shift;
   my $service = shift;
 
-  my $self = $class->SUPER::new($service, '/org/lotarproject/slackman');
+  my $self = $class->SUPER::new($service, '/org/lotarproject/SlackMan');
 
   bless $self, $class;
 
@@ -44,11 +39,14 @@ sub new {
 
 }
 
+
+dbus_method('ChangeLog', [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
+
 sub ChangeLog {
 
   my $self = shift;
 
-  logger->debug('Call org.lotarproject.slackman.ChangeLog method');
+  logger->debug('Call org.lotarproject.SlackMan.ChangeLog method');
 
   $slackman_opts = {};
 
@@ -70,11 +68,14 @@ sub ChangeLog {
 
 }
 
+
+dbus_method('SecurityFix', [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
+
 sub SecurityFix {
 
   my $self = shift;
 
-  logger->debug('Call org.lotarproject.slackman.SecurityFix method');
+  logger->debug('Call org.lotarproject.SlackMan.SecurityFix method');
 
   $slackman_opts = {};
 
@@ -99,11 +100,14 @@ sub SecurityFix {
 
 }
 
+
+dbus_method('CheckUpgrade', [], [[ 'dict', 'string', [ 'dict', 'string', 'string' ] ]]);
+
 sub CheckUpgrade {
 
   my $self = shift;
 
-  logger->debug('Call org.lotarproject.slackman.CheckUpgrade method');
+  logger->debug('Call org.lotarproject.SlackMan.CheckUpgrade method');
 
   # Re-Init DB Connection
   our $dbh = undef;
@@ -113,6 +117,20 @@ sub CheckUpgrade {
 
   my ($update_pkgs, $install_pkgs) = package_check_updates();
   return $update_pkgs;
+
+}
+
+
+dbus_method('PackageInfo',  [ 'string' ], [[ 'dict', 'string', 'string' ]]);
+
+sub PackageInfo {
+
+  my $self = shift;
+  my ($package) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.PackageInfo method (arg=$package)");
+
+  return package_info($package);
 
 }
 
