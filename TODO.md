@@ -1,7 +1,7 @@
 # SlackMan TODO
 
  - [ ] Number of installed packages in `slackman repo info REPOSITORY` command
- - [ ] D-BUS notification/service of avaiable packages update
+ - [x] D-BUS notification/service of avaiable packages update
  - [ ] Crontab script (send mail for new updates, download packages, etc)
  - [x] Makefile for automate build of package
  - [x] Speedup slackman bootstrap
@@ -10,6 +10,7 @@
  - [ ] Using Perl module instead of `curl` command for downloading
  - [ ] Create a plugin systems
  - [x] Move commands code into individual subs
- - [ ] Create `slackpkg new-config` like feature
+ - [x] Create `slackpkg new-config` like feature
  - [x] Check last SlackMan update metadata. Display message after 24h to remember to launch "slackman update"
  - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
+ - [ ] Integrate SlackMan with PolicyKit
