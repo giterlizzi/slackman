@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0_09';
+  $VERSION     = 'v1.1.0_10';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -1364,7 +1364,8 @@ slackman-package - Install, upgrade and display information of packages
 
 =head1 SEE ALSO
 
-L<slackman(8)>, L<slackman-repo(8)>, L<slackman.conf(5)>, L<slackman.repo(5)>
+L<slackman(8)>, L<slackman-repo(8)>, L<slackman-update(8)>, L<slackman.conf(5)>,
+L<slackman.repo(5)>
 
 =head1 BUGS
 
