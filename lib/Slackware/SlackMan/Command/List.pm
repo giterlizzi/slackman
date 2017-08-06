@@ -30,25 +30,47 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+use Pod::Find qw(pod_where);
 
 use constant COMMANDS_DISPATCHER => {
+
   'help.list'      => \&call_list_help,
   'list'           => \&call_list_help,
   'list.help'      => \&call_list_help,
+
   'list.installed' => \&call_list_installed,
   'list.obsoletes' => \&call_list_obsoletes,
   'list.orphan'    => \&call_list_orphan,
   'list.packages'  => \&call_list_packages,
   'list.variables' => \&call_list_variables,
+
 };
 
+use constant COMMANDS_MAN => {
+  'list' => \&call_list_man
+};
+
+use constant COMMANDS_HELP => {
+  'list' => \&call_list_help
+};
+
+sub call_list_man {
+
+ pod2usage(
+    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -exitval => 0,
+    -verbose => 2
+  );
+
+}
 
 sub call_list_help {
 
   pod2usage(
+    -input    => pod_where({-inc => 1}, __PACKAGE__),
     -exitval  => 0,
     -verbose  => 99,
-    -sections => [ 'SYNOPSIS', 'COMMANDS/LIST COMMANDS' ]
+    -sections => [ 'SYNOPSIS', 'OPTIONS' ]
   );
 
 }
@@ -221,3 +243,65 @@ sub call_list_packages {
 
 
 1;
+__END__
+=head1 NAME
+
+slackman-list - List packages and other info
+
+=head1 SYNOPSIS
+
+  slackman list packages [--repo=REPOSITORY]
+  slackman list installed
+  slackman list obsoletes
+  slackman list orphan
+  slackman list variables
+  slackman list help
+
+=head1 DESCRIPTION
+
+B<slackman list> display information of:
+
+    * installed packages
+    * available packages
+    * orphan packages
+    * obsolete packages
+
+=head1 COMMANDS
+
+  slackman list obsoletes      List obsolete packages
+  slackman list installed      List installed packages
+  slackman list packages       List available packages
+  slackman list orphan         List orphan packages installed from unknown repository
+  slackman list variables      List variables for ".repo" configurations
+
+=head1 OPTIONS
+
+  --repo=REPOSITORY            Use specified repository
+  -h, --help                   Display help and exit
+  --man                        Display man pages
+  --version                    Display version information
+  -c, --config=FILE            Configuration file
+  --color=[always|auto|never]  Colorize the output
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.repo(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

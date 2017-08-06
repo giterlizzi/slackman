@@ -18,8 +18,9 @@ Method                                 | Description
 
 ## SlackMan Notifier
 
-`slackman-notifier(1)` is a D-Bus client for receive Desktop notification via `org.freedesktop.Notification`
-service for:
+`slackman-notifier(1)` is user-space utility to receive a desktop notification via
+D-Bus (using `org.freedesktop.Notification` service) for Slackware Security
+Advisories, ChangeLogs and new packages upgrade.
 
   - Packages with Security Fix
   - Repositories ChangeLog updates

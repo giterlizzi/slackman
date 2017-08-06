@@ -64,6 +64,9 @@ mv $PKG/usr/bin $PKG/usr/sbin
 # Remove slackman(1) man (see slackman(5) man)
 rm $PKG/usr/man/man1/slackman.1
 
+# Remove duplicate man3
+rm $PKG/usr/man/man3/Slackware::SlackMan::Command::*
+
 find $PKG -print0 | xargs -0 file | grep -e "executable" -e "shared object" | grep ELF \
   | cut -f 1 -d : | xargs strip --strip-unneeded 2> /dev/null || true
 

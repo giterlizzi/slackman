@@ -34,6 +34,8 @@ use File::Find qw( find );
 use Term::ANSIColor qw(color colored :constants);
 use Term::ReadLine;
 use Text::Wrap;
+use Pod::Usage;
+use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -48,6 +50,54 @@ use constant COMMANDS_DISPATCHER => {
   'upgrade'     => \&call_package_upgrade,
   'new-config'  => \&call_package_new_config,
 };
+
+use constant COMMANDS_MAN => {
+  'changelog'   => \&call_package_man,
+  'file-search' => \&call_package_man,
+  'history'     => \&call_package_man,
+  'info'        => \&call_package_man,
+  'install'     => \&call_package_man,
+  'reinstall'   => \&call_package_man,
+  'remove'      => \&call_package_man,
+  'search'      => \&call_package_man,
+  'upgrade'     => \&call_package_man,
+  'new-config'  => \&call_package_man,
+};
+
+use constant COMMANDS_HELP => {
+  'changelog'   => \&call_package_help,
+  'file-search' => \&call_package_help,
+  'history'     => \&call_package_help,
+  'info'        => \&call_package_help,
+  'install'     => \&call_package_help,
+  'reinstall'   => \&call_package_help,
+  'remove'      => \&call_package_help,
+  'search'      => \&call_package_help,
+  'upgrade'     => \&call_package_help,
+  'new-config'  => \&call_package_help,
+};
+
+
+sub call_package_man {
+
+ pod2usage(
+    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -exitval => 0,
+    -verbose => 2
+  );
+
+}
+
+sub call_package_help {
+
+  pod2usage(
+    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => [ 'SYNOPSIS', 'OPTIONS' ]
+  );
+
+}
 
 
 sub call_package_info {
@@ -1267,3 +1317,70 @@ sub _fork_update_local_database {
 
 
 1;
+__END__
+=head1 NAME
+
+slackman-package - Install, upgrade and display information of packages
+
+=head1 SYNOPSIS
+
+  slackman install PACKAGE [...]
+  slackman upgrade [PACKAGE [...]]
+  slackman reinstall PACKAGE [...]
+  slackman remove PACKAGE [...]
+  slackman history PACKAGE
+  slackman info PACKAGE
+
+  slackman changelog [PACKAGE]
+  slackman search PATTERN
+  slackman file-search PATTERN
+  slackman new-config
+
+=head1 DESCRIPTION
+
+=head1 COMMANDS
+
+  slackman install PACKAGE [...]        Install one or more packages
+  slackman upgrade [PACKAGE [...]]      Upgrade installed packages
+  slackman reinstall PACKAGE [...]      Reinstall one or more packages
+  slackman remove PACKAGE [...]         Remove one or more packages
+  slackman history PACKAGE              Display package history information
+  slackman info PACKAGE                 Display information about installed or available packages
+
+  slackman changelog [PACKAGE]          Display general or package ChangeLog
+  slackman search PATTERN               Search packages using PATTERN
+  slackman file-search PATTERN          Search files into packages using PATTERN
+  slackman new-config                   Find new configuration files
+
+=head1 OPTIONS
+
+  -h, --help                            Display help and exit
+  --man                                 Display man pages
+  --version                             Display version information
+  -c, --config=FILE                     Configuration file
+  --root                                Set Slackware root directory
+  --color=[always|auto|never]           Colorize the output
+
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman-repo(8)>, L<slackman.conf(5)>, L<slackman.repo(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

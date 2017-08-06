@@ -93,10 +93,7 @@ my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
 
-exit show_help()    if $slackman_opts->{'help'};
 exit show_version() if $slackman_opts->{'version'};
-
-pod2usage(-exitval => 0, -verbose => 2) if $slackman_opts->{'man'};
 
 # Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
@@ -164,13 +161,20 @@ sub run {
     'help'    => \&show_help,
   };
 
+  my $commands_man  = {};
+  my $commands_help = {};
+
   foreach (@command_modules) {
 
     my $module = "Slackware::SlackMan::Command::$_";
     my $module_dispatcher = $module->COMMANDS_DISPATCHER;
+    my $module_man        = $module->COMMANDS_MAN;
+    my $module_help       = $module->COMMANDS_HELP;
 
     # Merge all submodules dispatch table into main dispatch table
     $commands_dispatcher = { %$commands_dispatcher, %$module_dispatcher };
+    $commands_man        = { %$commands_man,        %$module_man };
+    $commands_help       = { %$commands_help,       %$module_help };
 
   }
 
@@ -183,6 +187,26 @@ sub run {
 
   if ($command && ! $dispatch_key && exists($commands_dispatcher->{"$command"})) {
     $dispatch_key = "$command";
+  }
+
+  if ($slackman_opts->{'man'}) {
+
+    if ($command && exists($commands_man->{$command})) {
+      $commands_man->{$command}->();
+    } else {
+      pod2usage(-exitval => 0, -verbose => 2);
+    }
+
+  }
+
+  if ($slackman_opts->{'help'}) {
+
+    if($command && exists($commands_help->{$command})) {
+      $commands_help->{$command}->();
+    } else {
+      show_help();
+    }
+
   }
 
   if ($dispatch_key) {

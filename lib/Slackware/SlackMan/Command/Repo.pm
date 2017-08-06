@@ -27,24 +27,48 @@ use Slackware::SlackMan::Utils  qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
+
   'help.repo'    => \&call_repo_help,
   'repo'         => \&call_repo_help,
+  'repo.help'    => \&call_repo_help,
+
   'repo.disable' => \&call_repo_disable,
   'repo.enable'  => \&call_repo_enable,
-  'repo.help'    => \&call_repo_help,
   'repo.info'    => \&call_repo_info,
   'repo.list'    => \&call_repo_list,
+
 };
+
+use constant COMMANDS_MAN => {
+  'repo' => \&call_repo_man
+};
+
+use constant COMMANDS_HELP => {
+  'repo' => \&call_repo_help
+};
+
+
+sub call_repo_man {
+
+ pod2usage(
+    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -exitval => 0,
+    -verbose => 2
+  );
+
+}
 
 sub call_repo_help {
 
   pod2usage(
+    -input    => pod_where({-inc => 1}, __PACKAGE__),
     -exitval  => 0,
     -verbose  => 99,
-    -sections => [ 'SYNOPSIS', 'COMMANDS/REPOSITORY COMMANDS' ]
+    -sections => [ 'SYNOPSIS', 'OPTIONS' ]
   );
 
 }
@@ -176,3 +200,59 @@ sub call_repo_info {
 
 
 1;
+__END__
+=head1 NAME
+
+slackman-repo - Display and manage Slackware repository
+
+=head1 SYNOPSIS
+
+  slackman repo info REPOSITORY
+  slackman repo enable REPOSITORY
+  slackman repo disable REPOSITORY
+  slackman repo list
+  slackman repo help
+
+=head1 DESCRIPTION
+
+B<slackman repo> display and manage Slackware repository defined in F</etc/slackman/repod.d>
+directory.
+
+=head1 COMMANDS
+
+  slackman repo list                   List available repositories
+  slackman repo enable REPOSITORY      Enable repository
+  slackman repo disable REPOSITORY     Disable repository
+  slackman repo info REPOSITORY        Display repository information
+  slackman repo help                   Display repo command help usage
+
+=head1 OPTIONS
+
+  -h, --help                           Display help and exit
+  --man                                Display man pages
+  --version                            Display version information
+  -c, --config=FILE                    Configuration file
+  --color=[always|auto|never]          Colorize the output
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.conf(5)>, L<slackman.repo(5)>, L<slackman-update(8)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

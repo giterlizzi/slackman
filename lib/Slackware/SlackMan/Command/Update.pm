@@ -30,6 +30,7 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
+use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -45,13 +46,32 @@ use constant COMMANDS_DISPATCHER => {
   'update.packages'  => \&call_update_repo_packages,
 };
 
+use constant COMMANDS_MAN => {
+  'update' => \&call_update_man
+};
+
+use constant COMMANDS_HELP => {
+  'update' => \&call_update_help
+};
+
+
+sub call_update_man {
+
+ pod2usage(
+    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -exitval => 0,
+    -verbose => 2
+  );
+
+}
 
 sub call_update_help {
 
   pod2usage(
+    -input    => pod_where({-inc => 1}, __PACKAGE__),
     -exitval  => 0,
     -verbose  => 99,
-    -sections => [ 'SYNOPSIS', 'COMMANDS/UPDATE COMMANDS' ]
+    -sections => [ 'SYNOPSIS', 'OPTIONS' ]
   );
 
 }
@@ -221,3 +241,85 @@ sub call_update_all_metadata {
 }
 
 1;
+__END__
+=head1 NAME
+
+slackman-update - Perform update of repository metadata
+
+=head1 SYNOPSIS
+
+  slackman update installed
+  slackman update history
+
+  slackman update [--repo=REPOSITORY]
+  slackman update packages  [--repo=REPOSITORY]
+  slackman update changelog [--repo=REPOSITORY]
+  slackman update manifest [--repo=REPOSITORY]
+  slackman update gpg-key [--repo=REPOSITORY]
+  slackman update all [--repo=REPOSITORY]
+
+  slackman update help
+
+=head1 DESCRIPTION
+
+B<slackman update> perform update of repository metadata. This is a standard
+Slackware repository structure:
+
+    ChangeLog.txt
+    PACKAGES.TXT
+    MANIFEST.bz2
+    GPG-KEY
+    CHECHSUMS.md5
+    FILE_LIST
+
+SlackMan store this files into a repository cache and into a database.
+
+The default location of SlackMan cache is C<directory.cache>.
+
+To see the current location of C<directory.cache> use L<slackman-config(8)> command:
+
+    slackman config directory.cache
+
+=head1 COMMANDS
+
+  slackman update                      Update repository and local history packages metadata
+  slackman update installed            Update local installed metadata
+  slackman update history              Update local packages history metadata
+  slackman update packages             Update repository metadata (using PACKAGES.TXT file)
+  slackman update changelog            Update repository ChangeLog (using ChangeLog.txt)
+  slackman update manifest             Update repository Manifest (using MANIFEST.bz2)
+  slackman update gpg-key              Update repository GPG-KEY
+  slackman update all                  Update all metadata (packages, gpg-key, changelog, etc.)
+  slackman update help                 Display update command help usage
+
+=head1 OPTIONS
+
+  --repo=REPOSITORY                    Use specified repository during update
+  -h, --help                           Display help and exit
+  --man                                Display man pages
+  --version                            Display version information
+  -c, --config=FILE                    Configuration file
+  --color=[always|auto|never]          Colorize the output
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman-repo(8)>, L<slackman.conf(5)>, L<slackman.repo(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

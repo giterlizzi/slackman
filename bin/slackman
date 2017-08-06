@@ -101,7 +101,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   -h, --help                   Display help and exit
   --man                        Display man pages
   --version                    Display version information
-  -c, --config                 Configuration file
+  -c, --config=FILE            Configuration file
   --root                       Set Slackware root directory
   --color=[always|auto|never]  Colorize the output
 
