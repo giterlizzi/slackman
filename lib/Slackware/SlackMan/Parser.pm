@@ -185,6 +185,7 @@ sub parse_changelog {
         $category =~ s/^\.//         if ($category);
         $package  =~ s/\://          if ($package);
         $version  =~ s/(\.|\;|\,)$// if ($version);
+        $version  =~ s/^v//          if ($version);
 
         $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
         $status  = 'added'    if ($status && $status =~ /added/i);
