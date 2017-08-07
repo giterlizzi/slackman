@@ -234,6 +234,58 @@ directory.
   -c, --config=FILE                    Configuration file
   --color=[always|auto|never]          Colorize the output
 
+=head1 EXAMPLES
+
+List all repositories:
+
+  slackman repo list
+
+  --------------------------------------------------------------------------------------
+  Repository ID         Description                       Status     Priority   Packages
+  --------------------------------------------------------------------------------------
+  slackware:extra       Slackware64-current (Extra)       Enabled    0          92
+  slackware:multilib    Slackware64-current (MultiLib)    Enabled    10         181
+  slackware:packages    Slackware64-current               Enabled    0          1348
+  slackware:pasture     Slackware64-current (Pasture)     Disabled   0          0
+  slackware:patches     Slackware64-current (Patches)     Enabled    10         0
+  slackware:testing     Slackware64-current (Testing)     Disabled   -1         0
+
+
+Enable a repository:
+
+  slackman repo enable slackware:multilib
+
+
+Display repository informations:
+
+  slackman repo info slackware:extra
+
+  Name:                Slackware64-current (Extra)
+  ID:                  slackware:extra
+  Configuration:       /etc/slackman/repos.d/slackware.repo
+  Mirror:              http://mirrors.slackware.com/slackware/slackware64-current/
+  Status:              enabled
+  Last Update:         2017-05-24 07:03:49
+  Priority:            0
+  Packages:            92
+  
+  Repository URLs:
+    * packages         http://mirrors.slackware.com/slackware/slackware64-current/extra/PACKAGES.TXT
+    * manifest         http://mirrors.slackware.com/slackware/slackware64-current/extra/MANIFEST.bz2
+    * checksums        http://mirrors.slackware.com/slackware/slackware64-current/extra/CHECKSUMS.md5
+    * gpgkey           http://mirrors.slackware.com/slackware/slackware64-current/GPG-KEY
+
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/slackman.conf
+
+=item /etc/slackman/repos.d/*
+
+=back
+
 =head1 SEE ALSO
 
 L<slackman(8)>, L<slackman.conf(5)>, L<slackman.repo(5)>, L<slackman-update(8)>

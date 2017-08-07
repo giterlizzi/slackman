@@ -125,7 +125,6 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --no-deps                    Disable dependency check
   -y, --yes                    Assume yes
   -n, --no                     Assume no
-  --quiet                      Quiet
 
 =head1 EXAMPLES
 
@@ -148,7 +147,7 @@ Upgrade package excluding kernels packages
 
   slackman upgrade --exclude kernel-*
 
-Search package:
+Search a package:
 
   slackman search docker
 

@@ -1320,7 +1320,7 @@ sub _fork_update_local_database {
 __END__
 =head1 NAME
 
-slackman-package - Install, upgrade and display information of packages
+slackman-package - Install, upgrade and display information of Slackware packages
 
 =head1 SYNOPSIS
 
@@ -1354,6 +1354,7 @@ slackman-package - Install, upgrade and display information of packages
 
 =head1 OPTIONS
 
+  --repo=REPOSITORY                     Use specified repo during upgrade or install packages
   -h, --help                            Display help and exit
   --man                                 Display man pages
   --version                             Display version information
@@ -1361,6 +1362,58 @@ slackman-package - Install, upgrade and display information of packages
   --root                                Set Slackware root directory
   --color=[always|auto|never]           Colorize the output
 
+=head2 CHANGELOG OPTIONS
+
+  --after=DATE                          Filter changelog after date
+  --before=DATE                         Filter changelog before date
+  --details                             Display ChangeLog details
+  --security-fix                        Display only ChangeLog Security Fix
+
+=head2 INFO OPTIONS
+
+  --show-files                          Show file lists
+
+=head2 INSTALL, UPGRADE, REMOVE, REINSTALL OPTIONS
+
+  --category=CATEGORY                   Use a category
+  -f, --force                           Force action
+  --download-only                       Download only
+  --new-packages                        Check for new packages
+  --obsolete-packages                   Check for obsolete packages
+  -x, --exclude=PACKAGE                 Exclude package
+  --no-priority                         Disable repository priority check
+  --no-excludes                         Disable exclude repo configuration
+  --no-deps                             Disable dependency check
+  -y, --yes                             Assume yes
+  -n, --no                              Assume no
+
+=head1 EXAMPLES
+
+Update repository packages list and upgrade all packages:
+
+  slackman update && slackman upgrade -y
+
+Install, upgrade and remove obsolete packages from specific repository:
+
+  slackman install --new-packages --repo ktown
+  slackman upgrade --repo ktown
+  slackman remove --obsolete-packages --repo ktown
+
+Upgrade package excluding kernels packages
+
+  slackman upgrade --exclude kernel-*
+
+Search a package:
+
+  slackman search docker
+
+Search file using MANIFEST.bz2 repository file (C<slackman update manifest>):
+
+  slackman file-search firefox
+
+Display a ChangeLog:
+
+  slackman changelog --repo slackware:packages
 
 =head1 SEE ALSO
 

@@ -277,6 +277,7 @@ B<slackman list> display information of:
 =head1 OPTIONS
 
   --repo=REPOSITORY            Use specified repository
+  --exclude-installed          Exclude installed packages from list
   -h, --help                   Display help and exit
   --man                        Display man pages
   --version                    Display version information
