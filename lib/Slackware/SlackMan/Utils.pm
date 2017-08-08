@@ -75,11 +75,9 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
 
-my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
-
 
 sub http {
 
