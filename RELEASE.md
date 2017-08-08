@@ -3,13 +3,16 @@
 ## [v1.1.0]
 
 ### Added
-  * New commands (`config` get & set via CLI, `log`, etc) and options (`--details`, `--Security-fix`, etc)
+  * New commands (`config` get & set configuration via CLI, `log`, etc) and options (`--details`, `--Security-fix`, etc)
   * Added DBus interface to fetch latest Security Fix & ChangeLog and packages update
-  * Added `slackman-notifier` DBus client to notifiy Security Fix & ChangeLog and packages update via `org.freedesktop.Notification`
+  * Added `slackman-notifier` DBus client to notifiy Security Fix & ChangeLog and packages upgrade via `org.freedesktop.Notification` DBus service
   * Color Output (you can disable temporary via `--color=never` option or via `slackman config main.color never` command)
   * Informational message for new kernel upgrade. New SlackMan remember and help the user to create new `initrd.gz` file and install the new kernel via `lilo` (or `eliloconfig`) command
-  * Added `.new` config file search in `/etc` directory & user interaction (`slackpkg` like feature)
+  * Added `.new` config file search in `/etc` directory (`slackpkg` like feature)
   * Added daily update metadata (packages list & ChangeLog) via cron
+  * Added `HTTP::Tiny` module for package and repository metadata download
+  * Added man pages
+  * Added `make slackbuild` target for create a precompiled SlackMan package
   * Added new bugs to fix later
 
 ### Changed
@@ -19,6 +22,10 @@
 
 ### Fixed
   * Fixed ChangeLog parser. Now slackman support most Slackware ChangeLog dialect (AliebBob, SlackOnly, etc)
+
+### Removed
+  * Dropped support of `curl` for package and repository metadata download
+  * Removed `Build.PL` (use `make slackbuild` instead)
 
 ## Older releases
 
