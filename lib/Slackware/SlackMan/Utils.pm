@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.0_10';
+  $VERSION = 'v1.1.0_11';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw(
@@ -41,6 +41,7 @@ BEGIN {
     get_slackware_release
     gpg_import_key
     gpg_verify
+    http
     ldd
     md5_check
     time_to_timestamp
@@ -66,32 +67,29 @@ use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
 use Time::Seconds;
+use HTTP::Tiny;
+use Carp ();
+use File::Basename;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
-
-my $curl_useragent    = "SlackMan/$VERSION";
-my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --retry 5 --retry-max-time 0/;
 
 my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
-# Get proxy flags for cURL
-#
-sub _get_curl_proxy_flags {
 
-  my $proxy_conf = $slackman_conf{'proxy'};
+sub http {
 
-  return '' unless ($proxy_conf->{'enable'});
-
-  my $curl_proxy_flags = '';
+  my $http_options = { 'agent' => "SlackMan/$VERSION" };
+  my $proxy_conf   = $slackman_conf{'proxy'};
+  my $proxy_url    = undef;
 
   if ($proxy_conf->{'username'}) {
 
-    $curl_proxy_flags .= sprintf(" -x %s://%s:%s@%s:%s",
+    $proxy_url = sprintf("%s://%s:%s@%s:%s",
       $proxy_conf->{'protocol'},
       $proxy_conf->{'username'},
       $proxy_conf->{'password'},
@@ -100,14 +98,19 @@ sub _get_curl_proxy_flags {
     );
 
   } else {
-    $curl_proxy_flags .= sprintf(" -x %s://%s:%s",
+    $proxy_url = sprintf("%s://%s:%s",
       $proxy_conf->{'protocol'},
       $proxy_conf->{'hostname'},
       $proxy_conf->{'port'},
     );
   }
 
-  return $curl_proxy_flags;
+  $http_options->{'http_proxy'}  = $proxy_url;
+  $http_options->{'https_proxy'} = $proxy_url;
+
+  my $http = HTTP::Tiny->new( $http_options );
+
+  return $http;
 
 }
 
@@ -124,6 +127,27 @@ sub ldd {
           map { (abs_path($_) || $_) }
           map { $_ =~ m/(\/\S+)/ }
               ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
+
+}
+
+sub progress_bar {
+
+  my ( $url, $got, $total, $width, $char ) = @_;
+
+  $| = 1;
+
+  $width ||= 25;
+  $char  ||= '=';
+
+  my $got_h      = filesize_h($got, 1);
+  my $total_h    = filesize_h($total, 1);
+  my $num_width  = length $total_h;
+  my $file       = basename($url);
+  my $percentage = (100 * $got/+$total);
+
+  return sprintf "%-60s %3d%% [%-${width}s] %7s / %s\r",
+    $file, $percentage, $char x (($width-1)*$got/$total) . '>',
+    $got_h, $total_h;
 
 }
 
@@ -262,31 +286,44 @@ sub file_handler {
 
 }
 
-sub curl_cmd {
-
-  my ($curl_flags) = @_;
-
-  my $curl_proxy_flags = _get_curl_proxy_flags() || '';
-  my $curl_cmd = "curl $curl_global_flags $curl_proxy_flags $curl_flags";
-
-  logger->debug("[CURL] $curl_cmd");
-
-  return $curl_cmd;
-
-}
-
 sub download_file {
 
-  my ($url, $output, $extra_curl_flags) = @_;
+  my ($url, $file, $progress) = @_;
 
-  $extra_curl_flags ||= '';
+  my $total_data;
+  my $options = {};
+  my $http    = http();
 
-  my $curl_cmd = curl_cmd("$extra_curl_flags -# -o $output $url");
+  logger->info("[DOWNLOAD] Downloading $url and save into $file");
 
-  logger->info("[CURL] Downloading $url");
+  open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
 
-  system($curl_cmd);
-  return ($?) ? 0 : 1;
+  print "\r" if ($progress);
+
+  $options->{data_callback} = sub {
+
+    my ($data, $response) = @_;
+    my $content_length = $response->{'headers'}->{'content-length'};
+
+    print DOWNLOAD $data; # Save chunk into file
+
+    $total_data .= $data;
+
+    STDOUT->printflush( progress_bar( $url, length($total_data), $content_length, 20, '=' ) ) if ($progress);
+
+  };
+
+  my $response = $http->request( 'GET', $url, $options );
+
+  close (DOWNLOAD);
+
+  if ( $response->{'success'} ) {
+    logger->info("[DOWNLOAD] done");
+    return 1;
+  }
+
+  logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
+  return 0;
 
 }
 
@@ -306,19 +343,20 @@ sub get_last_modified {
 
   }
 
-  my $curl_cmd = curl_cmd("-s -I $url");
+  my $http = http();
 
-  logger->debug(qq/[CURL] Get "Last-Modified" date of $url/);
+  logger->debug("Get 'Last-Modified' date of $url");
 
-  my $headers = qx{ $curl_cmd };
-  my $result  = 0;
+  my $response = $http->request('HEAD', $url);
 
-  if ($headers =~ m/Last\-Modified\:\s+(.*)/) {
-    my $match = $1;
-    return w3c_date_to_time(trim($match));
+  if ( $response->{'success'} ) {
+
+    my $last_modified = $response->{'headers'}{'last-modified'};
+    return w3c_date_to_time($last_modified) if ($last_modified);
+
   }
 
-  return $result;
+  return 0;
 
 }
 

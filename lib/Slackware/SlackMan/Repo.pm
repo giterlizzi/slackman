@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0_10';
+  $VERSION     = 'v1.1.0_11';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -238,7 +238,7 @@ sub download_repository_metadata {
 
     } else {
       logger->debug(sprintf('[REPO/%s] Download %s metadata file', $repo_id, $metadata));
-      download_file($metadata_url, $metadata_file, "-s");
+      download_file($metadata_url, $metadata_file);
     }
 
   }

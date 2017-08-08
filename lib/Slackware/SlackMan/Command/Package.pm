@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.0_10';
+  $VERSION     = 'v1.1.0_11';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -1105,7 +1105,7 @@ sub _packages_download {
 
     $count_downloads++;
 
-    STDOUT->printflush(sprintf("[%d/%d] %s\n", $count_downloads, $num_downloads, $pkg->{'package'}));
+    print sprintf("%s", $pkg->{'package'});
 
     my ($package_path, $package_errors) = package_download($pkg);
 
@@ -1116,6 +1116,8 @@ sub _packages_download {
     if (-e $package_path) {
       push(@$packages_for_pkgtool, $package_path);
     }
+
+    print "\n";
 
   }
 

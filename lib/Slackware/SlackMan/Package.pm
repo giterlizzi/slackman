@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.0_10';
+  $VERSION = 'v1.1.0_11';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -718,9 +718,9 @@ sub package_download {
 
       logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
 
-      if (download_file($package_url, "$package_path.part")) {
-        rename("$package_path.part", $package_path);
+      if (download_file($package_url, "$package_path.part", 'progress-bar')) {
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
+        rename("$package_path.part", $package_path);
       } else {
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
         push(@package_errors, 'download');
@@ -732,7 +732,7 @@ sub package_download {
 
   unless (-e "$package_path.asc") {
 
-    if (download_file("$package_url.asc", "$package_path.asc", "-s")) {
+    if (download_file("$package_url.asc", "$package_path.asc")) {
       logger->info(sprintf("Downloaded signature of %s package", $pkg->{'package'}));
     }
 
