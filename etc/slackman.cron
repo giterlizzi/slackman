@@ -17,15 +17,15 @@ if [ -f /etc/slackman/slackman-cron.conf ]; then
 fi
 
 if [ "$UPDATE_METADATA" == "yes" ]; then
-  /usr/sbin/slackman update $SLACKMAN_PARAMS > /dev/null 2&>1
+  /usr/sbin/slackman update $SLACKMAN_PARAMS > /dev/null 2>&1
 fi
 
 if [ "$UPDATE_MANIFEST_METADATA" == "yes" ]; then
-  /usr/sbin/slackman update manifest $SLACKMAN_PARAMS > /dev/null 2&>1
+  /usr/sbin/slackman update manifest $SLACKMAN_PARAMS > /dev/null 2>&1
 fi
 
 if [ "$DOWNLOAD_PACKAGES" == "yes" ]; then
-  /usr/sbin/slackman upgrade --download-only $SLACKMAN_PARAMS > /dev/null 2&>1
+  /usr/sbin/slackman upgrade --download-only $SLACKMAN_PARAMS > /dev/null 2>&1
 fi
 
 exit 0
