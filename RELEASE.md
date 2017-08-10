@@ -3,28 +3,29 @@
 ## [v1.1.0]
 
 ### Added
-  * New commands (`config` get & set configuration via CLI, `log`, etc) and options (`--details`, `--Security-fix`, etc)
+  * New commands (`config` get & set configuration via CLI, `log`, etc) and new options (`--details`, `--Security-fix`, etc)
   * Added DBus interface to fetch latest Security Fix & ChangeLog and packages update
   * Added `slackman-notifier` DBus client to notifiy Security Fix & ChangeLog and packages upgrade via `org.freedesktop.Notification` DBus service
-  * Color Output (you can disable temporary via `--color=never` option or via `slackman config main.color never` command)
+  * Color output (you can disable temporary via `--color=never` option or via `slackman config main.color never` command)
   * Informational message for new kernel upgrade. New SlackMan remember and help the user to create new `initrd.gz` file and install the new kernel via `lilo` (or `eliloconfig`) command
   * Added `.new` config file search in `/etc` directory (`slackpkg` like feature)
   * Added daily update metadata (packages list & ChangeLog) via cron
-  * Added `HTTP::Tiny` module for package and repository metadata download
-  * Added man pages
+  * Added support for `HTTP::Tiny` module for package and repository metadata download
+  * Added man pages for all commands
   * Added `make slackbuild` target for create a precompiled SlackMan package
   * Added new bugs to fix later
 
 ### Changed
   * DB structure (added new fileds and index to speedup operations)
-  * DB schema update
-  * Splitted `SlackMan/Command.pm` module in different modules `SlackMan/Commands/*.pm`
+  * DB schema update process
+  * Splitted `SlackMan/Command.pm` module in different sub-modules `SlackMan/Commands/*.pm`
+  * Create a symlink for repository with `file://` protocol
 
 ### Fixed
   * Fixed ChangeLog parser. Now slackman support most Slackware ChangeLog dialect (AliebBob, SlackOnly, etc)
 
 ### Removed
-  * Dropped support of `curl` for package and repository metadata download
+  * Dropped support of `curl` command for package and repository metadata download
   * Removed `Build.PL` (use `make slackbuild` instead)
 
 ## Older releases

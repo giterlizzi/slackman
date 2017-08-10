@@ -836,6 +836,8 @@ sub call_package_file_search {
     exit(1);
   }
 
+  _check_last_metadata_update();
+
   my $rows = package_search_files($file);
 
   foreach my $row (@$rows) {

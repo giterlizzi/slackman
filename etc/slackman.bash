@@ -122,7 +122,7 @@ _slackman_slackman() {
   local slackman_options slackman_commands
 
   slackman_options="-h --help --man --version -c --config --root --color"
-  slackman_commands="changelog clean config db file-search help history install
+  slackman_commands="changelog clean config db file-search help history install info
                      list log new-config reinstall remove repo search update upgrade"
 
   if [[ "$cur" == -* ]]; then

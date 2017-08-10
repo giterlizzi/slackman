@@ -80,7 +80,7 @@ find $PKG -depth -type d -empty -delete || true
 # Preserve slackman.conf
 mv $PKG/etc/slackman/slackman.conf $PKG/etc/slackman/slackman.conf.new
 
-# Preserver slackman-cron.conf
+# Preserve slackman-cron.conf
 mv $PKG/etc/slackman/slackman-cron.conf $PKG/etc/slackman/slackman-cron.conf.new
 
 # Preserve repo config
@@ -98,7 +98,7 @@ chmod 750 $PKG/var/lib/slackman
 
 mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
 cp -a \
-  README.md INSTALL.md LICENSE.md docs/*.md \
+  README.md INSTALL.md LICENSE.md RELEASE.md TODO.md docs/*.md \
   $PKG/usr/doc/$PRGNAM-$VERSION
 
 cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild

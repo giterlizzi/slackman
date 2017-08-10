@@ -165,16 +165,36 @@ sub check_upgrade {
   my $max_timestamp = 0; # Max timestamp
   my $upgrades_body = '';
 
+  my @pkgs = ();
+
   return unless ( keys %{$upgrades} );
 
-  foreach ( keys %{$upgrades} ) {
+  foreach my $package ( keys %{$upgrades} ) {
+
+    push(@pkgs, $package);
 
     $upgrades_body .= sprintf(" ● %s <i>%s</i> ➜ <i>%s</i>\n",
-                              $_,
-                              $upgrades->{$_}->{'old_version_build'},
-                              $upgrades->{$_}->{'new_version_build'});
+                              $package,
+                              $upgrades->{$package}->{'old_version_build'},
+                              $upgrades->{$package}->{'new_version_build'});
 
   }
+
+  my $pkgs_string = join(',', sort(@pkgs));
+
+  my %current_config = read_config($user_config_file);
+
+  my $current_packages  = $current_config{'packages'}->{'upgrades'}    || '';
+  my $current_timestamp = $current_config{'last_update'}->{'upgrades'} || 0;
+
+  # Remember the user after 6h
+  return if ( $pkgs_string eq $current_packages && time() < ($current_timestamp + (3600 * 6)) );
+
+  # Save actual package list
+  $current_config{'packages'}->{'upgrades'}    = $pkgs_string;
+  $current_config{'last_update'}->{'upgrades'} = time();
+
+  file_write($user_config_file, stringify_config(%current_config));
 
   return unless ($upgrades_body);
 
