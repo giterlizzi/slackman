@@ -24,6 +24,7 @@ README.md
 INSTALL.md
 LICENSE.md
 RELEASE.md
+TODO.md
 t/00-fake-root.t
 t/00-load.t
 t/01-package-info.t
@@ -39,6 +40,7 @@ etc/repos.d/extra/csb.repo
 etc/repos.d/extra/ktown.repo
 etc/repos.d/extra/microlinux.repo
 etc/repos.d/extra/msb.repo
+etc/repos.d/extra/rlworkman.repo
 etc/repos.d/extra/salix.repo
 etc/repos.d/extra/slacke18.repo
 etc/repos.d/extra/slackers.repo
@@ -67,7 +69,6 @@ docs/dbus.md
 pod/Makefile
 pod/slackman.conf.5.pod
 pod/slackman.repo.5.pod
-slackbuilds/Build.PL
 slackbuilds/slackman/doinst.sh
 slackbuilds/slackman/slackman.info
 slackbuilds/slackman/slackman.SlackBuild
