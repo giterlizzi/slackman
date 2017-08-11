@@ -2,14 +2,15 @@
 
 ## [v1.1.0]
 
-This release introduce new commands & params and new DBus service & destkop client (`slackman-notifier`). Improved speed, stability and repository support.
+This release introduce new features, new commands & params and new DBus service & destkop client (`slackman-notifier`). Improved speed, stability and repository support.
 
 ### Added
-  * New commands (`config` get & set configuration via CLI, `log`, etc) and new options (`--details`, `--Security-fix`, etc)
+  * New commands (`config` get & set configuration via CLI, `log`, etc) and new options (`--new-config`, `--details`, `--Security-fix`, etc)
   * Added DBus interface to fetch latest Security Fix & ChangeLog and packages update
   * Added `slackman-notifier` DBus client to notifiy Security Fix & ChangeLog and packages upgrade via `org.freedesktop.Notification` DBus service
-  * Color output (you can disable temporary via `--color=never` option or via `slackman config main.color never` command)
-  * Informational message for new kernel upgrade. New SlackMan remember and help the user to create new `initrd.gz` file and install the new kernel via `lilo` (or `eliloconfig`) command
+  * Added color output for most commands (you can disable temporary via `--color=never` option or via `slackman config main.color never` command)
+  * Added informational message for new kernel upgrade
+  * Added helper to create new `initrd.gz` file and install the new kernel via `lilo` (or `eliloconfig`) command
   * Added `.new` config file search in `/etc` directory (`slackpkg` like feature)
   * Added daily update metadata (packages list & ChangeLog) via cron
   * Added support for `HTTP::Tiny` module for package and repository metadata download
