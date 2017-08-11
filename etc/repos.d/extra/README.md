@@ -2,16 +2,18 @@
 
 SlackMan support different Slackware repository:
 
+ - Slackware stable and **-current**
  - SlackOnly
  - Slackers (Conraid)
  - Slacky (Italian Slackware Community)
- - AlienBob
+ - AlienBob (and **restricted** repository)
+ - Robby Workman
  - ktown (KDE5)
  - Cinnamon SlackBuilds
  - MATE SlackBuilds
  - Salix
  - Microlinux
- - and more...
+ - ... and more
 
 ## Install
 

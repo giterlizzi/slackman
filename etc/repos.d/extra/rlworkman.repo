@@ -1,0 +1,12 @@
+# rlworkman's Slackware Packages
+
+[packages]
+name      = Robby Workman's Slackware Packages
+enabled   = false
+mirror    = http://slackware.uk/people/rlworkman/$release.real/$arch/
+changelog = http://slackware.uk/people/rlworkman/$release.real/ChangeLog.txt
+packages  = http://slackware.uk/people/rlworkman/$release.real/PACKAGES.TXT
+manifest  = http://slackware.uk/people/rlworkman/$release.real/MANIFEST.bz2
+checksums = http://slackware.uk/people/rlworkman/$release.real/CHECKSUMS.md5
+gpgkey    = http://slackware.uk/people/rlworkman/$release.real/GPG-KEY
+priority  = 1

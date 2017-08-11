@@ -11,16 +11,22 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.4';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw(
+  @EXPORT_OK = qw(
 
     callback_spinner
     callback_status
     changelog_date_to_time
+    check_perl_module
     confirm
+    confirm_choice
+    create_lock
     curl_cmd
+    datetime_calc
+    datetime_h
+    delete_lock
     directory_files
     download_file
     file_append
@@ -28,23 +34,22 @@ BEGIN {
     file_read
     file_read_url
     file_write
+    filesize_h
+    get_arch
     get_last_modified
+    get_lock_pid
+    get_slackware_release
     gpg_import_key
     gpg_verify
-    time_to_timestamp
-    trim
-    w3c_date_to_time
+    http
+    ldd
     md5_check
-    get_arch
-    get_slackware_release
-    logger
-    create_lock
-    get_lock_pid
-    delete_lock
-    read_config
-    set_config
-
-    $slackman_opts
+    time_to_timestamp
+    timestamp_to_time
+    timestamp_options_to_sql
+    trim
+    uniq
+    w3c_date_to_time
 
   );
 
@@ -61,52 +66,173 @@ use IO::Dir;
 use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
-use Getopt::Long qw(:config );
+use Time::Seconds;
+use HTTP::Tiny;
+use Carp ();
+use File::Basename;
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
 
-my $curl_useragent    = "SlackMan/$VERSION";
-my $curl_global_flags = qq/-H "User-Agent: $curl_useragent" -C - -L -k --fail --retry 5 --retry-max-time 0/;
-
-# Set proxy flags for cURL
-if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'enable'}) {
-
-  if ($Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'}) {
-
-    $curl_global_flags .= sprintf(" -x %s://%s:%s@%s:%s",
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'username'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'password'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
-    );
-
-  } else {
-    $curl_global_flags .= sprintf(" -x %s://%s:%s",
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'protocol'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'hostname'},
-      $Slackware::SlackMan::Config::slackman_conf->{'proxy'}->{'port'},
-    );
-  }
-
-}
-
-my $logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
-# Export cmd options
-our $slackman_opts = {};
+sub http {
 
-GetOptions( $slackman_opts,
-            'help|h', 'man', 'version', 'root=s', 'repo=s', 'exclude|x=s', 'limit=i',
-            'yes|y', 'no|n', 'quiet', 'no-excludes', 'no-priority', 'config=s', 'force|f',
-            'download-only', 'new-packages', 'obsolete-packages', 'summary', 'show-files',
-          );
+  my $http_options = { 'agent' => "SlackMan/$VERSION" };
+  my $proxy_conf   = $slackman_conf{'proxy'};
+  my $proxy_url    = undef;
 
-# Set default options
-$slackman_opts->{'limit'} ||= 50;
+  if ($proxy_conf->{'username'}) {
+
+    $proxy_url = sprintf("%s://%s:%s@%s:%s",
+      $proxy_conf->{'protocol'},
+      $proxy_conf->{'username'},
+      $proxy_conf->{'password'},
+      $proxy_conf->{'hostname'},
+      $proxy_conf->{'port'},
+    );
+
+  } else {
+    $proxy_url = sprintf("%s://%s:%s",
+      $proxy_conf->{'protocol'},
+      $proxy_conf->{'hostname'},
+      $proxy_conf->{'port'},
+    );
+  }
+
+  $http_options->{'http_proxy'}  = $proxy_url;
+  $http_options->{'https_proxy'} = $proxy_url;
+
+  my $http = HTTP::Tiny->new( $http_options );
+
+  return $http;
+
+}
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
+}
+
+sub ldd {
+
+  my ($file) = @_;
+
+  return sort { $a cmp $b }
+          map { (abs_path($_) || $_) }
+          map { $_ =~ m/(\/\S+)/ }
+              ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
+
+}
+
+sub progress_bar {
+
+  my ( $url, $got, $total, $width, $char ) = @_;
+
+  $| = 1;
+
+  $width ||= 25;
+  $char  ||= '=';
+
+  my $got_h      = filesize_h($got, 1);
+  my $total_h    = filesize_h($total, 1);
+  my $num_width  = length $total_h;
+  my $file       = basename($url);
+  my $percentage = (100 * $got/+$total);
+
+  return sprintf "%-80s %3d%% [%-${width}s] %7s / %s\r",
+    $file, $percentage, $char x (($width-1)*$got/$total) . '>',
+    $got_h, $total_h;
+
+}
+
+sub datetime_h {
+
+  my ($timestamp) = @_;
+
+  my $ago = time() - $timestamp;
+
+  if ($ago > 24 * 60 * 60 * 30 * 12 * 2) {
+    return sprintf('%d years ago', ($ago / (24 * 60 * 60 * 30 * 12)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 30 * 2) {
+    return sprintf('%d months ago', ($ago / (24 * 60 * 60 * 30)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 7 * 2) {
+    return sprintf('%d weeks ago', ($ago / (24 * 60 * 60 * 7)));
+  }
+
+  if ($ago > 24 * 60 * 60 * 2) {
+    return sprintf('%d days ago', ($ago / (24 * 60 * 60)));
+  }
+
+  if ($ago > 60 * 60 * 2) {
+    return sprintf('%d hours ago', ($ago / (60 * 60)));
+  }
+
+  if ($ago > 60 * 2) {
+    return sprintf('%d minutes ago', ($ago / (60)));
+  }
+
+  return sprintf('%d seconds ago', $ago);
+
+}
+
+sub filesize_h {
+
+  my ($size, $decimal, $padding) = @_;
+
+  $decimal ||= 0;
+  $padding ||= 0;
+
+  my @size_units = ('B', 'K', 'M', 'G', 'T');
+  my $idx_unit   = 0;
+
+  while ($size >= 1024 && ($idx_unit < scalar(@size_units) - 1)) {
+    $size /= 1024;
+    $idx_unit++;
+  }
+
+  my $size_h = sprintf('%.'.$decimal.'f %s', $size, $size_units[$idx_unit]);
+
+  if ($padding) {
+    return sprintf("%s$size_h", " "x(8 - length($size_h)));
+  }
+
+  return $size_h;
+
+}
+
+sub datetime_calc {
+
+  my ($string) = @_;
+
+  my ($sign, $digit, $order) = ($string =~ /^(\+|-|)(\d+)\s(days?|hours?|months?|years?)$/i);
+
+  my $time = 0;
+
+     $time = ONE_DAY   * $digit  if (lc($order) =~ /day/);
+     $time = ONE_HOUR  * $digit  if (lc($order) =~ /hour/);
+     $time = ONE_MONTH * $digit  if (lc($order) =~ /month/);
+     $time = ONE_YEAR  * $digit  if (lc($order) =~ /year/);
+
+  my $datetime = Time::Piece->new();
+
+  if ($sign eq '' || $sign eq '+') {
+    $datetime += $time;
+  }
+  if ($sign eq '-') {
+    $datetime -= $time;
+  }
+
+  return $datetime;
+
+}
 
 sub file_read {
 
@@ -158,68 +284,88 @@ sub file_handler {
 
 }
 
-sub curl_cmd {
-
-  my ($curl_flags) = @_;
-
-  my $curl_cmd = "curl $curl_global_flags $curl_flags";
-
-  logger->debug("[CURL] $curl_cmd");
-
-  return $curl_cmd;
-
-}
-
-sub file_read_url {
-
-  my $url      = shift;
-  my $curl_cmd = curl_cmd("-s $url");
-
-  logger->info("[CURL] Downloading $url");
-
-  my $data = qx{ $curl_cmd };
-  return $data;
-
-}
-
 sub download_file {
 
-  my ($url, $output, $extra_curl_flags) = @_;
+  my ($url, $file, $progress) = @_;
 
-  $extra_curl_flags ||= '';
+  my $total_data;
+  my $options = {};
+  my $http    = http();
 
-  my $curl_cmd = curl_cmd("$extra_curl_flags -# -o $output $url");
+  logger->info("[DOWNLOAD] Downloading $url and save into $file");
 
-  logger->info("[CURL] Downloading $url");
+  open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
 
-  system($curl_cmd);
-  return ($?) ? 0 : 1;
+  print "\r" if ($progress);
+
+  $options->{data_callback} = sub {
+
+    my ($data, $response) = @_;
+    my $content_length = $response->{'headers'}->{'content-length'};
+
+    print DOWNLOAD $data; # Save chunk into file
+
+    $total_data .= $data;
+
+    STDOUT->printflush( progress_bar( $url, length($total_data), $content_length, 20, '=' ) ) if ($progress);
+
+  };
+
+  my $response = $http->request( 'GET', $url, $options );
+
+  close (DOWNLOAD);
+
+  if ( $response->{'success'} ) {
+    logger->info("[DOWNLOAD] done");
+    return 1;
+  }
+
+  logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
+  return 0;
 
 }
 
 sub get_last_modified {
 
-  my $url      = shift;
-  my $curl_cmd = curl_cmd("-s -I $url");
+  my ($url) = @_;
 
-  logger->debug(qq/[CURL] Get "Last-Modified" date of $url/);
+  if ($url =~ /^file/) {
 
-  my $headers = qx{ $curl_cmd };
-  my $result  = 0;
+    my $local_file = $url;
+       $local_file =~ s/file:\/\///;
 
-  if ($headers =~ m/Last\-Modified\:\s+(.*)/) {
-    my $match = $1;
-    return w3c_date_to_time(trim($match));
+    my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
+        $atime, $mtime, $ctime, $blksize, $blocks) = stat($local_file);
+
+    return $mtime;
+
   }
 
-  return $result;
+  my $http = http();
+
+  logger->debug("Get 'Last-Modified' date of $url");
+
+  my $response = $http->request('HEAD', $url);
+
+  if ( $response->{'success'} ) {
+
+    my $last_modified = $response->{'headers'}{'last-modified'};
+    return w3c_date_to_time($last_modified) if ($last_modified);
+
+  }
+
+  return 0;
 
 }
 
 sub trim {
+
   my $string = shift;
+  return $string unless($string);
+
   $string =~ s/^\s+|\s+$//g;
   return $string;
+
 }
 
 sub confirm {
@@ -228,13 +374,29 @@ sub confirm {
   my $term   = Term::ReadLine->new('prompt');
   my $answer = undef;
 
-  while ( defined ($_ = $term->readline($prompt)) ) {
+  while ( defined ($_ = $term->readline("$prompt ")) ) {
     $answer = $_;
     last if ($answer =~ /^(y|n)$/i);
   }
 
   return 1 if ($answer =~ /y/i);
   return 0 if ($answer =~ /n/i);
+
+}
+
+sub confirm_choice {
+
+  my ($prompt, $regex) = @_; 
+
+  my $term   = Term::ReadLine->new('prompt');
+  my $answer = undef;
+
+  while ( defined ($_ = $term->readline("$prompt ")) ) {
+    $answer = $_;
+    last if ($answer =~ /^($regex)$/);
+  }
+
+  return uc($answer);
 
 }
 
@@ -262,15 +424,26 @@ sub changelog_date_to_time {
 
 }
 
+sub timestamp_to_time {
+
+  my ($timestamp) = @_;
+
+  my $t = Time::Piece->strptime($timestamp, "%Y-%m-%d %H:%M:%S");
+  return $t->epoch;
+
+}
+
 sub w3c_date_to_time {
 
   my $timestamp = shift;
   return $timestamp unless($timestamp);
 
   $timestamp = trim($timestamp);
+  $timestamp =~ s/\s+GMT//;  # Remove GMT to prevent issue with older Time::Piece
+                             # NOTE: HTTP dates are always expressed in GMT, never in local time.
 
                                             # Wed, 12 Apr 2017 09:03:03 GMT
-  my $t = Time::Piece->strptime($timestamp, "%a, %d %b %Y %H:%M:%S %Z");
+  my $t = Time::Piece->strptime($timestamp, "%a, %d %b %Y %H:%M:%S");
 
   return $t->epoch();
 
@@ -288,9 +461,50 @@ sub time_to_timestamp {
 
 }
 
+sub timestamp_options_to_sql {
+
+  my $option_after  = $slackman_opts->{'after'};
+  my $option_before = $slackman_opts->{'before'};
+
+  my $parsed_after  = undef;
+  my $parsed_before = undef;
+
+  my @timestamp_filter = ();
+
+  if ($option_after) {
+
+    if ($option_after && $option_after =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_after  = datetime_calc($option_after)->ymd;
+    }
+
+    if (! $parsed_after && $option_after =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_after = $option_after;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp > "%s")', $parsed_after))  if ($parsed_after);
+
+  }
+
+  if ($option_before) {
+
+    if ($option_before && $option_before =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+      $parsed_before = datetime_calc($option_before)->ymd;
+    }
+
+    if (! $parsed_before && $option_before =~ /^\d{4}-\d{2}-\d{2}/) {
+      $parsed_before = $option_before;
+    }
+
+    push(@timestamp_filter, sprintf('(timestamp < "%s")', $parsed_before)) if ($parsed_before);
+
+  }
+
+  return sprintf('( %s )', join(' AND ', @timestamp_filter)) if ($parsed_after || $parsed_before);
+
+}
+
 sub callback_status {
-  my $status = shift;
-  STDOUT->printflush("$status... ");
+  STDOUT->printflush(sprintf("%s... ", shift));
 }
 
 sub callback_spinner {
@@ -308,7 +522,7 @@ sub gpg_verify {
 
   my $file = shift;
 
-  logger->debug(qq/[GPG] verify file "$file" width "$file.asc"/);
+  logger->debug(qq/[GPG] verify file "$file" with "$file.asc"/);
 
   system("gpg --verify $file.asc $file 2>/dev/null");
   return ($?) ? 0 : 1;
@@ -333,9 +547,11 @@ sub get_arch {
   return (POSIX::uname())[4];
 }
 
-sub get_slackware_release {
+my $slackware_release;
 
-  my $slackware_version_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
+sub _get_slackware_release {
+
+  my $slackware_version_file = $slackman_conf{'directory'}->{'root'} . '/etc/slackware-version';
   my $slackware_version      = file_read($slackware_version_file);
 
   chomp($slackware_version);
@@ -343,6 +559,10 @@ sub get_slackware_release {
   $slackware_version =~ /Slackware (.*)/;
   return $1;
 
+}
+
+sub get_slackware_release {
+  return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
 
 sub md5_check {
@@ -357,21 +577,16 @@ sub md5_check {
 
 }
 
-sub logger {
-
-  my $logger_file  = $Slackware::SlackMan::Config::slackman_conf->{'logger'}->{'file'};
-  my $logger_level = $Slackware::SlackMan::Config::slackman_conf->{'logger'}->{'level'};
-
-  $logger ||= Slackware::SlackMan::Logger->new( 'file'  => $logger_file,
-                                                'level' => $logger_level );
-  return $logger;
-
+sub check_perl_module {
+  my ($module) = @_;
+  return 1 if (eval "require $module");
+  return 0;
 }
 
 sub create_lock {
 
   my $pid = $$;
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
 
   file_write($lock_file, $pid);
 
@@ -379,7 +594,7 @@ sub create_lock {
 
 sub get_lock_pid {
 
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
 
   open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
@@ -396,89 +611,8 @@ sub get_lock_pid {
 
 sub delete_lock {
 
-  my $lock_file = $Slackware::SlackMan::Config::slackman_conf->{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
-
-}
-
-sub read_config {
-
-  my $file = shift;
-  my $fh   = file_handler($file, '<');
-
-  my $section;
-  my %config;
-
-  while (my $line = <$fh>) {
-
-    chomp($line);
-
-    # skip comments
-    next if ($line =~ /^\s*#/);
-
-    # skip empty lines
-    next if ($line =~ /^\s*$/);
-
-    if ($line =~ /^\[(.*)\]\s*$/) {
-      $section = $1;
-      next;
-    }
-
-    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
-
-      my ($field, $value) = ($1, $2);
-
-      if (not defined $section) {
-
-        $value = 1 if ($value =~ /^(yes|true)$/);
-        $value = 0 if ($value =~ /^(no|false)$/);
-
-        $config{$field} = $value;
-        next;
-
-      }
-
-      $value = 1 if ($value =~ /^(yes|true)$/);
-      $value = 0 if ($value =~ /^(no|false)$/);
-
-      $config{$section}{$field} = $value;
-
-    }
-  }
-
-  return %config;
-
-}
-
-sub set_config {
-
-  my ( $input, $section, $keyname, $new_value ) = @_;
-
-  my $current_section = '';
-  my @lines  = split(/\n/, $input);
-  my $output = '';
-
-  foreach (@lines) { 
-
-    if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
-      $current_section = $1;
-
-    } elsif ( $current_section eq $section )  {
-
-      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
-
-      if ( $key and $key eq $keyname  ) { 
-        $output .= "$keyname=$new_value\n";
-        next;
-      }
-
-    }
-
-    $output .= "$_\n";
-
-  }
-
-  return $output;
 
 }
 

@@ -14,10 +14,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.4';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK = qw{
     parse_packages
     parse_history
     parse_variables
@@ -32,12 +32,12 @@ BEGIN {
 
 }
 
-use Data::Dumper;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use File::Basename;
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB      qw(:all);
-use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
@@ -50,12 +50,9 @@ sub parse_changelog {
   my $repository          = $repo->{'id'};
   my $changelog_separator = quotemeta('+--------------------------+');
 
-  unless(download_repository_metadata($repository, 'changelog', \&$callback_status)) {
-    &$callback_status('skip') if ($callback_status);
-    return(0);
-  }
+  return(0) unless(download_repository_metadata($repository, 'changelog', \&$callback_status));
 
-  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf{'directory'}->{'cache'}, $repository);
   return(0) unless (-e $changelog_file);
 
   my $changelog_contents = file_read($changelog_file);
@@ -71,12 +68,11 @@ sub parse_changelog {
 
   &$callback_status('parse') if ($callback_status);
 
-  my $num = 0;
+  my $i = 0;
 
   foreach my $changelog (@changelogs) {
 
-    callback_spinner($num);
-    $num++;
+    callback_spinner($i++) if ($callback_status);
 
     chomp($changelog);
 
@@ -97,7 +93,7 @@ sub parse_changelog {
       $security_fix = 0;
 
       # Standard Slackware Changelog format (directory/package.ext:  status. description)
-      if ($line =~ /^([[:graph:]]+):\s+(.*)/gm) {
+      if ($line =~ /^([[:graph:]]+\/[[:graph:]]+):\s+(.*)/gm) {
 
         $package = $1;
         $text    = $2;
@@ -109,7 +105,7 @@ sub parse_changelog {
         $description =~ s/\|/\n/g  if ($description);
         $description =~ s/^  //gm  if ($description);
 
-        my $package_info = package_info(basename($package));
+        my $package_info = package_parse_name(basename($package));
 
         $name    = $package_info->{'name'};
         $version = $package_info->{'version'};
@@ -117,48 +113,79 @@ sub parse_changelog {
         $build   = $package_info->{'build'};
         $tag     = $package_info->{'tag'};
 
+        next unless($name);
+
+      # Non-standard ChangeLogs
       } else {
 
         next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
 
+        my $line2 = $line;
+           $line2 =~ s/\|/\n/g;
+
         # AlienBob ChangeLog
-        if ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
+        if ($line2 =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
 
           $package = $1;
           $status  = $2;
           $version = $3;
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
+        } elsif ($line2 =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
 
           $package = $1;
           $status  = $2;
           $version = $3;
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
+        } elsif ($line2 =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
 
           $package = $1;
           $version = $2;
           $status  = 'added';
 
         # AlienBob Changelog
-        } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
+        } elsif ($line2 =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
 
           $package = $1;
           $version = $2;
           $status  = 'upgraded';
 
         # slackonly ChangeLog
-        } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
+        } elsif ($line2 =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
 
           $package = $1;
           $status  = $4;
 
+        # CSB ChangeLog or package-version-arch-build-tag.ext version
+        } elsif ($line2 =~ /([[:graph:]]+):\s+(added|removed|rebuilt|updated|upgraded)*/i) {
+
+          $package = $1;
+          $status  = $2;
+
         }
 
-        $version =~ s/(\.|\;|\,)$// if ($version);
-        $package =~ s/\://          if ($package);
+        $description = $line2;
+
+        $category = dirname($package)  if ($package);
+        $name     = basename($package) if ($package);
+
+        if (defined($package) && $package =~ /t?z/) {
+
+          my $package_info = package_parse_name(basename($package));
+
+          $name    = $package_info->{'name'};
+          $version = $package_info->{'version'};
+          $arch    = $package_info->{'arch'};
+          $build   = $package_info->{'build'};
+          $tag     = $package_info->{'tag'};
+
+        }
+
+        $category =~ s/^\.//         if ($category);
+        $package  =~ s/\://          if ($package);
+        $version  =~ s/(\.|\;|\,)$// if ($version);
+        $version  =~ s/^v//          if ($version);
 
         $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
         $status  = 'added'    if ($status && $status =~ /added/i);
@@ -167,8 +194,6 @@ sub parse_changelog {
 
       next     if (defined($version) && $version !~ /\d/);
       next unless ($status);
-
-      $category = dirname($package) || '';
 
       my @row = (
         $changelog_timestamp,    # timestamp
@@ -189,105 +214,6 @@ sub parse_changelog {
 
     }
 
-
-#     foreach my $line (@lines) {
-# 
-#       chomp($line);
-# 
-#       next if ($line =~ /^\s/);
-#       next if ($line =~ /\*\:/);
-#       next if ($line =~ /\.img/);
-# 
-#       next unless ($line =~ /(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i);
-# 
-#       my ($package, $status, $name, $version, $arch, $tag, $build);
-# 
-#       # Standard Slackware ChangeLog format (directory/package.ext: status)
-#       if ($line =~ /([[:graph:]]+t?z):\s+(Added|Rebuilt|Removed|Upgraded|Updated|Patched|Renamed|Moved|Name Change|Switched)/i) {
-# 
-#         $package = $1;
-#         $status  = $2;
-# 
-#       # AlienBob Changelog
-#       } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i) {
-# 
-#         $package = $1;
-#         $status  = $2;
-#         $version = $3;
-# 
-#       # AlienBob Changelog
-#       } elsif ($line =~ /([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i) {
-# 
-#         $package = $1;
-#         $status  = $2;
-#         $version = $3;
-# 
-#       # AlienBob Changelog
-#       } elsif ($line =~ /([[:graph:]]+) added version (\d.([[:graph:]]+))/i) {
-# 
-#         $package = $1;
-#         $version = $2;
-#         $status  = 'added';
-# 
-#       # AlienBob Changelog
-#       } elsif ($line =~ /([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i) {
-# 
-#         $package = $1;
-#         $version = $2;
-#         $status  = 'upgraded';
-# 
-#       # slackonly ChangeLog
-#       } elsif ($line =~ /(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)*/i) {
-# 
-#         $package = $1;
-#         $status  = $4;
-# 
-#       }
-# 
-#       next     if (defined($version) && ! $version =~ /\d/);
-#       next unless ($status);
-# 
-#       $version =~ s/(\.|\;|\,)$// if ($version);
-#       $package =~ s/\://          if ($package);
-# 
-#       $status  = 'upgraded' if ($status && $status =~ /(updated|upgraded)/i);
-#       $status  = 'added'    if ($status && $status =~ /added/i);
-# 
-#       if ($package =~ /(txz|tgz|tbz|tlz)/) {
-# 
-#         my $package_info = package_info(basename($package));
-# 
-#         next unless ($package_info->{'name'});
-#         next unless ($package_info->{'version'});
-#         next unless ($package_info->{'build'} =~ /^[0-9]+$/);
-# 
-#         $name    = $package_info->{'name'};
-#         $version = $package_info->{'version'};
-#         $arch    = $package_info->{'arch'};
-#         $build   = $package_info->{'build'};
-#         $tag     = $package_info->{'tag'};
-# 
-#       } else {
-#         $name = basename($package);
-#       }
-# 
-#       my @row = (
-#         $changelog_timestamp,    # timestamp
-#         $package,                # package
-#         lc($status),             # status
-#         $name,                   # name
-#         $version,                # version
-#         $arch,                   # arch
-#         $build,                  # build
-#         $tag,                    # tag
-#         $repository,             # repository
-#         0
-#       );
-# 
-#       push(@values, \@row);
-# 
-#     }
-
   }
 
   &$callback_status('save') if ($callback_status);
@@ -305,13 +231,11 @@ sub parse_changelog {
 
 sub parse_checksums {
 
-  my ($repo) = @_;
+  my ($repo, $callback_status) = @_;
 
-  unless(download_repository_metadata($repo->{'id'}, 'checksums')) {
-    return(0);
-  }
+  return(0) unless(download_repository_metadata($repo->{'id'}, 'checksums', \&$callback_status));
 
-  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf->{directory}->{'cache'}, $repo->{'id'});
+  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf{'directory'}->{'cache'}, $repo->{'id'});
   return(0) unless (-e $checksums_file);
 
   my $checksums_contents = file_read($checksums_file);
@@ -334,25 +258,22 @@ sub parse_packages {
 
   my ($repo, $callback_status) = @_;
 
-  unless(download_repository_metadata($repo->{'id'}, 'packages', \&$callback_status, \&$callback_status)) {
-    &$callback_status('skip') if ($callback_status);
-    return(0);
-  }
+  return(0) unless(download_repository_metadata($repo->{'id'}, 'packages', \&$callback_status));
 
   my $repository = $repo->{'id'};
   my $mirror     = $repo->{'mirror'};
 
-  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf{'directory'}->{'cache'}, $repository);
 
   return(0) unless (-e $packages_file);
 
   my $packages_contents = file_read($packages_file);
   return(0) unless($packages_contents);
 
-  &$callback_status('parse') if ($callback_status);
-
   my @packages  = split(/\n{2,}/, $packages_contents);
-  my @checksums = parse_checksums($repo);
+  my @checksums = parse_checksums($repo, $callback_status);
+
+  &$callback_status('parse') if ($callback_status);
 
   my $last_update = shift(@packages);
      $last_update =~ s/PACKAGES.TXT;\s+// if ($last_update);
@@ -364,19 +285,20 @@ sub parse_packages {
                    conflicts suggests size_compressed size_uncompressed checksum);
   my @values  = ();
 
-  my $num = 0;
+  my $i = 0;
 
   foreach my $metadata (@packages) {
 
     my $data = package_metadata($metadata);
 
-    callback_spinner($num);
-    $num++;
+    callback_spinner($i++) if ($callback_status);
 
     next unless ($data->{'name'});
 
-    my $package_grep = quotemeta(sprintf('%s/%s', $data->{'location'}, $data->{'package'}));
-    my $checksum     = ( grep { $_ =~ /$package_grep$/} @checksums )[0] || '';
+    my $package_grep = sprintf('(%s|%s)', quotemeta(sprintf('%s/%s', $data->{'location'}, $data->{'package'})),
+                                          $data->{'package'});
+
+    my $checksum     = ( grep { $_ =~ /$package_grep/} @checksums )[0] || '';
     my ($md5, $file) = split(/\s/, $checksum);
 
     my @row = (
@@ -413,6 +335,9 @@ sub parse_packages {
     'values'  => \@values,
   );
 
+  # Delete repository manifest data
+  $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
+
   db_compact();
 
 }
@@ -425,12 +350,9 @@ sub parse_manifest {
   my $repository        = $repo->{'id'};
   my $manifest_contents = '';
 
-  unless(download_repository_metadata($repository, 'manifest', \&$callback_status, \&$callback_status)) {
-    &$callback_status('skip') if ($callback_status);
-    return(0);
-  }
+  return(0) unless(download_repository_metadata($repository, 'manifest', \&$callback_status));
 
-  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf->{directory}->{'cache'}, $repository);
+  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf{'directory'}->{'cache'}, $repository);
   return(0) unless(-e $manifest_file);
 
   my $manifest_input = file_read($manifest_file);
@@ -444,31 +366,33 @@ sub parse_manifest {
 
   my @manifest = split(/\n{2,}/, $manifest_contents);
 
-  $dbh->do('DELETE FROM manifest WHERE package_id IN (SELECT packages.id FROM packages WHERE packages.repository = ?)', undef, $repository);
+  $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
 
-  my @columns = ('package_id', 'directory', 'file');
+  my @columns = ('repository', 'name', 'package', 'version',
+                 'arch', 'build', 'tag', 'directory', 'file');
   my @values  = ();
 
-  my $num = 0;
+  my $i = 0;
 
   foreach my $manifest (@manifest) {
 
-    callback_spinner($num);
-    $num++;
+    callback_spinner($i++) if ($callback_status);
 
     my @lines = split(/\n/, $manifest);
 
     my ($package_location) = $manifest =~ /Package:\s+(.*)/;
     my $package            = basename($package_location);
     my $location           = dirname($package_location);
-
-    my $package_id = $dbh->selectrow_array('SELECT id FROM packages WHERE package = ? AND repository = ?', undef, $package, $repository);
-    next unless($package_id);
+    my $pkg_info           = package_parse_name($package);
+    my $name               = $pkg_info->{'name'};
+    my $version            = $pkg_info->{'version'};
+    my $arch               = $pkg_info->{'arch'};
+    my $build              = $pkg_info->{'build'};
+    my $tag                = $pkg_info->{'tag'};
 
     foreach my $line (@lines) {
 
-      callback_spinner($num);
-      $num++;
+      callback_spinner($i++) if ($callback_status);
 
       next unless ($line =~ /^(d|-)/);
 
@@ -492,7 +416,8 @@ sub parse_manifest {
         $directory = dirname($path);
       }
 
-      my @row = ( $package_id, $directory, $file );
+      my @row = ( $repository, $name, $package, $version, $arch, $build, $tag,
+                  $directory, $file );
       push(@values, \@row);
 
     }
@@ -516,19 +441,23 @@ sub parse_history {
 
   my ($type, $callback_status) = @_;
 
-  my $path = '';
-  my $slackware_root = $ENV{ROOT} || '';
+  my $slackware_root    = $ENV{ROOT} || '';
+  my $slackware_log_path = "$slackware_root/var/log";
 
-  my $installed_packages = qx{ls -l $slackware_root/var/log/packages/ | wc -l};
-  my $removed_packages   = qx{ls -l $slackware_root/var/log/removed_packages/ | wc -l};
-  my $last_installed     = qx{ls -lrt $slackware_root/var/log/packages/ | tail -1 | awk '{ print \$NF }'};
+  my $installed_packages = qx{ ls -l $slackware_log_path/packages/ | wc -l };
+  my $removed_packages   = qx{ ls -l $slackware_log_path/removed_packages/ | wc -l };
 
   chomp($installed_packages);
   chomp($removed_packages);
-  chomp($last_installed);
 
-  my $meta_installed_packages = db_meta_get('installed-packages') || 0;
-  my $meta_removed_packages   = db_meta_get('removed-packages')   || 0;
+  my $meta_installed_packages = 0;
+  my $meta_removed_packages   = 0;
+
+  # Detect force flag
+  unless ($slackman_opts->{'force'}) {
+    $meta_installed_packages = db_meta_get('installed-packages') || 0;
+    $meta_removed_packages   = db_meta_get('removed-packages')   || 0;
+  }
 
   given($type) {
 
@@ -537,7 +466,7 @@ sub parse_history {
       return(0) if (   $installed_packages == $meta_installed_packages
                     && $removed_packages   == $meta_removed_packages);
 
-      $path = "$slackware_root/var/log/packages";
+      $slackware_log_path .= "/packages";
 
       $dbh->do(qq/DELETE FROM history WHERE status = 'installed'/);
       db_meta_set('installed-packages', $installed_packages);
@@ -548,7 +477,7 @@ sub parse_history {
 
       return(0) if ($removed_packages == $meta_removed_packages);
 
-      $path = "$slackware_root/var/log/removed_packages";
+      $slackware_log_path .= "/removed_packages";
 
       $dbh->do(qq/DELETE FROM history WHERE status IN ('upgraded', 'removed')/);
       db_meta_set('removed-packages', $removed_packages);
@@ -557,20 +486,18 @@ sub parse_history {
 
   }
 
+  my @values  = ();
   my @columns = qw(name package version build tag arch status timestamp upgraded
                    summary description size_compressed size_uncompressed);
 
-  my @values  = ();
-
   &$callback_status('parse') if ($callback_status);
 
-  my $num   = 0;
-  my @files = grep { -f } glob("$path/*");
+  my $i = 0;
+  my @files = grep { -f } glob("$slackware_log_path/*");
 
   foreach my $file (@files) {
 
-    callback_spinner($num);
-    $num++;
+    callback_spinner($i++) if ($callback_status);
 
     my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
         $atime, $mtime, $ctime, $blksize, $blocks) = stat($file);
@@ -586,7 +513,8 @@ sub parse_history {
       $filename  =~ s/\-upgraded(.*)//;
       $status    = 'upgraded';
     } else {
-      $status = $type;
+      $status    = $type;
+      $timestamp = time_to_timestamp($ctime) if ($status eq 'removed');
     }
 
     my $metadata = package_metadata(file_read($file));
@@ -636,7 +564,7 @@ sub parse_variables {
   my $release_conf   = $release;
   my $release_suffix = '';
 
-  $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'}->{'version'});
+  $release_conf = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }
@@ -645,12 +573,15 @@ sub parse_variables {
   $release_suffix = $arch_family if ($arch_family eq 'arm');
   $release_suffix = $arch_bit    if ($arch_bit eq '64');
 
+  # Remove "{" and "}" char from string
   $string =~ s/(\{|\})//g;
 
+  # Replace $arch variables
   $string =~ s/\$arch\.family/$arch_family/g;
   $string =~ s/\$arch\.bit/$arch_bit/g;
   $string =~ s/\$arch/$arch/g;
 
+  # Replace $release variables
   $string =~ s/\$release\.suffix/$release_suffix/g;
   $string =~ s/\$release\.real/$release/g;
   $string =~ s/\$release/$release_conf/g;
@@ -664,13 +595,13 @@ sub parse_module_name {
 
   my $module = shift;
 
-  return _parse_perl_module_name($module) if ($module =~ /perl\((.*)\)/);
+  return _to_perl_module_name($module) if ($module =~ /perl\((.*)\)/);
   return $module;
 
 }
 
 
-sub _parse_perl_module_name {
+sub _to_perl_module_name {
 
   my ($module) = shift =~ /perl\((.*)\)/;
       $module =~ s/::/-/g;

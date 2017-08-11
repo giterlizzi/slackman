@@ -5,15 +5,7 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
-use Slackware::SlackMan::Utils   qw(:all);
-use Slackware::SlackMan::Package qw(:all);
-use Slackware::SlackMan::Config  qw(:all);
-use Slackware::SlackMan::DB      qw(:all);
-use Slackware::SlackMan::Parser  qw(:all);
-use Slackware::SlackMan::Repo    qw(:all);
-use Slackware::SlackMan::Command qw(:all);
-
-our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
+our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 BEGIN {
 
@@ -21,34 +13,60 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION = 'v1.0.4';
-
-  @EXPORT_OK = (
-    @Slackware::SlackMan::Utils::EXPORT_OK,
-    @Slackware::SlackMan::Package::EXPORT_OK,
-    @Slackware::SlackMan::Config::EXPORT_OK,
-    @Slackware::SlackMan::DB::EXPORT_OK,
-    @Slackware::SlackMan::Parser::EXPORT_OK,
-    @Slackware::SlackMan::Repo::EXPORT_OK,
-    @Slackware::SlackMan::Command::EXPORT_OK,
-    @Slackware::SlackMan::Logger::EXPORT_OK,
+  $VERSION   = 'v1.1.0';
+  @EXPORT_OK = ();
+  @EXPORT    = qw(
+    $slackman_opts
+    %slackman_conf
+    logger
   );
 
   %EXPORT_TAGS = (
-    'all'     => \@EXPORT_OK,
-    'utils'   => \@Slackware::SlackMan::Utils::EXPORT_OK,
-    'package' => \@Slackware::SlackMan::Package::EXPORT_OK,
-    'config'  => \@Slackware::SlackMan::Config::EXPORT_OK,
-    'db'      => \@Slackware::SlackMan::DB::EXPORT_OK,
-    'parser'  => \@Slackware::SlackMan::Parser::EXPORT_OK,
-    'repo'    => \@Slackware::SlackMan::Repo::EXPORT_OK,
-    'command' => \@Slackware::SlackMan::Command::EXPORT_OK,
-    'logger'  => \@Slackware::SlackMan::Logger::EXPORT_OK,
+    'all' => \@EXPORT_OK,
   );
 
 }
 
+use Carp 'confess';
+
+use Slackware::SlackMan::Config qw(:all);
+use Slackware::SlackMan::Logger;
+
+# FIX "Can't locate Term/ReadLine/Perl.pm [...]" message
+$ENV{PERL_RL} = 'Stub';
+
+our %slackman_conf = load_config();
+our $slackman_opts = {};
+
+# Set default options
+$slackman_opts->{'limit'} ||= 25;
+
+my $logger_conf = $slackman_conf{'logger'};
+
+my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
+    $is_require, $hints, $bitmask, $hinthash) = caller(0);
+
+our $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
+                                                 'level'    => $logger_conf->{'level'},
+                                                 'category' => $subroutine );
+
+# "die" signal trap
+$SIG{'__DIE__'} = sub {
+  $logger->error(@_);
+  confess(@_);
+};
+
+# "warn" signal trap
+$SIG{'__WARN__'} = sub {
+  $logger->warning(@_);
+};
+
+sub logger {
+  return $logger->get_logger(caller(0));
+}
+
 1;
+
 __END__
 
 =head1 NAME
@@ -59,7 +77,7 @@ Slackware::SlackMan - SlackMan Core module
 
   use Slackware::SlackMan qw(:package);
 
-  my $pkg_info = package_info('aaa_base-14.2-x86_64-1.tgz');
+  my $pkg_info = package_parse_name('aaa_base-14.2-x86_64-1.tgz');
 
 =head1 DESCRIPTION
 

@@ -1,0 +1,17 @@
+[Desktop Entry]
+Comment=Slackware Security Advisory, ChangeLog and Package Upgrade Notifier
+Exec=/usr/libexec/slackman/slackman-notifier
+GenericName=
+Icon=/usr/share/slackman/slackware.png
+MimeType=
+Name=SlackMan Notifier
+Path=
+StartupNotify=false
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=none
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+Categories=System;Utility;

@@ -1,0 +1,212 @@
+=head1 NAME
+
+B<slackman.conf> - Configuration file for L<slackman(8)> Package Manager
+
+=head1 DESCRIPTION
+
+The F<slackman.conf> file contain the configurations for L<slackman(8)>.
+
+To get all options use C<slackman config> command.
+
+=head1 [main] SECTION
+
+B<checkmd5> (default: C<true>)
+
+=over
+
+Enable MD5 check for downloaded packages
+
+=back
+
+B<checkgpg> (default: C<true>)
+
+=over
+
+Enable GPG check for downloaded packages 
+
+=back
+
+B<exclude> (default: C<>)
+
+=over
+
+List of comma-separated packages to exclude for C<slackman install> or C<slackman upgrade> commands
+
+B<Examples>
+
+If you want exclude kernels and all KDE l10n packages:
+
+    exclude=kernel-*,kde-l10n-*
+
+=back
+
+B<color> (default: C<always>)
+
+=over
+
+Control output color.
+
+The possible values are:
+
+  always
+  auto
+  never
+
+=back
+
+=head1 [logger] SECTION
+
+B<level> (default: C<info>)
+
+=over
+
+Default log level
+
+The possible values are:
+
+  debug
+  info
+  notice
+  warning
+  error
+  critical
+  alert
+  emergency
+
+=back
+
+B<file> (default: F</var/log/slackman.log>)
+
+=over
+
+Define slackman log file
+
+=back
+
+=head1 [proxy] SECTION
+
+This section provide the proxy configuration for slackman.
+
+B<enable> (default: C<false>)
+
+=over
+
+Enable a proxy
+
+=back
+
+B<protocol> (default: C<http>)
+
+=over
+
+Proxy protocol type
+
+Supported protocols are:
+
+  http
+  https
+
+=back
+
+B<hostname>
+
+=over
+
+Proxy FQDN or IP address
+
+=back
+
+B<port> (default: C<8080>)
+
+=over
+
+Proxy TCP port
+
+=back
+
+B<username> (default: C<>)
+
+=over
+
+Proxy username
+
+=back
+
+B<password> (default: C<>)
+
+=over
+
+Proxy password
+
+=back
+
+=head1 [slackware] SECTION
+
+B<version> (default: actual Slackware release)
+
+=over
+
+Force Slackware version. The default value is actual Slackware version in
+F</etc/slackware-release> file.
+
+B<!!! ATTENTION !!!>
+
+Set C<current> value "only" if you have a I<-current> Slackware release.
+
+=back
+
+=head1 [directory] SECTION
+
+B<cache> (default: C</var/cache/slackman>)
+
+=over
+
+Package Cache directory
+
+=back
+
+B<lib> (default: C</var/lib/slackman>)
+
+=over
+
+Lib directory for slackman database
+
+=back
+
+B<log> (default: C</var/log>)
+
+=over
+
+Log directory
+
+=back
+
+B<lock> (default: C</var/lock>)
+
+=over
+
+Lock directory
+
+=back
+
+B<root> (default: C</>)
+
+=over
+
+Root directory
+
+=back
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/slackman.conf
+
+=item /etc/slackman/repos.d/*
+
+=back
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.repo(5)>

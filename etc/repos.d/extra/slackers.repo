@@ -1,4 +1,6 @@
+# Slackers (Conraid's Repository for Slackware64 current)
+
 [packages]
-name= Slackers (Slackware Current Repository)
-enabled=false
-mirror=http://slack.conraid.net/repository/slackware64-current/
+name    = Slackers (Conraid's Repository for Slackware64 current)
+enabled = false
+mirror  = http://slack.conraid.net/repository/slackware64-current/

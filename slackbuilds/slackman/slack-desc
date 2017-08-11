@@ -5,7 +5,7 @@ slackman: SlackMan is easy-to-use wrapper for Slackware "pkgtools" can help to
 slackman: install, update Slackware packages from a standard Slackware
 slackman: repository (official and 3th party).
 slackman:
-slackman: Homepage: https://github.com/LotarProject/slackman/wiki
+slackman: Homepage: https://lotarproject.github.io/slackman
 slackman:
 slackman:
 slackman:

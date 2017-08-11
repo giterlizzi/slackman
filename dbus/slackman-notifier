@@ -1,0 +1,395 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings FATAL => 'all';
+
+use 5.010;
+
+use Net::DBus;
+use Net::DBus::Reactor;
+use POSIX;
+use Getopt::Long qw(:config);
+use Pod::Usage;
+
+use Data::Dumper;
+
+use Slackware::SlackMan;
+use Slackware::SlackMan::Config  qw(:all);
+use Slackware::SlackMan::Utils   qw(:all);
+
+my $VERSION = "v1.1.0";
+my $options = {};
+
+GetOptions( $options,
+  'daemon|d',
+  'help|h',
+  'version|v',
+  'man'
+);
+
+show_help()    if ($options->{'help'});
+show_version() if ($options->{'version'});
+
+pod2usage(-exitval => 0, -verbose => 2) if $options->{'man'};
+
+my $home_dir         = $ENV{'HOME'};
+my $user_config_file = "$home_dir/.slackman-notifier";
+
+create_user_config() unless (-e $user_config_file);
+
+print STDOUT "SlackMan Notifier ($VERSION)\n";
+
+# Daemonize the script
+if ($options->{'daemon'}) {
+
+  print STDOUT "Run in background mode... ";
+
+  my $pid = daemonize();
+
+  unless($pid) {
+    print STDOUT "failed\n";
+    exit(255);
+  }
+
+  print STDOUT "done (pid:$$)\n";
+
+}
+
+while (1) {
+
+  # Check latest Security Advisories from all Slackware repository ChangeLogs
+  check_security_advisories();
+
+  sleep(5);
+
+  # Check latest Slackware ChangeLogs from all Slackware repository
+  check_changelogs();
+
+  sleep(5);
+
+  # Check local package upgrade
+  check_upgrade();
+
+  sleep(3600);
+
+}
+
+print STDOUT "Exit from SlackMan Notifier (pid:$$)\n";
+exit(0);
+
+
+# SlackMan DBus interface
+#
+sub SlackMan {
+  return Net::DBus->system
+    ->get_service('org.lotarproject.SlackMan')
+    ->get_object('/org/lotarproject/SlackMan');
+}
+
+
+# Notification DBus interface
+#
+sub Notifications {
+  return Net::DBus->session
+    ->get_service('org.freedesktop.Notifications')
+    ->get_object('/org/freedesktop/Notifications');
+}
+
+
+# Notify via freedesktop.org Notification service
+#
+sub notify {
+
+  my (%params) = @_;
+
+  my $app_name = 'SlackMan';
+  my $id       = int(rand(64*1024));
+  my $app_icon = $params{'icon'}    || '';
+  my $summary  = $params{'summary'} || '';
+  my $body     = $params{'body'}    || '';
+  my $timeout  = $params{'timeout'} || 0;
+  my %actions  = $params{'actions'} || ();
+
+  my $reactor = Net::DBus::Reactor->main;
+
+  if (keys %actions) {
+
+    Notifications->connect_to_signal("ActionInvoked" => sub {
+      my ($to_id, $action_key) = @_;
+      logger->info("org.freedesktop.Notify->ActionInvoked: action invoked $to_id $action_key");
+      $reactor->shutdown();
+    });
+
+  }
+
+  logger->info(sprintf("Send notification via org.freedesktop.Notify (id:%s)", $id));
+
+  Notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
+
+  if (keys %actions) {
+
+    $reactor->add_timeout(30*1_000, sub {
+      print STDOUT "timeout";
+      $reactor->shutdown();
+    }, 1);
+
+    $reactor->run();
+
+  }
+
+}
+
+
+# Create a simple UNIX daemon
+#
+sub daemonize {
+
+  chdir("/")                  || die "can't chdir to /: $!";
+  open(STDIN,  "< /dev/null") || die "can't read /dev/null: $!";
+  #open(STDOUT, "> /dev/null") || die "can't write to /dev/null: $!";
+  defined(my $pid = fork())   || die "can't fork: $!";
+  exit if $pid;               # non-zero now means I am the parent
+  (setsid() != -1)            || die "Can't start a new session: $!";
+  open(STDERR, ">&STDOUT")    || die "can't dup stdout: $!";
+
+  return $$; # Return effective PID
+
+}
+
+
+sub check_upgrade {
+
+  logger->info('Check packages upgrade using SlackMan D-Bus service');
+
+  my $upgrades = SlackMan->CheckUpgrade();
+  my $max_timestamp = 0; # Max timestamp
+  my $upgrades_body = '';
+
+  my @pkgs = ();
+
+  return unless ( keys %{$upgrades} );
+
+  foreach my $package ( keys %{$upgrades} ) {
+
+    push(@pkgs, $package);
+
+    $upgrades_body .= sprintf(" ● %s <i>%s</i> ➜ <i>%s</i>\n",
+                              $package,
+                              $upgrades->{$package}->{'old_version_build'},
+                              $upgrades->{$package}->{'new_version_build'});
+
+  }
+
+  my $pkgs_string = join(',', sort(@pkgs));
+
+  my %current_config = read_config($user_config_file);
+
+  my $current_packages  = $current_config{'packages'}->{'upgrades'}    || '';
+  my $current_timestamp = $current_config{'last_update'}->{'upgrades'} || 0;
+
+  # Remember the user after 6h
+  return if ( $pkgs_string eq $current_packages && time() < ($current_timestamp + (3600 * 6)) );
+
+  # Save actual package list
+  $current_config{'packages'}->{'upgrades'}    = $pkgs_string;
+  $current_config{'last_update'}->{'upgrades'} = time();
+
+  file_write($user_config_file, stringify_config(%current_config));
+
+  return unless ($upgrades_body);
+
+  notify(
+    'icon'    => '/usr/share/slackman/slackware.png',
+    'summary' => 'Slackware Packages Upgrade',
+    'body'    => $upgrades_body,
+  );
+
+}
+
+
+sub check_changelogs {
+
+  logger->info('Get new ChangeLog items from SlackMan D-Bus service');
+
+  my $changelogs = SlackMan->ChangeLog();
+  my $max_timestamp  = 0; # Max ChangeLog entry timestamp
+  my $changelog_body = '';
+
+  return unless ( keys %{$changelogs} );
+
+  foreach my $repo (keys %{$changelogs}) {
+
+    $changelog_body .= sprintf("<b>%s repository</b>\n", $repo);
+
+    foreach ( @{$changelogs->{$repo}} ) {
+
+      $changelog_body .= sprintf(" ● %s (<i>%s %s</i>)\n", $_->{'package'}, $_->{'status'}, datetime_h(timestamp_to_time($_->{'timestamp'})));
+
+      $max_timestamp = timestamp_to_time($_->{'timestamp'}) if ($max_timestamp < timestamp_to_time($_->{'timestamp'}));
+
+    }
+
+    $changelog_body .= sprintf("\n%s\n", "-"x32);
+
+  }
+
+  my %current_config = read_config($user_config_file);
+  my $current_last_update = $current_config{'last_update'}->{'changelog'} || 0;
+
+  return unless ($max_timestamp > $current_last_update);
+
+  # Set and write new config with new max timestamp
+  $current_config{'last_update'}->{'changelog'} = $max_timestamp;
+
+  file_write($user_config_file, stringify_config(%current_config));
+
+  return unless ($changelog_body);
+
+  notify(
+    'icon'    => '/usr/share/slackman/slackware.png',
+    'summary' => 'Slackware ChangeLogs',
+    'body'    => $changelog_body,
+  );
+
+}
+
+
+# Check latest Security Advisories from all Slackware repository ChangeLogs and notify via DBus
+#
+sub check_security_advisories {
+
+  logger->info('Get new Security Advisories from SlackMan D-Bus service');
+
+  my $security_fix  = SlackMan->SecurityFix();
+  my $max_timestamp = 0; # Max ChangeLog entry timestamp
+
+  return unless ( keys %{$security_fix} );
+
+  my $security_fix_hash = {};
+  my $security_fix_body = '';
+
+  foreach my $repo (keys %{$security_fix}) {
+    foreach ( @{$security_fix->{$repo}} ) {
+      push(@{ $security_fix_hash->{$repo}->{ $_->{'timestamp'} } }, $_);
+      $max_timestamp = timestamp_to_time($_->{'timestamp'}) if ($max_timestamp < timestamp_to_time($_->{'timestamp'}));
+    }
+  }
+
+  my %current_config = read_config($user_config_file);
+  my $current_last_update = $current_config{'last_update'}->{'security_fix'} || 0;
+
+  return unless ($max_timestamp > $current_last_update);
+
+  # Set and write new config with new max timestamp
+  $current_config{'last_update'}->{'security_fix'} = $max_timestamp;
+
+  file_write($user_config_file, stringify_config(%current_config));
+
+  foreach my $repo (keys %{$security_fix_hash}) {
+    foreach my $timestamp (keys %{$security_fix_hash->{$repo}}) {
+
+      $security_fix_body .= sprintf("<b>%s repository</b>\n<i>%s</i>\n", $repo, $timestamp);
+
+      foreach my $changelog (@{$security_fix_hash->{$repo}->{$timestamp}}) {
+
+        my $package = $changelog->{'package'};
+
+        my $description = $changelog->{'description'};
+           $description = "\n<i>$description</i>" if ($description);
+
+        $security_fix_body .= sprintf("\n%s\n ● %s\n%s\n",
+          "-"x32, $package, $description);
+
+      }
+
+      $security_fix_body .= sprintf("\n%s\n", "-"x32);
+
+    }
+  }
+
+  notify(
+    'icon'    => '/usr/share/slackman/slackware.png',
+    'summary' => 'Slackware Security',
+    'body'    => $security_fix_body,
+  );
+
+}
+
+
+# Create an empty config file
+#
+sub create_user_config {
+
+  my %user_config = (
+    'last_update' => {
+      'changelog'    => 0,
+      'security_fix' => 0,
+    }
+  );
+
+  file_write($user_config_file, stringify_config(%user_config));
+
+}
+
+
+sub show_version {
+  print sprintf("SlackMan - Slackware Package Manager Notifier %s\n\n", $VERSION);
+  exit(0);
+}
+
+
+sub show_help {
+
+  pod2usage(
+    -message  => "SlackMan - Slackware Package Manager Notifier $VERSION\n",
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => 'SYNOPSIS|OPTIONS',
+  );
+
+}
+
+__END__
+=head1 NAME
+
+slackman-notifier - SlackMan Notification Tool
+
+=head1 SYNOPSIS
+
+  /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version]
+
+=head1 DESCRIPTION
+
+B<slackman-notifier> is user-space utility to receive a desktop notification via
+D-Bus (using B<org.freedesktop.Notification> service) for Slackware Security
+Advisories, ChangeLogs and new packages upgrade.
+
+=head1 OPTIONS
+
+  -d, --daemon                 Run SlackMan Notifier in background mode
+  -h, --help                   Display help and exit
+  --man                        Display man page
+  --version                    Display version information
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<dbus-monitor(1)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

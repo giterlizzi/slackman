@@ -11,10 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.0.4';
-  @ISA         = qw(Exporter);
+  $VERSION = 'v1.1.0';
+  @ISA     = qw(Exporter);
 
-  @EXPORT_OK   = qw{
+  @EXPORT_OK = qw{
     dbh
     db_init
     db_wipe_table
@@ -26,6 +26,8 @@ BEGIN {
     db_meta_set
     db_meta_delete
     db_reindex
+    db_drop
+    db_check
     $dbh
   };
 
@@ -37,10 +39,12 @@ BEGIN {
 
 use DBI;
 use Sort::Versions;
-use Data::Dumper;
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Utils  qw(:all);
 
+use Slackware::SlackMan;
+use Slackware::SlackMan::Utils   qw(:all);
+use Slackware::SlackMan::Config;
+
+use constant SLACKMAN_SCHEMA_VERSION => 1;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -64,6 +68,13 @@ use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages"
   "size_compressed"   INTEGER,
   "size_uncompressed" INTEGER,
   "checksum"          VARCHAR)/;
+
+use constant SLACKMAN_PACKAGES_INDEX => qq/CREATE INDEX IF NOT EXISTS "packages_idx" ON "packages" (
+  "name"              ASC,
+  "package"           ASC,
+  "arch"              ASC,
+  "status"            ASC,
+  "repository"        ASC)/;
 
 use constant SLACKMAN_HISTORY_TABLE => qq/CREATE TABLE IF NOT EXISTS "history" (
   "id"                INTEGER PRIMARY KEY,
@@ -89,9 +100,19 @@ use constant SLACKMAN_HISTORY_INDEX => qq/CREATE INDEX IF NOT EXISTS "history_id
 
 use constant SLACKMAN_MANIFEST_TABLE => qq/CREATE TABLE IF NOT EXISTS "manifest" (
   "id"                INTEGER PRIMARY KEY,
-  "package_id"        INTEGER,
+  "repository"        VARCHAR,
+  "name"              VARCHAR,
+  "package"           VARCHAR,
+  "version"           VARCHAR,
+  "arch"              VARCHAR,
+  "build"             INTEGER,
+  "tag"               VARCHAR,
   "directory"         VARCHAR,
   "file"              VARCHAR)/;
+
+use constant SLACKMAN_MANIFEST_INDEX => qq/CREATE INDEX IF NOT EXISTS "manifest_idx" ON "manifest" (
+  "directory"         ASC,
+  "file"              ASC)/;
 
 use constant SLACKMAN_CHANGELOGS_TABLE => qq/CREATE TABLE IF NOT EXISTS "changelogs" (
   "id"                INTEGER PRIMARY KEY,
@@ -114,26 +135,26 @@ use constant SLACKMAN_METADATA_TABLE => qq/CREATE TABLE IF NOT EXISTS "metadata"
   "value"             VARCHAR)/;
 
 use constant SLACKMAN_SCHEMA => {
-  'packages'    => SLACKMAN_PACKAGES_TABLE,
-  'metadata'    => SLACKMAN_METADATA_TABLE,
-  'changelogs'  => SLACKMAN_CHANGELOGS_TABLE,
-  'history'     => SLACKMAN_HISTORY_TABLE,
-  'manifest'    => SLACKMAN_MANIFEST_TABLE,
-  'history_idx' => SLACKMAN_HISTORY_INDEX,
+  'packages'     => SLACKMAN_PACKAGES_TABLE,
+  'metadata'     => SLACKMAN_METADATA_TABLE,
+  'changelogs'   => SLACKMAN_CHANGELOGS_TABLE,
+  'history'      => SLACKMAN_HISTORY_TABLE,
+  'manifest'     => SLACKMAN_MANIFEST_TABLE,
+  'history_idx'  => SLACKMAN_HISTORY_INDEX,
+  'packages_idx' => SLACKMAN_PACKAGES_INDEX,
+  'manifest_idx' => SLACKMAN_MANIFEST_INDEX,
 };
 
-use constant SLACKMAN_TABLES  => ( 'packages', 'metadata', 'changelogs', 'history', 'manifest' );
-use constant SLACKMAN_INDEXES => ( 'history_idx' );
-
+use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );
+use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
 our $dbh = dbh();
 
-
 sub dbh {
 
-  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf->{directory}->{lib});
+  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf{'directory'}->{'lib'});
 
-  my $dbh = DBI->connect($dsn,'', '', {
+  our $dbh = DBI->connect($dsn, '', '', {
     PrintError       => 1,
     RaiseError       => 1,
     AutoCommit       => 1,
@@ -144,29 +165,76 @@ sub dbh {
   $dbh->do('PRAGMA synchronous  = OFF');
   $dbh->do('PRAGMA journal_mode = MEMORY');
   $dbh->do('PRAGMA temp_store   = MEMORY');
-  $dbh->do('PRAGMA user_version = 1');
+  $dbh->do('PRAGMA cache_size   = 800000');
 
   $dbh->sqlite_create_function('version_compare', -1, sub {
     my ($old, $new) = @_;
     return versioncmp($old, $new);
   });
 
+  logger->debug("Connected to $dsn");
+
+  db_check();
+
   return $dbh;
+
+}
+
+sub db_check {
+
+  my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
+  
+  # Init database if "user_version" pragma is not defined
+  #
+  unless ($slackman_schema_version) {
+    db_init();
+    $slackman_schema_version = SLACKMAN_SCHEMA_VERSION;
+  }
+
+  # Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
+  #
+  if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
+  
+    logger->debug(sprintf('Detected previous SlackMan schema version (actual: %s, required: %s)',
+      $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
+    
+    logger->debug('Re-create SlackMan database');
+
+    db_drop();
+    db_compact();
+    db_init();
+  
+  }
+
+}
+
+sub db_drop {
+
+  foreach (SLACKMAN_INDEXES) {
+    logger->debug(qq/Drop index "$_"/);
+    $dbh->do("DROP INDEX $_");
+  }
+
+  foreach (SLACKMAN_TABLES) {
+    logger->debug(qq/Drop table "$_"/);
+    $dbh->do("DROP TABLE $_");
+  }
 
 }
 
 sub db_init {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Init table "$_"/);
+    logger->debug(qq/Init table "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Init index "$_"/);
+    logger->debug(qq/Init index "$_"/);
     $dbh->do(SLACKMAN_SCHEMA->{$_});
   }
 
+  $dbh->do(sprintf('PRAGMA user_version = %s', SLACKMAN_SCHEMA_VERSION));
 
 }
 
@@ -179,7 +247,7 @@ sub db_wipe_tables {
 }
 
 sub db_wipe_table {
-  logger->debug(qq/[DB] Wipe "$_" table/);
+  logger->debug(qq/Wipe "$_" table/);
   $dbh->do("DELETE FROM $_");
 }
 
@@ -198,19 +266,19 @@ sub db_insert {
 }
 
 sub db_compact {
-  logger->debug('[DB] Compact database');
+  logger->debug('Compact database');
   $dbh->do('PRAGMA VACUUM');
 }
 
 sub db_reindex {
 
   foreach (SLACKMAN_TABLES) {
-    logger->debug(qq/[DB] Reindex "$_" table/);
+    logger->debug(qq/Reindex "$_" table/);
     $dbh->do("REINDEX $_");
   }
 
   foreach (SLACKMAN_INDEXES) {
-    logger->debug(qq/[DB] Reindex "$_" index/);
+    logger->debug(qq/Reindex "$_" index/);
     $dbh->do("REINDEX $_");
   }
 
@@ -226,7 +294,7 @@ sub db_bulk_insert {
 
   my $n_rows  = scalar(@$values);
 
-  logger->debug(qq/[DB] Insert $n_rows rows into "$table" table/);
+  logger->debug(qq/Insert $n_rows rows into "$table" table/);
 
   my $query = sprintf("INSERT INTO %s(%s) VALUES(%s)",
     $table,
@@ -238,7 +306,7 @@ sub db_bulk_insert {
 
   my $sth = $dbh->prepare($query);
 
-  logger->debug(qq/[DB] $query/);
+  logger->debug(qq/$query/);
 
   foreach my $row (@$values) {
     $sth->execute(@$row);
@@ -251,7 +319,7 @@ sub db_bulk_insert {
 sub db_meta_get {
 
   my ($key) = @_;
-  logger->debug(qq/[DB] Get key "$key" value/);
+  logger->debug(qq/Get key "$key" value/);
 
   return $dbh->selectrow_array(qq/SELECT value FROM metadata WHERE key = ?/, undef, $key);
 
@@ -260,7 +328,7 @@ sub db_meta_get {
 sub db_meta_set {
 
   my ($key, $value) = @_;
-  logger->debug(qq/[DB] Set key "$key" value "$value"/);
+  logger->debug(qq/Set key "$key" value "$value"/);
 
   $dbh->do(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
   $dbh->do(qq/INSERT INTO metadata(key, value) VALUES(?, ?)/, undef, $key, $value);
@@ -273,7 +341,7 @@ sub db_meta_delete {
 
   my ($key) = @_;
 
-  logger->debug(qq/[DB] Delete key "$key"/);
+  logger->debug(qq/Delete key "$key"/);
 
   return $dbh->selectrow_array(qq/DELETE FROM metadata WHERE key = ?/, undef, $key);
 

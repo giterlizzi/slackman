@@ -44,10 +44,9 @@ my @pkg_data = (
   }
 );
 
-use Data::Dumper;
 foreach my $pkg_data (@pkg_data) {
 
-  my $pkg_info = Slackware::SlackMan::Package::package_info($pkg_data->{'package'});
+  my $pkg_info = Slackware::SlackMan::Package::package_parse_name($pkg_data->{'package'});
 
   foreach my $key (keys %{$pkg_data->{'expected'}}) {
     is ( $pkg_info->{$key},

@@ -11,14 +11,13 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.0.4';
+  $VERSION   = 'v1.1.0';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
 }
 
-use Data::Dumper;
-use Slackware::SlackMan::Utils qw(:all);
+use Time::Piece;
 
 use constant LOGGER_LEVELS => qw(EMERG ALERT CRIT ERR WARN NOTICE INFO DEBUG);
 
@@ -38,7 +37,7 @@ use constant CRITICAL  => 2;
 use constant ERROR     => 3;
 use constant WARNING   => 4;
 
-sub new {
+sub init {
 
   my $class  = shift;
   my $self   = {};
@@ -47,10 +46,21 @@ sub new {
   $self->{params} = \%params;
 
   # Force INFO logger level
-  $self->{params}->{level} ||= 'INFO';
+  $self->{params}->{level}    ||= 'INFO';
+  $self->{params}->{category} ||= caller(0);
 
   bless $self, $class;
   return $self;
+
+}
+
+sub get_logger {
+
+  my $self = shift;
+  my ($category) = @_;
+  my $params = $self->{params};
+
+  return Slackware::SlackMan::Logger->init( 'file' => $params->{file}, 'category' => $category, 'level' => $params->{level} );
 
 }
 
@@ -61,10 +71,19 @@ sub log {
 
   my $file         = $self->{params}->{file};
   my $logger_level = $self->{params}->{level};
+  my $category     = $self->{params}->{category} || 'main';
+  my $time         = Time::Piece->new();
+
+  $category =~ s/::/./g;
 
   return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
 
-  file_append($file, sprintf("%s %s - %s\n", time_to_timestamp(time), uc($level), $message), 1);
+  unless(open(LOG, '>>', $file)) {
+    open(LOG, '>&STDERR'); # Fallback to STDERR
+  }
+
+  print LOG sprintf("%s [%5s] %s [pid:%s] %s\n",
+                      $time->datetime, uc($level), $category, $$, $message);
 
 }
 

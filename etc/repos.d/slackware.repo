@@ -1,40 +1,71 @@
+# Slackware Linux
+
+# This repo config include this repositories:
+# 
+#  - packages (main Slackware repository)
+#  - patches
+#  - pasture
+#  - extra
+#  - testing
+#  - multilib (only for x86-64 arch)
+# 
+# NOTE: patches, pasture, extra and testing ChangeLog are included in main
+#       Slackware "packages" repository
+# 
+
 [packages]
-name=Slackware{$release.suffix}-$release
-enabled=true
-mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
-manifest=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/slackware{$release.suffix}/MANIFEST.bz2
-exclude=kde-l10n-*,calligra-l10n-*
+name      = Slackware{$release.suffix}-$release
+enabled   = true
+mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+manifest  = $mirror/slackware{$release.suffix}/MANIFEST.bz2
+exclude   = kde-l10n-*,calligra-l10n-*
 
 [patches]
-name=Slackware{$release.suffix}-$release (Patches)
-enabled=true
-mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/patches/
-gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
-priority=10
+name      = Slackware{$release.suffix}-$release (Patches)
+enabled   = true
+mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+changelog = false
+packages  = $mirror/patches/PACKAGES.TXT
+manifest  = $mirror/patches/MANIFEST.bz2
+checksums = $mirror/patches/CHECKSUMS.md5
+gpgkey    = $mirror/GPG-KEY
+priority  = 10
 
 [pasture]
-name=Slackware{$release.suffix}-$release (Pasture)
-enabled=false
-mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/pasture/
-gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
+name      = Slackware{$release.suffix}-$release (Pasture)
+enabled   = false
+mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+changelog = false
+packages  = $mirror/pasture/PACKAGES.TXT
+manifest  = $mirror/pasture/MANIFEST.bz2
+checksums = $mirror/pasture/CHECKSUMS.md5
+gpgkey    = $mirror/GPG-KEY
 
 [extra]
-name=Slackware{$release.suffix}-$release (Extra)
-enabled=false
-mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/extra/
-gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
+name      = Slackware{$release.suffix}-$release (Extra)
+enabled   = false
+mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+changelog = false
+packages  = $mirror/extra/PACKAGES.TXT
+manifest  = $mirror/extra/MANIFEST.bz2
+checksums = $mirror/extra/CHECKSUMS.md5
+gpgkey    = $mirror/GPG-KEY
 
 [testing]
-name=Slackware{$release.suffix}-$release (Testing)
-enabled=false
-mirror=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/testing/
-gpgkey=http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/GPG-KEY
-priority=-1
+name      = Slackware{$release.suffix}-$release (Testing)
+enabled   = false
+mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
+changelog = false
+packages  = $mirror/testing/PACKAGES.TXT
+manifest  = $mirror/testing/MANIFEST.bz2
+checksums = $mirror/testing/CHECKSUMS.md5
+gpgkey    = $mirror/GPG-KEY
+priority  = -1
 
 [multilib]
-name=Slackware64-$release (MultiLib)
-enabled=false
-mirror=http://www.slackware.com/~alien/multilib/$release/
-changelog=http://www.slackware.com/~alien/multilib/ChangeLog.txt
-gpgkey=http://www.slackware.com/~alien/multilib/GPG-KEY
-priority=10
+name      = Slackware64-$release (MultiLib)
+enabled   = false
+mirror    = http://www.slackware.com/~alien/multilib/$release/
+changelog = http://www.slackware.com/~alien/multilib/ChangeLog.txt
+gpgkey    = http://www.slackware.com/~alien/multilib/GPG-KEY
+priority  = 10
