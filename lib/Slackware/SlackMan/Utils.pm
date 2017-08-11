@@ -143,7 +143,7 @@ sub progress_bar {
   my $file       = basename($url);
   my $percentage = (100 * $got/+$total);
 
-  return sprintf "%-60s %3d%% [%-${width}s] %7s / %s\r",
+  return sprintf "%-80s %3d%% [%-${width}s] %7s / %s\r",
     $file, $percentage, $char x (($width-1)*$got/$total) . '>',
     $got_h, $total_h;
 

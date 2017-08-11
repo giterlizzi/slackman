@@ -9,6 +9,7 @@ SlackMan support different SlackWare repository including:
  - Slackers (Conraid)
  - Slacky (Italian Slackware Community)
  - AlienBob (and **restricted** repository)
+ - Robby Workman
  - ktown (KDE5)
  - Cinnamon SlackBuilds
  - MATE SlackBuilds

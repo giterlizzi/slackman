@@ -2,6 +2,8 @@
 
 ## [v1.1.0]
 
+This release introduce new commands & params and new DBus service & destkop client (`slackman-notifier`). Improved speed, stability and repository support.
+
 ### Added
   * New commands (`config` get & set configuration via CLI, `log`, etc) and new options (`--details`, `--Security-fix`, etc)
   * Added DBus interface to fetch latest Security Fix & ChangeLog and packages update
@@ -13,6 +15,7 @@
   * Added support for `HTTP::Tiny` module for package and repository metadata download
   * Added man pages for all commands
   * Added `make slackbuild` target for create a precompiled SlackMan package
+  * Added Robby Workman repository (`rworkman:packages`)
   * Added new bugs to fix later
 
 ### Changed
