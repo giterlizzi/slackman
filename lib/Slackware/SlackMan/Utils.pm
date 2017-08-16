@@ -81,32 +81,39 @@ $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
 sub http {
 
-  my $http_options = { 'agent' => "SlackMan/$VERSION" };
+  my %http_options = ( 'agent' => "SlackMan/$VERSION" );
   my $proxy_conf   = $slackman_conf{'proxy'};
-  my $proxy_url    = undef;
 
-  if ($proxy_conf->{'username'}) {
+  if ($proxy_conf->{'enable'}) {
 
-    $proxy_url = sprintf("%s://%s:%s@%s:%s",
-      $proxy_conf->{'protocol'},
-      $proxy_conf->{'username'},
-      $proxy_conf->{'password'},
-      $proxy_conf->{'hostname'},
-      $proxy_conf->{'port'},
-    );
+    my $proxy_url = undef;
 
-  } else {
-    $proxy_url = sprintf("%s://%s:%s",
-      $proxy_conf->{'protocol'},
-      $proxy_conf->{'hostname'},
-      $proxy_conf->{'port'},
-    );
+    if ($proxy_conf->{'username'}) {
+
+      $proxy_url = sprintf("%s://%s:%s@%s:%s",
+        $proxy_conf->{'protocol'},
+        $proxy_conf->{'username'},
+        $proxy_conf->{'password'},
+        $proxy_conf->{'hostname'},
+        $proxy_conf->{'port'},
+      );
+
+    } else {
+
+      $proxy_url = sprintf("%s://%s:%s",
+        $proxy_conf->{'protocol'},
+        $proxy_conf->{'hostname'},
+        $proxy_conf->{'port'},
+      );
+
+    }
+
+    $http_options{'http_proxy'}  = $proxy_url;
+    $http_options{'https_proxy'} = $proxy_url;
+
   }
 
-  $http_options->{'http_proxy'}  = $proxy_url;
-  $http_options->{'https_proxy'} = $proxy_url;
-
-  my $http = HTTP::Tiny->new( $http_options );
+  my $http = HTTP::Tiny->new( %http_options );
 
   return $http;
 
