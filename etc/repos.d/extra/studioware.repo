@@ -1,0 +1,17 @@
+# Studioware repository
+
+# Studioware is a project aimed at providing build scripts and packages of the 
+# best open source audio, video and photo editing software available for 
+# Slackware Linux. It includes libraries and other dependencies with a 
+# comprehensive dependency list for each package so you will know exactly what 
+# you need to install. Although Studioware is quite a small project, the 
+# maintainers are Slackware users of many years experience.
+
+# Home-Page: http://studioware.org/
+
+# NOTE: This repository support only Slackware64 release
+
+[packages]
+name    = Studioware
+enabled = false
+mirror  = http://slackware.uk/studioware/$release.real/

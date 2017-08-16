@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.1.0';
+  $VERSION   = 'v1.1.1';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
@@ -60,7 +60,11 @@ sub get_logger {
   my ($category) = @_;
   my $params = $self->{params};
 
-  return Slackware::SlackMan::Logger->init( 'file' => $params->{file}, 'category' => $category, 'level' => $params->{level} );
+  return Slackware::SlackMan::Logger->init(
+    'file'     => $params->{'file'},
+    'category' => $category,
+    'level'    => $params->{'level'}
+  );
 
 }
 
@@ -82,7 +86,7 @@ sub log {
     open(LOG, '>&STDERR'); # Fallback to STDERR
   }
 
-  print LOG sprintf("%s [%5s] %s [pid:%s] %s\n",
+  print LOG sprintf("%s [%7s] %s [pid:%s] %s\n",
                       $time->datetime, uc($level), $category, $$, $message);
 
 }

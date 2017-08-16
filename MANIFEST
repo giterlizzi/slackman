@@ -46,6 +46,7 @@ etc/repos.d/extra/slacke18.repo
 etc/repos.d/extra/slackers.repo
 etc/repos.d/extra/slackonly.repo
 etc/repos.d/extra/slacky.repo
+etc/repos.d/extra/studioware.repo
 etc/repos.d/slackware.repo
 etc/slackman-cron.conf
 etc/slackman.bash

@@ -2,8 +2,8 @@
 
 # MSB repo | Slackware version
 # ---------|-----------------------
-# latest   | stable
-# 1.18     | 14.2 *
+# latest   | stable, current
+# 1.18     | 14.2 *, current *
 # 1.16     | 14.2
 # 1.14     | 14.2
 # 1.12     | 14.1 *
@@ -16,47 +16,47 @@
 [latest]
 name      = MATE SlackBuilds (MSB) - latest
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/latest/$arch/
+mirror    = http://slackware.uk/msb/$release/latest/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.18]
 name      = MATE SlackBuilds (MSB) - 1.18
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.18/$arch/
+mirror    = http://slackware.uk/msb/$release/1.18/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.16]
 name      = MATE SlackBuilds (MSB) - 1.16
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.16/$arch/
+mirror    = http://slackware.uk/msb/$release/1.16/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.14]
 name      = MATE SlackBuilds (MSB) - 1.14
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.14/$arch/
+mirror    = http://slackware.uk/msb/$release/1.14/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.12]
 name      = MATE SlackBuilds (MSB) - 1.12
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.12/$arch/
+mirror    = http://slackware.uk/msb/$release/1.12/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.10]
 name      = MATE SlackBuilds (MSB) - 1.10
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.10/$arch/
+mirror    = http://slackware.uk/msb/$release/1.10/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.8]
 name      = MATE SlackBuilds (MSB) - 1.8
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.8/$arch/
+mirror    = http://slackware.uk/msb/$release/1.8/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.6]
 name      = MATE SlackBuilds (MSB) - 1.6
 enabled   = false
-mirror    = http://slackware.uk/msb/$release.real/1.6/$arch/
+mirror    = http://slackware.uk/msb/$release/1.6/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt

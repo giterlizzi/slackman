@@ -1,5 +1,16 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.1.1]
+
+### Added
+
+  * Added Studioware repository
+
+### Fixed
+
+  * Fixed `HTTP::Tiny` warning
+  * Fixed proxy initialization with `HTTP::Tiny`
+
 ## [v1.1.0]
 
 This release introduce new features, new commands & params and new DBus service & destkop client (`slackman-notifier`). Improved speed, stability and repository support.
@@ -41,6 +52,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.1.1]: https://github.com/LotarProject/slackman/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/LotarProject/slackman/compare/v1.0.4...v1.1.0
 [v1.0.4]: https://github.com/LotarProject/slackman/compare/v1.0.3...v1.0.4
 [v1.0.3]: https://github.com/LotarProject/slackman/compare/v1.0.2...v1.0.3
