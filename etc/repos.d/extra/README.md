@@ -13,6 +13,7 @@ SlackMan support different Slackware repository:
  - MATE SlackBuilds
  - Salix
  - Microlinux
+ - Studioware
  - ... and more
 
 ## Install

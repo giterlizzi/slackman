@@ -1,7 +1,5 @@
 # KDE5 "ktown"
 
-
-
 [packages]
 name      = KDE5 ktown packages
 enabled   = false

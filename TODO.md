@@ -15,4 +15,6 @@
  - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
  - [ ] Integrate SlackMan with PolicyKit
  - [ ] Add new repository via URL
+ - [ ] Arch rule in `.repo` file ( 32bit -> i386 directory)
+ - [ ] Upgrade packages only with particular tag (`slackman upgrade --repo slackonly:packages --tag SBo`)
  
