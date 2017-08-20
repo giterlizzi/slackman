@@ -100,24 +100,36 @@ sub Notifications {
 #
 sub notify {
 
-  my (%params) = @_;
+  my ($params) = @_;
 
-  my $app_name = 'SlackMan';
-  my $id       = int(rand(64*1024));
-  my $app_icon = $params{'icon'}    || '';
-  my $summary  = $params{'summary'} || '';
-  my $body     = $params{'body'}    || '';
-  my $timeout  = $params{'timeout'} || 0;
-  my %actions  = $params{'actions'} || ();
+  my $app_name  = 'SlackMan';
+  my $id        = int(rand(64*1024));
+  my $app_icon  = $params->{'icon'}    || '';
+  my $summary   = $params->{'summary'} || '';
+  my $body      = $params->{'body'}    || '';
+  my $timeout   = $params->{'timeout'} || 0;
+  my $actions   = $params->{'actions'} || {};
+  my %actions   = ();
 
   my $reactor = Net::DBus::Reactor->main;
 
-  if (keys %actions) {
+  if ( keys %{$actions} ) {
+
+    foreach my $id ( keys %{$actions} ) {
+      $actions{$id} = $actions->{$id}->{'label'};
+    }
 
     Notifications->connect_to_signal("ActionInvoked" => sub {
+
       my ($to_id, $action_key) = @_;
-      logger->info("org.freedesktop.Notify->ActionInvoked: action invoked $to_id $action_key");
+      logger->info("org.freedesktop.Notify->ActionInvoked: action invoked (id:$to_id, key:$action_key)");
+
+      if ( defined( $actions->{$action_key}->{'callback'} ) ) {
+        $actions->{$action_key}->{'callback'}->();
+      }
+
       $reactor->shutdown();
+
     });
 
   }
@@ -126,9 +138,9 @@ sub notify {
 
   Notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
 
-  if (keys %actions) {
+  if ( keys %actions ) {
 
-    $reactor->add_timeout(30*1_000, sub {
+    $reactor->add_timeout( 30 * 1_000, sub {
       print STDOUT "timeout";
       $reactor->shutdown();
     }, 1);
@@ -198,11 +210,11 @@ sub check_upgrade {
 
   return unless ($upgrades_body);
 
-  notify(
+  notify({
     'icon'    => '/usr/share/slackman/slackware.png',
     'summary' => 'Slackware Packages Upgrade',
     'body'    => $upgrades_body,
-  );
+  });
 
 }
 
@@ -245,11 +257,11 @@ sub check_changelogs {
 
   return unless ($changelog_body);
 
-  notify(
+  notify({
     'icon'    => '/usr/share/slackman/slackware.png',
     'summary' => 'Slackware ChangeLogs',
     'body'    => $changelog_body,
-  );
+  });
 
 }
 
@@ -307,11 +319,11 @@ sub check_security_advisories {
     }
   }
 
-  notify(
+  notify({
     'icon'    => '/usr/share/slackman/slackware.png',
     'summary' => 'Slackware Security',
     'body'    => $security_fix_body,
-  );
+  });
 
 }
 
