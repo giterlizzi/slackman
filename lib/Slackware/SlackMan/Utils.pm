@@ -219,14 +219,14 @@ sub datetime_calc {
 
   my ($string) = @_;
 
-  my ($sign, $digit, $order) = ($string =~ /^(\+|-|)(\d+)\s(days?|hours?|months?|years?)$/i);
+  my ($sign, $digit, $order) = ($string =~ /^(\+|-|)(\d+)(h|d|m|y|days?|hours?|months?|years?)$/i);
 
   my $time = 0;
 
-     $time = ONE_DAY   * $digit  if (lc($order) =~ /day/);
-     $time = ONE_HOUR  * $digit  if (lc($order) =~ /hour/);
-     $time = ONE_MONTH * $digit  if (lc($order) =~ /month/);
-     $time = ONE_YEAR  * $digit  if (lc($order) =~ /year/);
+     $time = ONE_DAY   * $digit  if (lc($order) =~ /d/ || lc($order) =~ /day/);
+     $time = ONE_HOUR  * $digit  if (lc($order) =~ /h/ || lc($order) =~ /hour/);
+     $time = ONE_MONTH * $digit  if (lc($order) =~ /m/ || lc($order) =~ /month/);
+     $time = ONE_YEAR  * $digit  if (lc($order) =~ /y/ || lc($order) =~ /year/);
 
   my $datetime = Time::Piece->new();
 
@@ -480,8 +480,8 @@ sub timestamp_options_to_sql {
 
   if ($option_after) {
 
-    if ($option_after && $option_after =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
-      $parsed_after  = datetime_calc($option_after)->ymd;
+    if ($option_after =~ /^(\+|-|)(\d+)(d|m|y|days?|months?|years?)$/) {
+      $parsed_after = datetime_calc($option_after)->ymd;
     }
 
     if (! $parsed_after && $option_after =~ /^\d{4}-\d{2}-\d{2}/) {
@@ -494,7 +494,7 @@ sub timestamp_options_to_sql {
 
   if ($option_before) {
 
-    if ($option_before && $option_before =~ /^(\+|-|)(\d+)\s(days?|months?|years?)$/) {
+    if ($option_before =~ /^(\+|-|)(\d+)(d|m|y|days?|months?|years?)$/) {
       $parsed_before = datetime_calc($option_before)->ymd;
     }
 
