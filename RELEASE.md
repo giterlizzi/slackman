@@ -1,15 +1,32 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.1.2]
+
+## Added
+
+  * Added `--after` and `--before` in `slackman.bash` completion script
+
+## Fixed
+
+  * Fixed paser for `--after` and `--before` options
+  * Fixed `notify` sub callback for `slackman-notifier` command
+
+
 ## [v1.1.1]
 
 ### Added
 
   * Added Studioware repository
 
+### Changed
+
+  * Changed MATE SlackBuild mirror URL
+
 ### Fixed
 
   * Fixed `HTTP::Tiny` warning
   * Fixed proxy initialization with `HTTP::Tiny`
+
 
 ## [v1.1.0]
 
@@ -42,6 +59,7 @@ This release introduce new features, new commands & params and new DBus service 
 ### Removed
   * Dropped support of `curl` command for package and repository metadata download
   * Removed `Build.PL` (use `make slackbuild` instead)
+
 
 ## Older releases
 
