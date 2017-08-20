@@ -14,7 +14,9 @@
  - [x] Check last SlackMan update metadata. Display message after 24h to remember to launch "slackman update"
  - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
  - [ ] Integrate SlackMan with PolicyKit
- - [ ] Add new repository via URL
+ - [ ] Add new repo via URL or via local file (`slackman repo add http://example.org/slackware.repo`) - #2
  - [ ] Arch rule in `.repo` file ( 32bit -> i386 directory)
- - [ ] Upgrade packages only with particular tag (`slackman upgrade --repo slackonly:packages --tag SBo`)
- 
+ - [ ] Upgrade packages only with particular tag (`slackman upgrade --repo slackonly:packages --tag SBo`) - #3
+ - [ ] List removed packages (`slackman list removed`) - #4
+ - [ ] List upgraded packages (`slackman list upgraded`) - #5
+ - [ ] Query `installed`, `upgraded` and `removed` packages by timestamp (`slackman list removed --after=7days`) - #6
