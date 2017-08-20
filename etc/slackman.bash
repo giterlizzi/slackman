@@ -225,7 +225,7 @@ _slackman_upgrade() {
 
 _slackman_changelog() {
 
-  local slackman_options="--repo --limit --details --security-fix"
+  local slackman_options="--repo --limit --details --security-fix --before --after"
 
   __slackman_complete_options "$cur" "$prev" && return
 
