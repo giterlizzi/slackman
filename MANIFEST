@@ -14,6 +14,7 @@ lib/Slackware/SlackMan/DB.pm
 lib/Slackware/SlackMan/DBus.pm
 lib/Slackware/SlackMan/Logger.pm
 lib/Slackware/SlackMan/Package.pm
+lib/Slackware/SlackMan/Pkgtools.pm
 lib/Slackware/SlackMan/Parser.pm
 lib/Slackware/SlackMan/Repo.pm
 lib/Slackware/SlackMan/Utils.pm

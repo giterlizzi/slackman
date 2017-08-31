@@ -51,7 +51,7 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
-
+use Slackware::SlackMan::Pkgtools;
 
 sub package_changelogs {
 
@@ -273,18 +273,9 @@ sub package_install {
 
   my $package = shift;
 
-  my @cmd = ('/sbin/upgradepkg', '--install-new', $package);
+  installpkg($package);
 
-  logger->debug("Install $package");
-  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
-
-  system(@cmd);
   unlink($package) or warn "Failed to delete file $package: $!";
-
-  my $pkg_info = package_parse_name(basename($package));
-
-  logger->info(sprintf("Installed %s package with %s version",
-    $pkg_info->{'name'}, $pkg_info->{'version'}));
 
   _update_history($package);
 
@@ -295,24 +286,16 @@ sub package_upgrade {
 
   my $package = shift;
 
-  logger->debug(qq/Upgrade $package/);
-
-  my $package_cmd = $package;
   my $pkg_info = package_parse_name(basename($package));
 
   my $package_installed = ($dbh->selectrow_arrayref("SELECT package FROM history WHERE status = 'installed' AND name = ?", undef, $pkg_info->{'name'}))->[0];
 
-  $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
+  my $package_cmd = $package;
+     $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
-  my @cmd = ('/sbin/upgradepkg', '--reinstall', '--install-new', $package_cmd);
-
-  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
-
-  system(@cmd);
+  upgradepkg($package_cmd, 'reinstall', 'install-new');
   unlink($package) or warn "Failed to delete file: $!";
 
-  logger->info(sprintf("Upgraded %s package to %s version",
-    $pkg_info->{'name'}, $pkg_info->{'version'}));
 
   _update_history($package);
 
@@ -323,13 +306,7 @@ sub package_remove {
 
   my $package = shift;
 
-  my @cmd = ('/sbin/removepkg', $package);
-
-  logger->debug("Remove $package");
-  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
-
-  system(@cmd);
-
+  removepkg($package);
   _update_history($package);
 
 }
