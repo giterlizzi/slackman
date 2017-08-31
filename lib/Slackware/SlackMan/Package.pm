@@ -69,15 +69,7 @@ sub package_changelogs {
   elsif ($arch =~ /arm(.*)/)       { push(@query_filters, '(arch = "noarch" OR arch LIKE "arm%" OR arch IS NULL)')}
 
   # Filter repository
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@query_filters, qq/repository LIKE "$option_repo"/);
-  } else {
-    push(@query_filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
-  }
-
-  # Filter disabled repository
-  push(@query_filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
+  push(@query_filters, repo_option_to_sql());
 
   # Filter specified package name
   if ($package) {
@@ -435,21 +427,12 @@ sub package_check_install {
 
   my (@install_packages) = @_;
 
-  my $install_pkgs          = {};
-  my $dependency_pkgs       = {};
-  my $arch                  = get_arch();
-  my $option_repo           = $slackman_opts->{'repo'};
-  my $option_exclude        = $slackman_opts->{'exclude'};
-  my @repositories          = get_enabled_repositories();
-  my @query_filters         = ();
-  my @filter_repository     = ();
-
-  @repositories = qq\$option_repo\ if ($option_repo); # TODO verificare se repository è disabilitato
-
-  foreach my $repository (@repositories) {
-    $repository .= ":%" unless ($repository =~ m/\:/);
-    push(@filter_repository, sprintf('packages.repository LIKE %s', $dbh->quote($repository)));
-  }
+  my $install_pkgs    = {};
+  my $dependency_pkgs = {};
+  my $arch            = get_arch();
+  my $option_repo     = $slackman_opts->{'repo'};
+  my $option_exclude  = $slackman_opts->{'exclude'};
+  my @query_filters   = ();
 
   @install_packages = map { parse_module_name($_) } @install_packages if (@install_packages);
 
@@ -478,15 +461,12 @@ sub package_check_install {
 
   }
 
-  push(@query_filters, '( ' . join(' OR ', @filter_repository) . ' )');
+  # Filter repository
+  push(@query_filters, repo_option_to_sql('packages'));
 
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
     push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
-  }
-
-  foreach my $repository (get_disabled_repositories()) {
-    push(@query_filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
   }
 
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
@@ -629,21 +609,14 @@ sub package_check_updates {
     push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
   }
 
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@query_filters, qq/packages.repository LIKE "$option_repo"/);
-  } else {
-    push(@query_filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
-  }
+  # Filter repository
+  push(@query_filters, repo_option_to_sql('packages'));
 
   # Skip excluded packages
   push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
 
   # Upgrade only packages in category
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
-
-  # Exclude disabled repository
-  push(@query_filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
 
   @update_packages = map { parse_module_name($_) } @update_packages if (@update_packages);
 

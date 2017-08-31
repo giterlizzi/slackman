@@ -50,6 +50,7 @@ BEGIN {
     trim
     uniq
     w3c_date_to_time
+    repo_option_to_sql
 
   );
 
@@ -467,6 +468,37 @@ sub time_to_timestamp {
   return sprintf("%s %s", $t->ymd, $t->hms);
 
 }
+
+
+sub repo_option_to_sql {
+
+  my ($table) = @_;
+
+  my $field = 'repository';
+     $field = "$table.$field" if ($table);
+
+  my $option_repo = $slackman_opts->{'repo'};
+
+  my @query_filters;
+
+  my @enabled_repo  = Slackware::SlackMan::Repo::get_enabled_repositories();
+  my @disabled_repo = Slackware::SlackMan::Repo::get_disabled_repositories();
+
+  if ($option_repo) {
+
+    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
+    push(@query_filters, qq/$field LIKE "$option_repo"/);
+
+  } else {
+    push(@query_filters, sprintf(qq/$field IN ("%s")/, join('", "', @enabled_repo)));
+  }
+
+  push(@query_filters, sprintf(qq/$field NOT IN ("%s")/, join('","', @disabled_repo)));
+
+  return sprintf(' ( %s ) ', join(' AND ', @query_filters));
+
+}
+
 
 sub timestamp_options_to_sql {
 

@@ -217,7 +217,6 @@ sub call_package_reinstall {
   _check_package_duplicates();
 
   my @is_installed = ();
-  my $option_repo  = $slackman_opts->{'repo'};
 
   my @packages_to_downloads = ();
   my @packages_for_pkgtool  = ();
@@ -270,14 +269,8 @@ sub call_package_reinstall {
     push(@filters, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
   }
 
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@filters, sprintf('repository LIKE %s', $dbh->quote($option_repo)));
-  } else {
-    push(@filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
-  }
-
-  push(@filters, 'repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
+  # Filter repository
+  push(@filters, repo_option_to_sql());
 
   my $query = 'SELECT * FROM packages WHERE ' . join(' AND ', @filters);
   my $rows  = $dbh->selectall_hashref($query, 'id', undef);
