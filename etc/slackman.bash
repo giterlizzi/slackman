@@ -317,7 +317,7 @@ _slackman_list() {
     return 0
   fi
 
-  local subcommands="installed obsoletes packages repo orphan variables"
+  local subcommands="installed obsoletes removed upgraded packages repo orphan variables"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

@@ -39,6 +39,8 @@ use constant COMMANDS_DISPATCHER => {
   'list.help'      => \&call_list_help,
 
   'list.installed' => \&call_list_installed,
+  'list.removed'   => \&call_list_removed,
+  'list.upgraded'  => \&call_list_upgraded,
   'list.obsoletes' => \&call_list_obsoletes,
   'list.orphan'    => \&call_list_orphan,
   'list.packages'  => \&call_list_packages,
@@ -134,7 +136,7 @@ sub call_list_orphan {
 
   print "\nOrphan package(s)\n\n";
   print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
+  print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Installed", "Size");
   print sprintf("%s\n", "-"x132);
 
   my $rows_ref = $dbh->selectall_hashref(qq/SELECT h.* FROM history h WHERE h.status = 'installed' AND NOT EXISTS (SELECT 1 FROM packages p WHERE p.name = h.name) ORDER BY name/, 'name', undef);
@@ -143,12 +145,13 @@ sub call_list_orphan {
 
     my $row = $rows_ref->{$_};
 
-    print sprintf("%-40s %-10s\t%-25s %-10s %s\n",
+    print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n",
       $row->{name},
       $row->{arch},
       $row->{version},
       $row->{tag},
-      $row->{timestamp});
+      $row->{timestamp},
+      filesize_h(($row->{size_compressed} * 1024), 1, 1));
 
   }
 
@@ -162,7 +165,7 @@ sub call_list_installed {
 
   print "\nInstalled packages\n\n";
   print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Installed");
+  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Installed/Upgraded at");
   print sprintf("%s\n", "-"x132);
 
   my $rows_ref = package_list_installed(@search);
@@ -171,12 +174,67 @@ sub call_list_installed {
 
     my $row = $rows_ref->{$_};
 
-    print sprintf("%-40s %-10s\t%-25s %-10s %s\n",
+    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
+      $row->{'name'},
+      $row->{'arch'},
+      ( $row->{version} . '-' . $row->{build} ),
+      $row->{'tag'},
+      filesize_h(($row->{'size_compressed'} * 1024), 1, 1),
+      $row->{'timestamp'});
+
+  }
+
+  exit(0);
+
+}
+
+
+sub call_list_upgraded {
+
+  print "\nUpgraded packages\n\n";
+  print sprintf("%s\n", "-"x132);
+  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
+  print sprintf("%s\n", "-"x132);
+
+  my $sth = $dbh->prepare("SELECT * FROM history WHERE status = 'upgraded' ORDER BY timestamp DESC");
+  $sth->execute();
+
+  while (my $row = $sth->fetchrow_hashref()) {
+
+    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
       $row->{name},
       $row->{arch},
       "$row->{version}-$row->{build}",
       $row->{tag},
-      $row->{timestamp});
+      filesize_h(($row->{size_compressed} * 1024), 1, 1),
+      $row->{'timestamp'});
+
+  }
+
+  exit(0);
+
+}
+
+
+sub call_list_removed {
+
+  print "\nRemoved packages\n\n";
+  print sprintf("%s\n", "-"x132);
+  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
+  print sprintf("%s\n", "-"x132);
+
+  my $sth = $dbh->prepare("SELECT * FROM history WHERE status = 'removed' ORDER BY timestamp DESC");
+  $sth->execute();
+
+  while (my $row = $sth->fetchrow_hashref()) {
+
+    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
+      $row->{name},
+      $row->{arch},
+      "$row->{version}-$row->{build}",
+      $row->{tag},
+      filesize_h(($row->{size_compressed} * 1024), 1, 1),
+      $row->{'timestamp'});
 
   }
 
@@ -190,7 +248,7 @@ sub call_list_packages {
 
   print "\nAvailable packages\n\n";
   print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Repository");
+  print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Repository", "Size");
   print sprintf("%s\n", "-"x132);
 
   my $option_repo = $slackman_opts->{'repo'};
@@ -228,12 +286,13 @@ sub call_list_packages {
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    print sprintf("%-40s %-10s\t%-25s %-10s %s\n",
+    print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n",
       $row->{name},
       $row->{arch},
       "$row->{version}-$row->{build}",
       $row->{tag},
-      $row->{repository});
+      $row->{repository},
+      filesize_h(($row->{size_compressed} * 1024), 1, 1));
 
   }
 
@@ -252,6 +311,8 @@ slackman-list - List packages and other info
 
   slackman list packages [--repo=REPOSITORY]
   slackman list installed
+  slackman list removed
+  slackman list upgraded
   slackman list obsoletes
   slackman list orphan
   slackman list variables

@@ -214,6 +214,8 @@ sub call_package_reinstall {
 
   my (@packages) = @_;
 
+  _check_package_duplicates();
+
   my @is_installed = ();
   my $option_repo  = $slackman_opts->{'repo'};
 
@@ -300,15 +302,16 @@ sub call_package_reinstall {
     print "Reinstall package(s)\n\n";
     print sprintf("%s\n", "-"x80);
 
-    foreach (@packages_for_pkgtool) {
-      package_upgrade($_);
+    foreach my $package_path (@packages_for_pkgtool) {
+
+      package_upgrade($package_path);
+
     }
 
   }
 
   _packages_errors($packages_errors);
 
-  _fork_update_local_database();
   exit(0);
 
 }
@@ -316,6 +319,8 @@ sub call_package_reinstall {
 sub call_package_remove {
 
   my (@packages) = @_;
+
+  _check_package_duplicates();
 
   my @is_installed = ();
 
@@ -371,11 +376,12 @@ sub call_package_remove {
 
   _check_root();
 
-  foreach (@is_installed) {
-    package_remove($_);
+  foreach my $package_path (@is_installed) {
+
+    package_remove($package_path);
+
   }
 
-  _fork_update_local_database();
   exit(0);
 
 }
@@ -395,6 +401,7 @@ sub call_package_install {
   }
 
   _check_last_metadata_update();
+  _check_package_duplicates();
 
   my $packages_to_install   = {};
   my @packages_to_downloads = ();
@@ -515,16 +522,16 @@ sub call_package_install {
     print "Install package(s)\n";
     print sprintf("%s\n\n", "-"x80);
 
-    foreach (@packages_for_pkgtool) {
-      package_install($_);
+    foreach my $package_path (@packages_for_pkgtool) {
+
+      package_install($package_path);
+
     }
 
   }
 
   _packages_errors($packages_errors);
   _packages_installed(\@packages_for_pkgtool);
-
-  _fork_update_local_database() if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -621,6 +628,8 @@ sub call_package_search {
 
 sub call_package_history {
 
+  # FIXME Packages installed and removed but not upgraded and reinstalled
+
   my ($package) = @_;
 
   unless ($package) {
@@ -636,8 +645,10 @@ sub call_package_history {
     exit 1;
   }
 
+  my $row_pattern = "%-10s %-20s %-10s %-25s %-20s %-25s\n";
+
   print sprintf("History of @{[ BOLD ]}%s@{[ RESET ]} package:\n\n", $package);
-  print sprintf("%-10s %-20s %-25s %-20s %-25s\n", "Status", "Version", "Timestamp", "Previous", "Upgraded");
+  print sprintf($row_pattern, "Status", "Version", "Tag", "Timestamp", "Previous", "Upgraded");
   print sprintf("%s\n", "-"x132);
 
   my $prev_version   = '';
@@ -651,6 +662,7 @@ sub call_package_history {
     my $version   = $row->{'version'} . '-' . $row->{'build'};
     my $timestamp = $row->{'timestamp'};
     my $upgraded  = $row->{'upgraded'};
+    my $tag       = $row->{'tag'};
 
     $status_history = $status;
     $status_history = 'upgraded'       if ($status eq 'installed');
@@ -660,10 +672,12 @@ sub call_package_history {
     $prev_version   = ''               if ($status_history eq 'removed');
     $prev_version   = ''               if ($status_history eq 'installed');
 
-    print sprintf("%-10s %-20s %-25s %-20s %-25s\n",
-      $status_history,
-      $version,  $timestamp,
-      $prev_version, $upgraded);
+    print sprintf(
+      $row_pattern,
+      $status_history, $version,
+      $tag, $timestamp,
+      $prev_version, $upgraded
+    );
 
     $prev_version = $version;
     $prev_status  = $status;
@@ -681,6 +695,7 @@ sub call_package_upgrade {
   my (@update_package) = @_;
 
   _check_last_metadata_update();
+  _check_package_duplicates();
 
   my $packages_to_update    = {};  # Updatable packages list
   my $packages_to_install   = {};  # Required packages to install
@@ -799,8 +814,11 @@ sub call_package_upgrade {
       print sprintf("%s\n\n", "-"x80);
 
       foreach my $package_path (@packages_for_pkgtool) {
+
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
+
         package_upgrade($package_path);
+
       }
 
     }
@@ -813,9 +831,6 @@ sub call_package_upgrade {
 
     # Display Kernel Update message
     _kernel_update_message() if ($kernel_upgrade);
-
-    # Update history metadata in background
-    _fork_update_local_database() if (@packages_for_pkgtool);
 
     # Search new configuration files (same as 'slackman new-config' command)
     call_package_new_config() if (@packages_for_pkgtool);
@@ -1296,26 +1311,47 @@ sub _check_root {
 
 }
 
-sub _fork_update_local_database {
+sub _check_package_duplicates {
 
-  # Delete all lock file
-  delete_lock();
+  my $rows_ref = $dbh->selectall_hashref("SELECT name, count(*) AS num FROM history WHERE status = 'installed' GROUP BY LOWER(name) HAVING num > 1", 'name', undef);
+  my $row_nums = scalar keys %$rows_ref;
 
-  # Force update metadata of installed packages commands in background and set ROOT environment
-  my $cmd  = "slackman update %s --force";
-     $cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
-     $cmd .= " > /dev/null &";
+  return (0) unless ($row_nums);
 
-  my $update_installed_cmd = sprintf($cmd, 'installed');
+  print "Found duplicate package(s):\n\n";
 
-  logger->debug("Call update metadata of installed packages in background ($update_installed_cmd)");
-  qx{ $update_installed_cmd };
+  foreach my $pkg (keys %$rows_ref) {
 
-  my $update_history_cmd = sprintf($cmd, 'history');
+    my $pkg_rows_ref = $dbh->selectall_hashref("SELECT * FROM history WHERE status = 'installed' AND name = ?", 'package', undef, $pkg);
 
-  logger->debug("Call update metadata of history packages in background ($update_history_cmd)");
-  qx{ $update_history_cmd };
+    print "$pkg:\n";
 
+    my $pkg_id = 0;
+    my @packages;
+
+    foreach (keys %$pkg_rows_ref) {
+
+      $pkg_id++;
+
+      my $row = $pkg_rows_ref->{$_};
+      push(@packages, $row->{'package'});
+
+      print sprintf("   %s) %-40s (%s)\n", $pkg_id, $row->{'package'}, $row->{'timestamp'});
+
+    }
+
+    print "\n";
+
+    my $pkg_id_regex = "([1-$pkg_id])";
+    my $choice = confirm_choice("Do you want remove package [1-$pkg_id] ?", qr/$pkg_id_regex/);
+
+    package_remove($packages[$choice-1]);
+
+    print "\n\n";
+
+  }
+
+  return(0);
 
 }
 

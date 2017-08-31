@@ -97,7 +97,7 @@ exit show_version() if $slackman_opts->{'version'};
 
 # Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
-  warn ("\n\nAction cancelled by user!\n");
+  logger->warning("Action cancelled by user!");
   exit(1);
 };
 
