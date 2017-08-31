@@ -28,7 +28,7 @@
  - [x] #5 - List upgraded packages (`slackman list upgraded`)
  - [ ] #6 - Query `installed`, `upgraded` and `removed` packages by timestamp (`slackman list removed --after=7days`)
  - [x] #7 - Check duplicate packages name
- - [ ] Optimization of loading of Slackware database (`/var/log/{removed_,}packages`)
+ - [x] #8 Optimizations of Slackware database parsing (`/var/log/{removed_,}packages`)
  - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
  - [ ] Display extended download error ( eg. **404** ) in package summary
  - [x] Display package "tag" on `slackman history` command
