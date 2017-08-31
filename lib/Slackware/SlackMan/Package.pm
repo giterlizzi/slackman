@@ -96,8 +96,6 @@ sub package_changelogs {
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
      $query = sprintf($query, join(' AND ', @query_filters), ($slackman_opts->{'limit'} || 25));
 
-  logger->debug($query);
-
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
@@ -283,15 +281,20 @@ sub package_install {
 
   my $package = shift;
 
-  logger->debug(qq/Install $package/);
+  my @cmd = ('/sbin/upgradepkg', '--install-new', $package);
 
-  system('/sbin/upgradepkg', '--install-new', $package);
+  logger->debug("Install $package");
+  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
+
+  system(@cmd);
   unlink($package) or warn "Failed to delete file $package: $!";
 
   my $pkg_info = package_parse_name(basename($package));
 
   logger->info(sprintf("Installed %s package with %s version",
     $pkg_info->{'name'}, $pkg_info->{'version'}));
+
+  _update_history($package);
 
 }
 
@@ -302,13 +305,24 @@ sub package_upgrade {
 
   logger->debug(qq/Upgrade $package/);
 
-  system('/sbin/upgradepkg', '--reinstall', '--install-new', $package);
-  unlink($package) or warn "Failed to delete file: $!";
-
+  my $package_cmd = $package;
   my $pkg_info = package_parse_name(basename($package));
+
+  my $package_installed = ($dbh->selectrow_arrayref("SELECT package FROM history WHERE status = 'installed' AND name = ?", undef, $pkg_info->{'name'}))->[0];
+
+  $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
+
+  my @cmd = ('/sbin/upgradepkg', '--reinstall', '--install-new', $package_cmd);
+
+  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
+
+  system(@cmd);
+  unlink($package) or warn "Failed to delete file: $!";
 
   logger->info(sprintf("Upgraded %s package to %s version",
     $pkg_info->{'name'}, $pkg_info->{'version'}));
+
+  _update_history($package);
 
 }
 
@@ -317,8 +331,14 @@ sub package_remove {
 
   my $package = shift;
 
-  logger->debug(qq/Remove $package/);
-  system('/sbin/removepkg', $package);
+  my @cmd = ('/sbin/removepkg', $package);
+
+  logger->debug("Remove $package");
+  logger->debug(sprintf('[PKGTOOL] %s', join(' ', @cmd)));
+
+  system(@cmd);
+
+  _update_history($package);
 
 }
 
@@ -389,7 +409,7 @@ sub package_available_update {
                   WHERE history.status = "installed"
                     AND history.name   = packages.name
                     AND packages.arch  = history.arch
-                    AND packages.name = ?
+                    AND packages.name  = ?
                     AND version_compare(old_version_build, new_version_build) < 0
                     AND packages.repository IN (%s)
                     AND packages.repository NOT IN (%s)
@@ -450,8 +470,8 @@ sub package_check_install {
 
     $packages_filter .= '(';
     $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
-    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
-    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+    $packages_filter .= ' OR '                                         if (@packages_in && @packages_like);
+    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))  if (@packages_like);
     $packages_filter .= ')';
 
     push(@query_filters, $packages_filter);
@@ -504,7 +524,11 @@ sub package_check_install {
                               FROM packages
                              WHERE name = ?
                                AND repository = ?
-                               AND arch IN (?, "noarch")/;
+                               AND arch IN (?, "noarch")
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM history
+                                                WHERE history.status = "installed"
+                                                  AND history.name = packages.name)/;
 
   $query_packages = $query_new_packages if ($slackman_opts->{'new-packages'});
   $query_packages = sprintf($query_packages, join(' AND ', @query_filters));
@@ -587,7 +611,11 @@ sub package_check_updates {
       FROM packages
      WHERE name = ?
        AND arch IN (?, "noarch")
-       AND repository IN (?)/;
+       AND repository IN (?)
+       AND NOT EXISTS (SELECT 1
+                         FROM history
+                       WHERE history.status = "installed"
+                         AND history.name = packages.name)/;
 
   my $arch           = get_arch();
   my @query_filters  = ();
@@ -637,8 +665,8 @@ sub package_check_updates {
     $packages_filter .= '(';
 
     $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
-    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
-    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+    $packages_filter .= ' OR '                                        if (@packages_in && @packages_like);
+    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like)) if (@packages_like);
 
     $packages_filter .= ')';
 
@@ -753,7 +781,7 @@ sub package_download {
     }
 
     unless ($pkg->{'checksum'}) {
-      exit(0) unless(confirm(sprintf("%s %s package don't have a valid checksum. Do you want continue ? [Y/N]", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
+      exit(0) unless(confirm(sprintf("\n%s %s package don't have a valid checksum. Do you want continue ? [Y/N]", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
       $skip_check = 1;
     }
 
@@ -874,6 +902,20 @@ sub package_search_files {
   }
 
   return $sth->fetchall_arrayref({});
+
+}
+
+
+sub _update_history {
+
+  my ($package) = @_;
+
+  my $pkg_basename = basename($package);
+  my $pkg_meta     = package_parse_name($pkg_basename);
+
+  $package = $pkg_meta->{'name'} if ($pkg_meta->{'version'});
+
+  parse_package_history($package);
 
 }
 
