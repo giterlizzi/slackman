@@ -99,13 +99,13 @@ sub call_repo_add {
   my $repos_directory = $slackman_conf{'directory'}->{'repos'};
 
   if ( -e "$repos_directory/$repo_basename") {
-    print colored('ERROR', 'red bold') . ": This repo config file already exists\n";
+    print colored('WARNING', 'yellow') . ": This repo config file already exists\n";
     exit(255);
   }
 
   my ($repo_fh, $repo_tmpfile) = tempfile( UNLINK => 1 );
 
-  if ( $repo_url =~ /^http?:\/\// ) {
+  if ( $repo_url =~ /^(http(|s)):\/\// ) {
 
     my $http    = http();
     my $request = $http->request( 'GET', $repo_url );
