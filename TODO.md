@@ -22,11 +22,11 @@
 
 ## SlackMan 1.2
 
- - [ ] #2 - Add new repo via URL or via local file (`slackman repo add http://example.org/slackware.repo`)
+ - [x] #2 - Add new repo via URL or via local file (`slackman repo add http://example.org/slackware.repo`)
  - [ ] #3 - Upgrade packages only with particular tag (`slackman upgrade --repo slackonly:packages --tag SBo`)
  - [x] #4 - List removed packages (`slackman list removed`)
  - [x] #5 - List upgraded packages (`slackman list upgraded`)
- - [ ] #6 - Query `installed`, `upgraded` and `removed` packages by timestamp (`slackman list removed --after=7days`)
+ - [x] #6 - Query `installed`, `upgraded` and `removed` packages by timestamp (`slackman list removed --after=7days`)
  - [x] #7 - Check duplicate packages name
  - [x] #8 Optimizations of Slackware database parsing (`/var/log/{removed_,}packages`)
  - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
