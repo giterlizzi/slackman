@@ -4,7 +4,7 @@
 
 ## Added
 
-  * #8: Add new repo via URL or via local file (`slackman repo add REPOSITORY`)
+  * #2: Add new repo via URL or via local file (`slackman repo add REPOSITORY`)
   * #7: Added check of duplicate packages for `install`, `upgrade`, `remove` and `reinstall` commands
   * #4, #5: Added `slackman list removed` & `slackman list upgraded` commands
   * Added package size for most list commands
