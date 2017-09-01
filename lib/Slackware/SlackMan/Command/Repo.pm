@@ -138,6 +138,16 @@ sub call_repo_add {
     exit(255);
   }
 
+  my $repo_desc = '';
+
+  LINE: foreach my $line ( split(/\n/, $repo_content ) ) {
+    last LINE if ( $line =~ /^\[/);
+    $line =~ s/^#//;
+    $repo_desc .= sprintf("%s\n", trim($line));
+  }
+
+  $repo_desc = trim($repo_desc);
+
   my %repo_config = parse_config($repo_content);
 
   unless ( %repo_config ) {
@@ -146,6 +156,8 @@ sub call_repo_add {
   }
 
   print "\nParsing $repo_url file:\n\n";
+
+  print sprintf("%s\n\n", $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
 
   print sprintf("%-30s %-50s\n", "Repository ID",  "Description");
   print sprintf("%s\n", "-"x80);
@@ -288,21 +300,35 @@ sub call_repo_info {
 
   update_repo_data();
 
+  my $repo_content = file_read($repo_data->{config_file});
+  my $repo_desc    = '';
+
+  LINE: foreach my $line ( split(/\n/, $repo_content ) ) {
+    last LINE if ( $line =~ /^\[/);
+    $line =~ s/^#//;
+    $repo_desc .= sprintf("%-17s %s\n", ' ', trim($line));
+  }
+
+  $repo_desc = trim($repo_desc);
+
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
   my $last_update  = time_to_timestamp(db_meta_get("last-update.$repo_id.packages"));
 
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-15s : %s\n",    "Name",          $repo_data->{name});
-  print sprintf("%-15s : %s\n",    "ID",            $repo_data->{id});
-  print sprintf("%-15s : %s\n",    "Configuration", $repo_data->{config_file});
-  print sprintf("%-15s : %s\n",    "Mirror",        $repo_data->{mirror});
-  print sprintf("%-15s : %s\n",    "Status",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-15s : %s\n",    "Last Update",   ($last_update || ''));
-  print sprintf("%-15s : %s\n",    "Priority",      $repo_data->{priority});
-  print sprintf("%-15s : %s\n",    "Packages",      $package_nums);
-  print sprintf("%-15s : %s/%s\n", "Directory",     $slackman_conf{directory}->{cache}, $repo_data->{id});
+  print sprintf("%-15s : %s\n",     "ID",            $repo_data->{id});
+  print sprintf("%-15s : %s\n",     "Name",          $repo_data->{name});
+  print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{config_file});
+
+  print sprintf("\n%-15s : %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
+
+  print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{mirror});
+  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
+  print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
+  print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{priority});
+  print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
+  print sprintf("%-15s : %s/%s\n",  "Directory",     $slackman_conf{directory}->{cache}, $repo_data->{id});
 
   print "\nRepository URLs :\n";
 
