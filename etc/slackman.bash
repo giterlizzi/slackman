@@ -308,7 +308,7 @@ _slackman_help() {
 
 _slackman_list() {
 
-  local slackman_options="--exclude-installed"
+  local slackman_options="--exclude-installed --after --before"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -317,7 +317,7 @@ _slackman_list() {
     return 0
   fi
 
-  local subcommands="installed obsoletes removed upgraded packages repo orphan variables"
+  local subcommands="installed obsoletes removed upgraded packages orphan variables"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

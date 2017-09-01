@@ -778,6 +778,10 @@ sub package_list_installed {
     push(@filters, sprintf('(name LIKE %s)', $dbh->quote($item)));
   }
 
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@filters, $timestamp_options);
+  }
+
   if (@filters) {
     $query_filter = sprintf('AND (%s)', join(' OR ', @filters));
   }

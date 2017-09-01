@@ -56,8 +56,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 =head3 GLOBAL COMMANDS OPTIONS
 
-  --after=DATE                 Filter changelog after date
-  --before=DATE                Filter changelog before date
+  --after=DATE                 Filter after date
+  --before=DATE                Filter before date
   --repo=REPOSITORY            Use specified repo during update or install packages
   -f, --force                  Force action
   --download-only              Download only

@@ -196,7 +196,18 @@ sub call_list_upgraded {
   print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
   print sprintf("%s\n", "-"x132);
 
-  my $sth = $dbh->prepare("SELECT * FROM history WHERE status = 'upgraded' ORDER BY timestamp DESC");
+  my @query_filters;
+
+  push(@query_filters, "status = 'upgraded'");
+
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  my $query = "SELECT * FROM history WHERE %s ORDER BY timestamp DESC";
+     $query = sprintf($query, join(' AND ', @query_filters));
+
+  my $sth = $dbh->prepare($query);
   $sth->execute();
 
   while (my $row = $sth->fetchrow_hashref()) {
@@ -223,8 +234,20 @@ sub call_list_removed {
   print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
   print sprintf("%s\n", "-"x132);
 
-  my $sth = $dbh->prepare("SELECT * FROM history WHERE status = 'removed' ORDER BY timestamp DESC");
+  my @query_filters;
+
+  push(@query_filters, "status = 'removed'");
+
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  my $query = "SELECT * FROM history WHERE %s ORDER BY timestamp DESC";
+     $query = sprintf($query, join(' AND ', @query_filters));
+
+  my $sth = $dbh->prepare($query);
   $sth->execute();
+
 
   while (my $row = $sth->fetchrow_hashref()) {
 
@@ -337,6 +360,8 @@ B<slackman list> display information of:
 
 =head1 OPTIONS
 
+  --after=DATE                 Filter list after date
+  --before=DATE                Filter list before date
   --repo=REPOSITORY            Use specified repository
   --exclude-installed          Exclude installed packages from list
   -h, --help                   Display help and exit
