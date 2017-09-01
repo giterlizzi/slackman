@@ -1,5 +1,9 @@
 # AlienBob SlackBuilds
 
+# Eric Hameleers (AlienBob) SlackBuilds.
+
+# Home-Page: https://alien.slackbook.org/
+
 [packages]
 name      = AlienBob SlackBuilds
 enabled   = false
