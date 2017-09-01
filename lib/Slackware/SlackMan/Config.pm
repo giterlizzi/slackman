@@ -62,6 +62,7 @@ sub load_config {
   # Set default slackman directories
   $slackman_conf{'directory'}->{'root'}  ||= $root;
   $slackman_conf{'directory'}->{'conf'}  ||= "$root/etc/slackman";
+  $slackman_conf{'directory'}->{'repos'} ||= "$root/etc/slackman/repos.d";
   $slackman_conf{'directory'}->{'log'}   ||= "$root/var/log";
   $slackman_conf{'directory'}->{'lib'}   ||= "$root/var/lib/slackman";
   $slackman_conf{'directory'}->{'cache'} ||= "$root/var/cache/slackman";

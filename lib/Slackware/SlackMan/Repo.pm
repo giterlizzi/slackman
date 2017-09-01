@@ -42,7 +42,7 @@ use Slackware::SlackMan::DB     qw(:all);
 
 my %repository = ();
 
-my @files = grep { -f } glob(sprintf('%s/repos.d/*.repo', $slackman_conf{'directory'}->{'conf'}));
+my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf{'directory'}->{'repos'}));
 
 foreach my $file (@files) {
 

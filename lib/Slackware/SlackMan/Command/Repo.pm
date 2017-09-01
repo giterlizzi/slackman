@@ -21,13 +21,18 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
+use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
+use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+use Pod::Find       qw(pod_where);
+use File::Temp      qw(tempfile);
+use File::Basename;
+use File::Copy;
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -40,6 +45,7 @@ use constant COMMANDS_DISPATCHER => {
   'repo.enable'  => \&call_repo_enable,
   'repo.info'    => \&call_repo_info,
   'repo.list'    => \&call_repo_list,
+  'repo.add'     => \&call_repo_add,
 
 };
 
@@ -70,6 +76,109 @@ sub call_repo_help {
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
   );
+
+}
+
+sub call_repo_add {
+
+  my ($repo_url) = @_;
+
+  unless ($repo_url) {
+    print "Usage: slackman repo add REPOSITORY-FILE\n";
+    exit(255);
+  }
+
+  unless ( $repo_url =~ /\.repo$/ ) {
+    print colored('ERROR', 'red bold') . ": Invalid repository URL ($repo_url)\n";
+    exit(255);
+  }
+
+  my $repo_basename   = basename($repo_url);
+  my $repo_name       = basename($repo_basename, '.repo');
+  my $repo_content    = '';
+  my $repos_directory = $slackman_conf{'directory'}->{'repos'};
+
+  if ( -e "$repos_directory/$repo_basename") {
+    print colored('ERROR', 'red bold') . ": This repo config file already exists\n";
+    exit(255);
+  }
+
+  my ($repo_fh, $repo_tmpfile) = tempfile( UNLINK => 1 );
+
+  if ( $repo_url =~ /^http?:\/\// ) {
+
+    my $http    = http();
+    my $request = $http->request( 'GET', $repo_url );
+
+    if ($request->{'status'} == 404) {
+      print colored('ERROR', 'red bold') . ": Repository file not found ($repo_url)\n";
+      exit(255);
+    }
+
+    $repo_content = $request->{'content'};
+    print $repo_fh $repo_content;
+    close($repo_fh);
+
+  }
+
+  if ($repo_url =~ /^\//) {
+
+    unless ( -e $repo_url ) {
+      print colored('ERROR', 'red bold') . ": Repository file not found ($repo_url)\n";
+      exit(255);
+    }
+
+    $repo_content = file_read($repo_url);
+    copy ($repo_url, $repo_tmpfile) or die ("Copy failed: $!");
+
+  }
+
+  unless ($repo_content) {
+    print colored('ERROR', 'red bold') . ": Invalid repository file ($repo_url)\n";
+    exit(255);
+  }
+
+  my %repo_config = parse_config($repo_content);
+
+  unless ( %repo_config ) {
+    print colored('ERROR', 'red bold') . ": Invalid repository file ($repo_url)\n";
+    exit(255);
+  }
+
+  print "\nParsing $repo_url file:\n\n";
+
+  print sprintf("%-30s %-50s\n", "Repository ID",  "Description");
+  print sprintf("%s\n", "-"x80);
+
+  foreach ( keys %repo_config ) {
+
+    my $repo_id     = "$repo_name:$_";
+    my $repo_name   = parse_variables($repo_config{$_}->{'name'});
+    my $repo_mirror = $repo_config{$_}->{'mirror'};
+
+    unless ($repo_mirror) {
+      print colored('ERROR', 'red bold') . ": Invalid repository file ($repo_url)\n";
+      exit(255);
+    }
+
+    print sprintf("%-30s %-50s\n", $repo_id, $repo_name);
+
+  }
+
+  print "\n";
+
+  exit(0) unless( confirm("Do you want add $repo_url repository ? [Y/N]") );
+
+  print sprintf("\nAdding %s config file into %s directory... ", $repo_basename, $repos_directory);
+
+  logger->debug("[REPO] Add $repo_url to $repos_directory/$repo_basename");
+  copy ($repo_tmpfile, "$repos_directory/$repo_basename") or die ("Copy failed: $!");
+
+  STDOUT->printflush(colored("done\n\n", 'green'));
+
+  print colored('NOTE', 'bold') . ": Remember to enable $repo_name repository via 'slackman repo enable REPOSITORY' command!\n";
+
+  exit(0);
 
 }
 
@@ -105,6 +214,11 @@ sub call_repo_disable {
 
   my ($repo_id) = @_;
 
+  unless ($repo_id) {
+    print "Usage: slackman repo disable REPOSITORY\n";
+    exit(255);
+  }
+
   if ($repo_id =~ /\*/) {
 
     foreach (get_enabled_repositories()) {
@@ -126,6 +240,11 @@ sub call_repo_disable {
 sub call_repo_enable {
 
   my ($repo_id) = @_;
+
+  unless ($repo_id) {
+    print "Usage: slackman repo enable REPOSITORY\n";
+    exit(255);
+  }
 
   if ($repo_id =~ /\*/) {
 
@@ -210,6 +329,7 @@ slackman-repo - Display and manage Slackware repository
   slackman repo info REPOSITORY
   slackman repo enable REPOSITORY
   slackman repo disable REPOSITORY
+  slackman repo add REPOSITORY-URL
   slackman repo list
   slackman repo help
 
@@ -221,6 +341,7 @@ directory.
 =head1 COMMANDS
 
   slackman repo list                   List available repositories
+  slackman repo add REPOSITORY-URL     Add new repository file into F</etc/slackman/repod.d> directory
   slackman repo enable REPOSITORY      Enable repository
   slackman repo disable REPOSITORY     Disable repository
   slackman repo info REPOSITORY        Display repository information
@@ -249,6 +370,11 @@ List all repositories:
   slackware:pasture     Slackware64-current (Pasture)     Disabled   0          0
   slackware:patches     Slackware64-current (Patches)     Enabled    10         0
   slackware:testing     Slackware64-current (Testing)     Disabled   -1         0
+
+
+Add new repository:
+
+  slackman repo add http://slackware.com/pub/slackman/repos.d/slackware.repo
 
 
 Enable a repository:

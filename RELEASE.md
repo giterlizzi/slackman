@@ -1,5 +1,25 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [Develop]
+
+## Added
+
+  * #8: Add new repo via URL or via local file (`slackman repo add REPOSITORY`)
+  * #7: Added check of duplicate packages for `install`, `upgrade`, `remove` and `reinstall` commands
+  * #4, #5: Added `slackman list removed` & `slackman list upgraded` commands
+  * Added package size for most list commands
+  * Added tag for `slackman history` command
+  * Added `Slackware::SlackMan::Pkgtools` module wrapper for Slackware Package Tools
+
+## Fixed
+
+  * #8: Optimizations of Slackware database parsing
+
+## Removed
+
+  * Removed `slackman update installed` command (merged into `slackman update history`)
+
+
 ## [v1.1.2]
 
 ## Added
