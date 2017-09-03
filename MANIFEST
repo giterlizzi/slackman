@@ -54,12 +54,13 @@ etc/slackman.bash
 etc/slackman.conf
 etc/slackman.cron
 etc/slackman.logrotate
-dbus/slackman-service
-dbus/slackman-notifier
 dbus/Makefile
-dbus/org.lotarproject.slackman.conf
+dbus/org.lotarproject.SlackMan.7.pod
+dbus/org.lotarproject.SlackMan.conf
+dbus/org.lotarproject.SlackMan.service
+dbus/slackman-notifier
 dbus/slackman-notifier.desktop
-dbus/org.lotarproject.slackman.service
+dbus/slackman-service
 dbus/slackware.png
 docs/repo.md
 docs/variables.md

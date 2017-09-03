@@ -4,6 +4,8 @@ INSTALLMAN3DIR = /usr/man/man3
 DESTINSTALLMAN3DIR = $(DESTDIR)$(INSTALLMAN3DIR)
 INSTALLMAN5DIR = /usr/man/man5
 DESTINSTALLMAN5DIR = $(DESTDIR)$(INSTALLMAN5DIR)
+INSTALLMAN7DIR = /usr/man/man7
+DESTINSTALLMAN7DIR = $(DESTDIR)$(INSTALLMAN7DIR)
 INSTALLMAN8DIR = /usr/man/man8
 DESTINSTALLMAN8DIR = $(DESTDIR)$(INSTALLMAN8DIR)
 
@@ -21,6 +23,7 @@ clean:
 
 install:
 	mkdir -p $(DESTINSTALLMAN1DIR)
+	mkdir -p $(DESTINSTALLMAN7DIR)
 	mkdir -p $(DESTDIR)/usr/share/dbus-1/system-services
 	mkdir -p $(DESTDIR)/etc/dbus-1/system.d
 	mkdir -p $(DESTDIR)/usr/libexec/slackman
@@ -28,8 +31,10 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/slackman
 	$(POD2MAN) --section 1 --perm_rw=$(PERM_RW) -u \
 	  slackman-notifier $(DESTINSTALLMAN1DIR)/slackman-notifier.1
-	install -m 644 org.lotarproject.slackman.service $(DESTDIR)/usr/share/dbus-1/system-services
-	install -m 644 org.lotarproject.slackman.conf $(DESTDIR)/etc/dbus-1/system.d
+	$(POD2MAN) --section 7 --perm_rw=$(PERM_RW) -u \
+	  org.lotarproject.SlackMan.7.pod $(DESTINSTALLMAN7DIR)/org.lotarproject.SlackMan.7
+	install -m 644 org.lotarproject.SlackMan.service $(DESTDIR)/usr/share/dbus-1/system-services
+	install -m 644 org.lotarproject.SlackMan.conf $(DESTDIR)/etc/dbus-1/system.d
 	install -m 755 slackman-service $(DESTDIR)/usr/libexec/slackman
 	install -m 755 slackman-notifier $(DESTDIR)/usr/libexec/slackman
 	install -m 644 slackman-notifier.desktop $(DESTDIR)/usr/share/applications

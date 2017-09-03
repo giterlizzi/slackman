@@ -1,0 +1,49 @@
+=head1 NAME
+
+B<org.lotarproject.SlackMan> - D-Bus interface for L<slackman(8)> Package Manager
+
+=head1 DESCRIPTION
+
+The SlackMan service is  accessed  through the D-Bus object at /org/lotarproject/SlackMan.
+Which provides the following interface.
+
+=head1 METHODS
+
+=head2 ChangeLog
+
+C<ChangeLog ( out dict )>
+
+=head2 CheckUpgrade
+
+C<CheckUpgrade ( out dict )>
+
+=head2 SecurityFix
+
+C<SecurityFix ( out dict )>
+
+=head2 PackageInfo
+
+C<PackageInfo ( in string, out dict )>
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.repo(5)>, L<slackman-notifier(1)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>
