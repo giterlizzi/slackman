@@ -809,10 +809,7 @@ sub package_list_obsoletes {
                     AND history.status    = "installed"
                     AND changelogs.repository %s
                     AND changelogs.repository NOT IN (%s)
-                    AND NOT EXISTS (SELECT 1
-                                      FROM changelogs clog
-                                     WHERE clog.name = changelogs.name
-                                       AND clog.timestamp >= changelogs.timestamp)/;
+                    AND changelogs.timestamp > history.timestamp/;
 
   my $enabled_repositories  = 'IN ("' . join('", "', get_enabled_repositories())  . '")';
   my $disabled_repositories = '"' . join('", "', get_disabled_repositories()) . '"';
