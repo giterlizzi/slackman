@@ -355,7 +355,7 @@ slackman-repo - Display and manage Slackware repository
   slackman repo info REPOSITORY
   slackman repo enable REPOSITORY
   slackman repo disable REPOSITORY
-  slackman repo add REPOSITORY-URL
+  slackman repo add REPOSITORY-FILE
   slackman repo list
   slackman repo help
 
@@ -367,7 +367,7 @@ directory.
 =head1 COMMANDS
 
   slackman repo list                   List available repositories
-  slackman repo add REPOSITORY-URL     Add new repository file into F</etc/slackman/repod.d> directory
+  slackman repo add REPOSITORY-FILE    Add new repository file into F</etc/slackman/repod.d> directory
   slackman repo enable REPOSITORY      Enable repository
   slackman repo disable REPOSITORY     Disable repository
   slackman repo info REPOSITORY        Display repository information

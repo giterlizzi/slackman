@@ -18,7 +18,10 @@ SlackMan support different Slackware repository:
 
 ## Install
 
-Copy your preferred repository in `/etc/slackman/repos.d` directory.
+Copy your preferred repository in `/etc/slackman/repos.d` directory or use
+`slackman repo add REPOSITORY-FILE` command:
+
+    # slackman repo add /etc/slackman/repos.d/extra/slackonly.repo
 
 ## Enable Repository
 
