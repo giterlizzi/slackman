@@ -84,11 +84,17 @@ sub _pkgtool_action {
 
   _pkg_exists($package) unless ($action eq 'remove');
 
-  my $pkg_info = package_parse_name(basename($package));
+  unless ($action eq 'remove') {
 
-  logger->debug(sprintf('[pkgtool:%s] %s package (version: %s, arch: %s, build: %s, tag: %s)',
-    $action, $pkg_info->{'name'},  $pkg_info->{'version'}, $pkg_info->{'arch'},
-             $pkg_info->{'build'}, $pkg_info->{'tag'}));
+    my $pkg_info = package_parse_name(basename($package));
+
+    logger->debug(sprintf('[pkgtool:%s] %s package (version: %s, arch: %s, build: %s, tag: %s)',
+      $action, $pkg_info->{'name'},  $pkg_info->{'version'}, $pkg_info->{'arch'},
+              $pkg_info->{'build'}, $pkg_info->{'tag'}));
+
+  } else {
+    logger->debug(sprintf('[pkgtool:%s] %s package', $action, $package));
+  }
 
   my $cmd = join(' ', sprintf('/sbin/%spkg', $action), @params, $package);
 
