@@ -25,6 +25,7 @@ install:
 	mkdir -p $(DESTINSTALLMAN1DIR)
 	mkdir -p $(DESTINSTALLMAN7DIR)
 	mkdir -p $(DESTDIR)/usr/share/dbus-1/system-services
+	mkdir -p $(DESTDIR)/usr/share/polkit-1/actions
 	mkdir -p $(DESTDIR)/etc/dbus-1/system.d
 	mkdir -p $(DESTDIR)/usr/libexec/slackman
 	mkdir -p $(DESTDIR)/usr/share/applications
@@ -35,6 +36,7 @@ install:
 	  org.lotarproject.SlackMan.7.pod $(DESTINSTALLMAN7DIR)/org.lotarproject.SlackMan.7
 	install -m 644 org.lotarproject.SlackMan.service $(DESTDIR)/usr/share/dbus-1/system-services
 	install -m 644 org.lotarproject.SlackMan.conf $(DESTDIR)/etc/dbus-1/system.d
+	install -m 644 org.lotarproject.SlackMan.policy $(DESTDIR)/usr/share/polkit-1/actions
 	install -m 755 slackman-service $(DESTDIR)/usr/libexec/slackman
 	install -m 755 slackman-notifier $(DESTDIR)/usr/libexec/slackman
 	install -m 644 slackman-notifier.desktop $(DESTDIR)/usr/share/applications

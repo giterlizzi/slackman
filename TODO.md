@@ -3,7 +3,6 @@
  - [ ] Number of installed packages in `slackman repo info REPOSITORY` command
  - [ ] Installed packages by repo `slackman list installed --repo REPOSITORY`
  - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
- - [ ] Integrate SlackMan with PolicyKit
  - [ ] Arch rule in `.repo` file for 32-bit diretory variant (i386, i486, i586, i686, x86)
 
 ## SlackMan 1.1
@@ -28,7 +27,8 @@
  - [x] #5 - List upgraded packages (`slackman list upgraded`)
  - [x] #6 - Query `installed`, `upgraded` and `removed` packages by timestamp (`slackman list removed --after=7days`)
  - [x] #7 - Check duplicate packages name
- - [x] #8 Optimizations of Slackware database parsing (`/var/log/{removed_,}packages`)
+ - [x] #8 - Optimizations of Slackware database parsing (`/var/log/{removed_,}packages`)
+ - [ ] #9 - Integrate SlackMan with PolicyKit
  - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
  - [ ] Display extended download error ( eg. **404** ) in package summary
  - [x] Display package "tag" on `slackman history` command

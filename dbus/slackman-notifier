@@ -223,7 +223,7 @@ sub check_changelogs {
 
   logger->info('Get new ChangeLog items from SlackMan D-Bus service');
 
-  my $changelogs = SlackMan->ChangeLog();
+  my $changelogs = SlackMan->ChangeLog( undef ); # Get ChangeLogs for all repositories
   my $max_timestamp  = 0; # Max ChangeLog entry timestamp
   my $changelog_body = '';
 

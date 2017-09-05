@@ -11,23 +11,61 @@ Which provides the following interface.
 
 =head2 ChangeLog
 
-C<ChangeLog ( out dict )>
+ChangeLog ( in: 's' I<repo_id>, out 'a{saa{ss}}' )
 
 =head2 CheckUpgrade
 
-C<CheckUpgrade ( out dict )>
+CheckUpgrade ( out 'a{sa{ss}}' )
 
 =head2 SecurityFix
 
-C<SecurityFix ( out dict )>
+SecurityFix ( out 'a{saa{ss}}' )
 
 =head2 PackageInfo
 
-C<PackageInfo ( in string, out dict )>
+PackageInfo ( in 's' I<package_name>, out 'a{ss}' )
+
+=head2 InstallPkg
+
+InstallPkg ( in 's' I<package_path>, out 'i' )
+
+Install a package using L<installpkg(8)> command and emit C<PackageInstalled> signal.
+
+=head2 UpgradePkg
+
+UpgradePkg ( in 's' I<package_path>, out 'i' )
+
+Upgrade a package using L<upgradepkg(8)> command and emit C<PackageUpgraded> signal.
+
+=head2 RemovePkg
+
+RemovePkg ( in 's' I<package_name>, out 'i' )
+
+Remove a package using L<removepkg(8)> command and emit C<PackageRemoved> signal.
+
+=head1 PROPERTIES
+
+=head2 version
+
+version (out 's')
+
+=head1 SIGNALS
+
+=head2 PackageInstalled
+
+This signal is emitted when a package is installed.
+
+=head2 PackageUpgraded
+
+This signal is emitted when a package is upgraded.
+
+=head2 PackageRemoved
+
+This signal is emitted when a package is removed.
 
 =head1 SEE ALSO
 
-L<slackman(8)>, L<slackman.repo(5)>, L<slackman-notifier(1)>
+L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-notifier(1)>
 
 =head1 BUGS
 

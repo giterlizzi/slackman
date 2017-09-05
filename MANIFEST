@@ -57,6 +57,7 @@ etc/slackman.logrotate
 dbus/Makefile
 dbus/org.lotarproject.SlackMan.7.pod
 dbus/org.lotarproject.SlackMan.conf
+dbus/org.lotarproject.SlackMan.policy
 dbus/org.lotarproject.SlackMan.service
 dbus/slackman-notifier
 dbus/slackman-notifier.desktop

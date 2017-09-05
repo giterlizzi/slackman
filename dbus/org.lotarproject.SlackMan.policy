@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>SlackMan Package Manager</vendor>
+  <vendor_url>https://github.com/LotarProject</vendor_url>
+  <icon_name></icon_name>
+
+  <action id="org.lotarproject.SlackMan.exec">
+    <description>Run a SlackMan as another user</description>
+    <message>Authentication is required to run the SlackMan ($(command_line))</message>
+    <icon_name></icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/slackman</annotate>
+  </action>
+
+  <action id="org.lotarproject.SlackMan.InstallPkg">
+    <description>Install a new package</description>
+    <message>Privileges are required to installing a new package</message>
+    <icon_name></icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.lotarproject.SlackMan.RemovePkg">
+    <description>Remove a package</description>
+    <message>Privileges are required to remove a package</message>
+    <icon_name></icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+  <action id="org.lotarproject.SlackMan.UpgradePkg">
+    <description>Upgrade a package</description>
+    <message>Privileges are required to upgrade a package</message>
+    <icon_name></icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+
+</policyconfig>
