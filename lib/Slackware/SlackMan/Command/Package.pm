@@ -319,7 +319,7 @@ sub call_package_remove {
 
   if ($slackman_opts->{'obsolete-packages'}) {
 
-    # Get list from "slackman list obsoletes"
+    # Get list from "slackman list obsoletes" command
     @is_installed = Slackware::SlackMan::Command::List::call_list_obsoletes();
 
   } else {

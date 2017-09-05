@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# SlackMan - Package Manager DBus service interface
+# SlackMan - Package Manager D-Bus service interface
 
 use strict;
 use warnings;
