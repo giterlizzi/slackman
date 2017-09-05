@@ -274,9 +274,6 @@ sub package_install {
   my $package = shift;
 
   installpkg($package);
-
-  unlink($package) or warn "Failed to delete file $package: $!";
-
   _update_history($package);
 
 }
@@ -294,9 +291,6 @@ sub package_upgrade {
      $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
   upgradepkg($package_cmd, 'reinstall', 'install-new');
-  unlink($package) or warn "Failed to delete file: $!";
-
-
   _update_history($package);
 
 }
@@ -861,10 +855,14 @@ sub _update_history {
 
   my ($package) = @_;
 
-  my $pkg_basename = basename($package);
-  my $pkg_meta     = package_parse_name($pkg_basename);
+  if ( $package =~ /\.(txz|tgz|tbz|tlz)/ ) {
 
-  $package = $pkg_meta->{'name'} if ($pkg_meta->{'version'});
+    my $pkg_basename = basename($package);
+    my $pkg_meta     = package_parse_name($pkg_basename);
+
+    $package = $pkg_meta->{'name'};
+
+  }
 
   parse_package_history($package);
 
