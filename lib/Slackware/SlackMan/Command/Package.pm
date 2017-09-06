@@ -1414,6 +1414,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   --new-packages                        Check for new packages
   --obsolete-packages                   Check for obsolete packages
   -x, --exclude=PACKAGE                 Exclude package
+  --tag=TAG                             Force upgrade of installed package with specified tag
   --no-priority                         Disable repository priority check
   --no-excludes                         Disable exclude repo configuration
   --no-deps                             Disable dependency check

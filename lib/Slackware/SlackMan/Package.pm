@@ -574,10 +574,17 @@ sub package_check_updates {
   my $install_pkgs   = {};  # Required packages to install
   my $option_repo    = $slackman_opts->{'repo'};
   my $option_exclude = $slackman_opts->{'exclude'};
+  my $option_tag     = $slackman_opts->{'tag'};
 
+  # Exclude package
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
     push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
+  }
+
+  # Filter installed package with tag
+  if ($option_tag) {
+    push(@query_filters, qq/history.tag = "$option_tag"/);
   }
 
   # Filter repository

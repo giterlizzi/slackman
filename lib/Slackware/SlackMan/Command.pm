@@ -65,6 +65,7 @@ GetOptions( $slackman_opts,
   'security-fix',
   'show-files',
   'summary',
+  'tag=s',
   'version',
   'yes|y',
 );
