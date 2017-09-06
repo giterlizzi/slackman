@@ -5,11 +5,14 @@
 ## Added
 
   * #2: Add new repo via URL or via local file (`slackman repo add REPOSITORY-FILE`)
+  * #3: Added `--tag` option for upgrade installed package with specified package tag (eg. `slackman upgrade --repo slackonly:packages --tag SBo`)
   * #6: Query "installed", "upgraded" and "removed" packages by timestamp
   * #7: Added check of duplicate packages for `install`, `upgrade`, `remove` and `reinstall` commands
   * #4, #5: Added `slackman list removed` & `slackman list upgraded` commands
+  * #9: Added PolicyKit integration for using `slackman` via `pkexec(1)` command and for `org.lotarproject.SlackMan` D-Bus interface methods
+  * Added new D-Bus methods for use Slackware Package Tools (`installpkg`, `removepkg`, `upgradepkg`) via D-Bus
   * Added package size for most list commands
-  * Added tag for `slackman history` command
+  * Added package `tag` field for `slackman history` command
   * Added `Slackware::SlackMan::Pkgtools` module wrapper for Slackware Package Tools
 
 ## Fixed
@@ -19,6 +22,7 @@
 ## Removed
 
   * Removed `slackman update installed` command (merged into `slackman update history`)
+  * Removed `unlink` after package upgrade and install. Remember to launch `slackman clean cache` command periodically
 
 
 ## [v1.1.2]
