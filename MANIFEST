@@ -29,7 +29,6 @@ TODO.md
 t/00-fake-root.t
 t/00-load.t
 t/01-package-info.t
-t/02-slackman.t
 t/99-fake-root.t
 t/manifest.t
 t/pod-coverage.t
