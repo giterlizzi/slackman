@@ -26,6 +26,8 @@ BEGIN {
     curl_cmd
     datetime_calc
     datetime_h
+    dbus_notifications
+    dbus_slackman
     delete_lock
     directory_files
     download_file
@@ -38,19 +40,20 @@ BEGIN {
     get_arch
     get_last_modified
     get_lock_pid
+    get_package_info
     get_slackware_release
     gpg_import_key
     gpg_verify
     http
     ldd
     md5_check
+    repo_option_to_sql
     time_to_timestamp
-    timestamp_to_time
     timestamp_options_to_sql
+    timestamp_to_time
     trim
     uniq
     w3c_date_to_time
-    repo_option_to_sql
 
   );
 
@@ -71,6 +74,7 @@ use Time::Seconds;
 use HTTP::Tiny;
 use Carp ();
 use File::Basename;
+use Net::DBus;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
@@ -119,6 +123,25 @@ sub http {
   return $http;
 
 }
+
+
+# SlackMan DBus interface
+#
+sub dbus_slackman {
+  return Net::DBus->system
+    ->get_service('org.lotarproject.SlackMan')
+    ->get_object('/org/lotarproject/SlackMan');
+}
+
+
+# Notification DBus interface
+#
+sub dbus_notifications {
+  return Net::DBus->session
+    ->get_service('org.freedesktop.Notifications')
+    ->get_object('/org/freedesktop/Notifications');
+}
+
 
 sub uniq {
   my %seen;
@@ -604,6 +627,52 @@ sub get_slackware_release {
   return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
 
+sub get_package_info {
+
+  my ($package_name) = @_;
+
+  # Add default extension
+  $package_name .= '.tgz' unless ($package_name =~ /\.(txz|tgz|tbz|tlz)/);
+
+  $package_name = basename($package_name);
+
+  my $package_basename;
+  my $package_version;
+  my $package_build;
+  my $package_tag;
+  my $package_arch;
+  my $package_type;
+
+  my @package_name_parts    = split(/-/, $package_name);
+  my $package_build_tag_ext = $package_name_parts[$#package_name_parts];
+     $package_build_tag_ext =~ /^(\d+)(.*)\.(txz|tgz|tbz|tlz)/;
+
+  $package_build   = $1;
+  $package_tag     = $2;
+  $package_type    = $3;
+
+  $package_arch    = $package_name_parts[$#package_name_parts-1];
+  $package_version = $package_name_parts[$#package_name_parts-2];
+
+  for (my $i=0; $i<$#package_name_parts-2; $i++) {
+    $package_basename .= $package_name_parts[$i] . '-';
+  }
+
+  $package_tag      =~ s/^_// if ($package_tag);
+  $package_basename =~ s/-$// if ($package_basename);
+
+  return {
+    'name'    => $package_basename,
+    'package' => $package_name,
+    'version' => $package_version,
+    'build'   => $package_build,
+    'tag'     => $package_tag,
+    'arch'    => $package_arch,
+    'type'    => $package_type,
+  }
+
+}
+
 sub md5_check {
 
   my ($file, $checksum) = @_;
@@ -670,7 +739,7 @@ Slackware::SlackMan::Utils - SlackMan utility module
 
 =head1 DESCRIPTION
 
-Config module for SlackMan.
+utility module for SlackMan.
 
 =head1 EXPORT
 

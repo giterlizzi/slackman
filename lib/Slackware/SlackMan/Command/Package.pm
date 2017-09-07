@@ -1145,7 +1145,7 @@ sub _packages_upgraded {
 
   foreach (@$packages) {
 
-    my $pkg = package_parse_name(basename($_));
+    my $pkg = get_package_info(basename($_));
 
     print sprintf("  * %s upgraded to %s version\n",
       colored($pkg->{'name'}, 'bold'),
@@ -1169,7 +1169,7 @@ sub _packages_installed {
   print sprintf("%s\n\n", "-"x80);
 
   foreach (@$packages) {
-    my $pkg = package_parse_name(basename($_));
+    my $pkg = get_package_info(basename($_));
     print sprintf("  * installed %s %s version\n", $pkg->{'name'}, $pkg->{'version'});
   }
 

@@ -49,6 +49,7 @@ dbus_signal('PackageRemoved',   [ 'string' ]);
 dbus_signal('PackageUpgraded',  [ 'string' ]);
 
 dbus_property('version', 'string', 'read');
+dbus_property('slackware', 'string', 'read');
 
 dbus_method('ChangeLog',    [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
 dbus_method('SecurityFix',  [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
@@ -60,10 +61,36 @@ dbus_method('InstallPkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names
 dbus_method('RemovePkg',    [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_name' ] });
 dbus_method('UpgradePkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
 
+dbus_method('Notify', [ 'string', 'string', 'string' ], [], { no_return => 1, param_names => [ 'action', 'summary', 'body' ] });
+
+
+sub Notify {
+
+  my ($self, $action, $summary, $body) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.Notify method (args: action=$action,summary=$summary,body=$body)");
+
+  $self->emit_signal('PackageInstalled', $body) if ($action eq 'PackageInstalled');
+  $self->emit_signal('PackageRemoved',   $body) if ($action eq 'PackageRemoved');
+  $self->emit_signal('PackageUpgraded',  $body) if ($action eq 'PackageUpgraded');
+
+}
+
 
 sub version {
   return $VERSION;
 }
+
+
+sub slackware {
+
+  my $release = get_slackware_release();
+     $release = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
+
+  return $release;
+
+}
+
 
 sub ChangeLog {
 

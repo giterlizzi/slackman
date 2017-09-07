@@ -15,7 +15,6 @@ BEGIN {
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
-    package_parse_name
     package_version_compare
     package_install
     package_upgrade
@@ -95,50 +94,6 @@ sub package_changelogs {
 
 }
 
-sub package_parse_name {
-
-  my $package_name = shift;
-
-  # Add default extension
-  $package_name .= '.tgz' unless ($package_name =~ /\.(txz|tgz|tbz|tlz)/);
-
-  my $package_basename;
-  my $package_version;
-  my $package_build;
-  my $package_tag;
-  my $package_arch;
-  my $package_type;
-
-  my @package_name_parts    = split(/-/, $package_name);
-  my $package_build_tag_ext = $package_name_parts[$#package_name_parts];
-     $package_build_tag_ext =~ /^(\d+)(.*)\.(txz|tgz|tbz|tlz)/;
-
-  $package_build   = $1;
-  $package_tag     = $2;
-  $package_type    = $3;
-
-  $package_arch    = $package_name_parts[$#package_name_parts-1];
-  $package_version = $package_name_parts[$#package_name_parts-2];
-
-  for (my $i=0; $i<$#package_name_parts-2; $i++) {
-    $package_basename .= $package_name_parts[$i] . '-';
-  }
-
-  $package_tag      =~ s/^_// if ($package_tag);
-  $package_basename =~ s/-$// if ($package_basename);
-
-  return {
-    'name'    => $package_basename,
-    'package' => $package_name,
-    'version' => $package_version,
-    'build'   => $package_build,
-    'tag'     => $package_tag,
-    'arch'    => $package_arch,
-    'type'    => $package_type,
-  }
-
-}
-
 
 sub package_metadata {
 
@@ -197,7 +152,7 @@ sub package_metadata {
     @file_list = split(/\n/, $file_list) if ($file_list);
   }
 
-  my $package_info     = package_parse_name($package_name);
+  my $package_info     = get_package_info($package_name);
   my $package_basename = $package_info->{name};
 
   return undef unless($package_basename);
@@ -249,8 +204,8 @@ sub package_version_compare {
 
   my ($old, $new) = @_;
 
-  my $old_info = package_parse_name($old);
-  my $new_info = package_parse_name($new);
+  my $old_info = get_package_info($old);
+  my $new_info = get_package_info($new);
 
   my $old_version  = $old_info->{version};
   my $new_version  = $new_info->{version};
@@ -283,7 +238,7 @@ sub package_upgrade {
 
   my $package = shift;
 
-  my $pkg_info = package_parse_name(basename($package));
+  my $pkg_info = get_package_info(basename($package));
 
   my $package_installed = ($dbh->selectrow_arrayref("SELECT package FROM history WHERE status = 'installed' AND name = ?", undef, $pkg_info->{'name'}))->[0];
 
@@ -865,7 +820,7 @@ sub _update_history {
   if ( $package =~ /\.(txz|tgz|tbz|tlz)/ ) {
 
     my $pkg_basename = basename($package);
-    my $pkg_meta     = package_parse_name($pkg_basename);
+    my $pkg_meta     = get_package_info($pkg_basename);
 
     $package = $pkg_meta->{'name'};
 
@@ -887,7 +842,7 @@ Slackware::SlackMan::Package - SlackMan Package module
 
   use Slackware::SlackMan::Package qw(:all);
 
-  my $pkg_info = package_parse_name('aaa_base-14.2-x86_64-1.tgz');
+  my $pkg_info = get_package_info('aaa_base-14.2-x86_64-1.tgz');
 
 =head1 DESCRIPTION
 

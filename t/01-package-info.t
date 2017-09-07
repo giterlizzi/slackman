@@ -9,7 +9,7 @@ use File::Basename;
 my $current_directory = dirname(__FILE__);
 $ENV{ROOT} = "$current_directory/root";
 
-use_ok('Slackware::SlackMan::Package');
+use_ok('Slackware::SlackMan::Utils');
 
 my @pkg_data = (
   {
@@ -46,7 +46,7 @@ my @pkg_data = (
 
 foreach my $pkg_data (@pkg_data) {
 
-  my $pkg_info = Slackware::SlackMan::Package::package_parse_name($pkg_data->{'package'});
+  my $pkg_info = Slackware::SlackMan::Utils::get_package_info($pkg_data->{'package'});
 
   foreach my $key (keys %{$pkg_data->{'expected'}}) {
     is ( $pkg_info->{$key},

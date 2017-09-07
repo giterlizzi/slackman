@@ -86,7 +86,7 @@ sub _pkgtool_action {
 
   unless ($action eq 'remove') {
 
-    my $pkg_info = package_parse_name(basename($package));
+    my $pkg_info = get_package_info(basename($package));
 
     logger->debug(sprintf('[pkgtool:%s] %s package (version: %s, arch: %s, build: %s, tag: %s)',
       $action, $pkg_info->{'name'},  $pkg_info->{'version'}, $pkg_info->{'arch'},

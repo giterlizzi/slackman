@@ -77,7 +77,7 @@ Slackware::SlackMan - SlackMan Core module
 
   use Slackware::SlackMan qw(:package);
 
-  my $pkg_info = package_parse_name('aaa_base-14.2-x86_64-1.tgz');
+  my $pkg_info = get_package_info('aaa_base-14.2-x86_64-1.tgz');
 
 =head1 DESCRIPTION
 
