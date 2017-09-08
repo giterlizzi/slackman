@@ -58,8 +58,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
   --after=DATE                 Filter after date
   --before=DATE                Filter before date
-  --repo=REPOSITORY            Use specified repo during update or install packages
-  -f, --force                  Force action
+  --repo=REPOSITORY            Use specified repository during update or install packages
+  -f, --force                  Force an action
   --download-only              Download only
   -y, --yes                    Assume yes
   -n, --no                     Assume no

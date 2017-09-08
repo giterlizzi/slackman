@@ -375,6 +375,7 @@ sub call_package_remove {
 
   }
 
+  # Send the list of removed packages via D-Bus
   dbus_slackman->Notify( 'PackageRemoved', undef, join(',', @is_installed) );
 
   exit(0);
@@ -528,6 +529,7 @@ sub call_package_install {
   _packages_errors($packages_errors);
   _packages_installed(\@packages_for_pkgtool);
 
+  # Send the list of installed packages via D-Bus
   dbus_slackman->Notify( 'PackageInstalled', undef, join(',', @packages_for_pkgtool) );
 
   exit(0);
@@ -829,10 +831,11 @@ sub call_package_upgrade {
     # Display Kernel Update message
     _kernel_update_message() if ($kernel_upgrade);
 
+    # Send the list of upgraded packages via D-Bus
+    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) );
+
     # Search new configuration files (same as 'slackman new-config' command)
     call_package_new_config() if (@packages_for_pkgtool);
-
-    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) );
 
   }
 

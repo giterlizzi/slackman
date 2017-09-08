@@ -344,7 +344,7 @@ sub action_listner {
 
     notify ({
       'icon'    => '/usr/share/slackman/slackware.png',
-      'summary' => "Slackware Packages - $action",
+      'summary' => "Slackware - $action packages",
       'body'    => $body
     });
 

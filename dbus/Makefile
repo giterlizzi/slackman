@@ -41,4 +41,5 @@ install:
 	install -m 755 slackman-notifier $(DESTDIR)/usr/libexec/slackman
 	install -m 644 slackman-notifier.desktop $(DESTDIR)/usr/share/applications
 	install -m 644 slackware.png $(DESTDIR)/usr/share/slackman
+	install -m 755 dbus-pkgtools $(DESTDIR)/usr/share/slackman
 

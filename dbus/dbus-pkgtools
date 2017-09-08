@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Net::DBus;
+
+my $action  = shift;
+my $package = shift;
+my @actions = ( 'install', 'remove', 'upgrade' );
+
+unless ($action && $package) {
+  print "Usage: $0 [install|upgrade|remove] PACKAGE\n\n";
+  print "SlackMan sample D-Bus pkgtool program\n\n";
+  exit(1);
+}
+
+unless ( grep { $action eq $_ } @actions ) {
+  print "Unknown action\n";
+  exit(1);
+}
+
+if ($action ne 'remove') {
+
+  unless ( -f $package ) {
+    print "Package '$package' not found: $!\n";
+    exit(1);
+  }
+
+}
+
+my $slackman = Net::DBus->system
+  ->get_service('org.lotarproject.SlackMan')
+  ->get_object('/org/lotarproject/SlackMan');
+
+$slackman->InstallPkg($package) if ($action eq 'install');
+$slackman->UpgradePkg($package) if ($action eq 'upgrade');
+$slackman->RemovePkg($package)  if ($action eq 'remove');
+
+exit(0);

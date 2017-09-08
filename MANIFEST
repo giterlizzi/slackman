@@ -62,6 +62,7 @@ dbus/slackman-notifier
 dbus/slackman-notifier.desktop
 dbus/slackman-service
 dbus/slackware.png
+dbus/dbus-pkgtools
 docs/repo.md
 docs/variables.md
 docs/examples.md
