@@ -57,3 +57,29 @@ Advisories, ChangeLogs and new packages upgrade.
     | org.freedesktop.Notification | <--- | D-Bus daemon  | <--- |  SlackMan   |
     |  ( D-Bus session service )   |      | (session bus) |      |   Notifier  |
     +------------------------------+      +---------------+      +-------------+
+
+### Screenshots
+
+**Slackware ChangeLogs**
+
+![Slackware Security notification](images/dbus-notification-slackware-changelog.png)
+
+**Slackware Security**
+
+![Slackware Security notification](images/dbus-notification-slackware-security.png)
+
+**Slackware Upgrade**
+
+![Slackware Security notification](images/dbus-notification-slackware-upgrade.png)
+
+**Slackware Installed Packages**
+
+![Slackware Security notification](images/dbus-notification-installed-packages.png)
+
+**Slackware Upgraded Packages**
+
+![Slackware Security notification](images/dbus-notification-upgraded-packages.png)
+
+**Slackware Removed Packages**
+
+![Slackware Security notification](images/dbus-notification-removed-packages.png)
