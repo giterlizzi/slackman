@@ -427,7 +427,7 @@ Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove sum
 
 =head1 SEE ALSO
 
-L<slackman(8)>, L<dbus-monitor(1)>
+L<slackman(8)>, L<slackman-service(1)>, L<dbus-monitor(1)>
 
 =head1 BUGS
 

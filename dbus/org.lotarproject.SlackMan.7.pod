@@ -43,11 +43,25 @@ RemovePkg ( in 's' I<package_name>, out 'i' )
 
 Remove a package using L<removepkg(8)> command and emit C<PackageRemoved> signal.
 
+=head2 Notify
+
+Notify ( in 's' I<action>, in 's' I<summary>, in 's' I<body>)
+
+Send notification to L<slackman-service(1)>
+
 =head1 PROPERTIES
 
 =head2 version
 
 version (out 's')
+
+Return the SlackMan version
+
+=head2 slackware
+
+slackware (out 's')
+
+Return the Slackware version (eg. I<14.2> or I<current>)
 
 =head1 SIGNALS
 
