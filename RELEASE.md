@@ -17,6 +17,7 @@
   * Added package size for most list commands
   * Added package `tag` field for `slackman history` command
   * Added `Slackware::SlackMan::Pkgtools` module wrapper for Slackware Package Tools
+  * Added sample script `dbus-pkgtools` to emulate Slackware PkgTools via D-Bus + PolicyKit
 
 ## Fixed
 
