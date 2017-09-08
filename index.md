@@ -14,6 +14,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - Bash Completion support
  - More configurable
  - Flexible configuration via variables
+ - D-Bus interface (via `org.lotarproject.SlackMan`)
+ - Userspace D-Bus client to notify update & changelogs (via `org.freedesktop.Notification`) service
  - ... and more
 
 ## Read more
@@ -21,6 +23,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - [Install & Build](install.md)
  - [Repository](repo.md)
  - [Variables](variables.md)
+ - [D-Bus interface](dbus.md)
 
 
 ## Copyright

@@ -2,11 +2,14 @@
 
 ## Supported Repository
 
+SlackMan support different SlackWare repository including:
+
  - Slackware stable and **-current**
  - SlackOnly
  - Slackers (Conraid)
  - Slacky (Italian Slackware Community)
- - AlienBob
+ - AlienBob (and **restricted** repository)
+ - Robby Workman
  - ktown (KDE5)
  - Cinnamon SlackBuilds
  - MATE SlackBuilds
@@ -14,11 +17,12 @@
  - Microlinux
  - ... and more
 
+
 ## Sample configuration
 
 This is a sample .repo configuration
 
-    [repository]
+    [repository-id]
 
     # Short description of repository
     #
@@ -44,7 +48,7 @@ This is a sample .repo configuration
     #   Remote URL: https://example.org/slackware/
     #        Local: file:///srv/slackware/
     #
-    mirror=http://example.org/slackware/
+    mirror=https://example.org/slackware/
 
 
     # Priority (optional)
@@ -63,26 +67,26 @@ This is a sample .repo configuration
 
     # Override metadata URLs if the file is in another location
 
-    # Packages file URL
+    # GPG-KEY file URL
     #
-    gpgkey=http://example.org/slackware/GPG-KEY
+    gpgkey=$mirror/GPG-KEY
 
     # Packages file URL
     #
-    packages=http://example.org/slackware/PACKAGES.TXT
+    packages=$mirror/PACKAGES.TXT
 
     # Filelist file URL
     #
-    filelist=http://example.org/slackware/FILELIST.TXT
+    filelist=$mirror/FILELIST.TXT
 
     # Changelog file URL
     #
-    changelog=http://example.org/slackware/ChangeLog.txt
+    changelog=$mirror/ChangeLog.txt
 
     # Manifest file URL
     #
-    manifest=http://example.org/slackware/MANIFEST.bz2
+    manifest=$mirror/MANIFEST.bz2
 
     # Checksums file URL
     #
-    chechsums=http://example.org/slackware/CHECHSUMS.md5
+    chechsums=$mirror/CHECHSUMS.md5
