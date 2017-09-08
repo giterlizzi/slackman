@@ -329,13 +329,22 @@ sub action_listner {
     my $body = '';
 
     foreach (split(',', $package)) {
-      my $pkg_info = get_package_info($_);
-      $body .= sprintf(" ● %s (%s)\n", $pkg_info->{'name'} || $_, $pkg_info->{'version'} || '');
+
+      if (lc($action) eq 'removed') {
+
+        $body .= " ● $_\n";
+
+      } else {
+
+        my $pkg_info = get_package_info($_);
+        $body .= sprintf(" ● %s (%s)\n", $pkg_info->{'name'} || $_, $pkg_info->{'version'} || '');
+
+      }
     }
 
     notify ({
       'icon'    => '/usr/share/slackman/slackware.png',
-      'summary' => "Slackware Packages $action",
+      'summary' => "Slackware Packages - $action",
       'body'    => $body
     });
 
