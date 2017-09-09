@@ -1046,7 +1046,7 @@ sub _new_config_file_manual {
 
   print "\n\n$new_config_file\n";
 
-  my $answer = sprintf("What do you want [%seep/%svervrite/%semove/%siff/%serge] ?", 
+  my $answer = sprintf("What do you want [%seep/%sverwrite/%semove/%siff/%serge] ?", 
                         colored('K', 'bold'),
                         colored('O', 'bold'),
                         colored('R', 'bold'),
