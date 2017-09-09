@@ -21,6 +21,7 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
+use Slackware::SlackMan::Repo    qw(:all);
 
 use Net::DBus::Exporter 'org.lotarproject.SlackMan';
 use base qw(Net::DBus::Object);
@@ -105,9 +106,7 @@ sub ChangeLog {
   $slackman_opts->{'limits'} = 256;
   $slackman_opts->{'repo'}   = $repo_id if ($repo_id);
 
-  # Re-Init DB Connection
-  our $dbh = undef;
-      $dbh = Slackware::SlackMan::DB::dbh();
+  _reload_data();
 
   my $changelogs = package_changelogs();
   my $result     = {};
@@ -134,9 +133,7 @@ sub SecurityFix {
   $slackman_opts->{'limits'}       = 256;
   $slackman_opts->{'security-fix'} = 1;
 
-  # Re-Init DB Connection
-  our $dbh = undef;
-      $dbh = Slackware::SlackMan::DB::dbh();
+  _reload_data();
 
   my $changelogs = package_changelogs();
 
@@ -157,9 +154,7 @@ sub CheckUpgrade {
 
   logger->debug('Call org.lotarproject.SlackMan.CheckUpgrade method');
 
-  # Re-Init DB Connection
-  our $dbh = undef;
-      $dbh = Slackware::SlackMan::DB::dbh();
+  _reload_data();
 
   $slackman_opts = {};
 
@@ -236,6 +231,18 @@ sub UpgradePkg {
   $self->emit_signal('PackageUpgraded', $package);
 
   return 0;
+
+}
+
+
+sub _reload_data {
+
+  # Re-Init DB Connection
+  our $dbh = undef;
+      $dbh = Slackware::SlackMan::DB::dbh();
+
+  # Reload repositories data
+  load_repositories();
 
 }
 

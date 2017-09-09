@@ -23,6 +23,7 @@ BEGIN {
     enable_repository
     download_repository_metadata
     update_repo_data
+    load_repositories
   };
 
   %EXPORT_TAGS = (
@@ -42,55 +43,61 @@ use Slackware::SlackMan::DB     qw(:all);
 
 my %repository = ();
 
-my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf{'directory'}->{'repos'}));
+load_repositories(); # Init repositories hash
 
-foreach my $file (@files) {
+sub load_repositories {
 
-  $file =~ /(.*)\.repo/;
+  my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf{'directory'}->{'repos'}));
 
-  my $config_name = basename($1);
-  my %repo_config = read_config($file);
-  my @repos       = keys %repo_config;
+  foreach my $file (@files) {
 
-  foreach my $repo (@repos) {
+    $file =~ /(.*)\.repo/;
 
-    my $repo_cfg = $repo_config{$repo};
-    my $repo_id  = "$config_name:$repo";
-    my $mirror   = $repo_cfg->{'mirror'};
-       $mirror   =~ s/\/$//;
+    my $config_name = basename($1);
+    my %repo_config = read_config($file);
+    my @repos       = keys %repo_config;
 
-    $repo_cfg->{'exclude'}     = parse_variables($repo_cfg->{'exclude'}) if ($repo_cfg->{'exclude'});
-    $repo_cfg->{'config_file'} = $file;
+    foreach my $repo (@repos) {
 
-    # Set defaults
-    $repo_cfg->{'priority'} ||= 0;
-    $repo_cfg->{'enabled'}  ||= 0;
-    $repo_cfg->{'exclude'}  ||= undef;
+      my $repo_cfg = $repo_config{$repo};
+      my $repo_id  = "$config_name:$repo";
+      my $mirror   = $repo_cfg->{'mirror'};
+        $mirror   =~ s/\/$//;
 
-    $repo_cfg->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{'changelog'}));
-    $repo_cfg->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{'packages'}));
-    $repo_cfg->{'manifest'}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{'manifest'}));
-    $repo_cfg->{'checksums'} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{'checksums'}));
-    $repo_cfg->{'gpgkey'}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{'gpgkey'}));
-    $repo_cfg->{'filelist'}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{'filelist'}));
+      $repo_cfg->{'exclude'}     = parse_variables($repo_cfg->{'exclude'}) if ($repo_cfg->{'exclude'});
+      $repo_cfg->{'config_file'} = $file;
 
-    my @keys_to_parse = qw( name mirror packages manifest checksums changelog
-                            gpgkey filelist );
+      # Set defaults
+      $repo_cfg->{'priority'} ||= 0;
+      $repo_cfg->{'enabled'}  ||= 0;
+      $repo_cfg->{'exclude'}  ||= undef;
 
-    foreach (@keys_to_parse) {
-      $repo_cfg->{$_} =~ s/(\{|\})//g;
-      $repo_cfg->{$_} =~ s/\$mirror/$mirror/;
+      $repo_cfg->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{'changelog'}));
+      $repo_cfg->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{'packages'}));
+      $repo_cfg->{'manifest'}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{'manifest'}));
+      $repo_cfg->{'checksums'} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{'checksums'}));
+      $repo_cfg->{'gpgkey'}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{'gpgkey'}));
+      $repo_cfg->{'filelist'}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{'filelist'}));
+
+      my @keys_to_parse = qw( name mirror packages manifest checksums changelog
+                              gpgkey filelist );
+
+      foreach (@keys_to_parse) {
+        $repo_cfg->{$_} =~ s/(\{|\})//g;
+        $repo_cfg->{$_} =~ s/\$mirror/$mirror/;
+      }
+
+      foreach (@keys_to_parse) {
+        $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
+      }
+
+      $repo_cfg->{'priority'}       += 0;
+      $repo_cfg->{'id'}              = $repo_id;
+      $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id);
+
+      $repository{"$config_name:$repo"} = $repo_cfg;
+
     }
-
-    foreach (@keys_to_parse) {
-      $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
-    }
-
-    $repo_cfg->{'priority'}       += 0;
-    $repo_cfg->{'id'}              = $repo_id;
-    $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id);
-
-    $repository{"$config_name:$repo"} = $repo_cfg;
 
   }
 
