@@ -924,9 +924,9 @@ sub call_package_new_config {
     $etc_directory = $ENV{ROOT} . '/etc';
   }
 
-  print "Search for new configuration files... ";
+  STDOUT->printflush("Search for new configuration files... ");
 
-  # Find .new files in /etc directory excluding files listed in UPGRADE.TXT doc:
+  # Find .new files in /etc directory excluding files listed in Slackware UPGRADE.TXT doc:
   #
   #  * /etc/rc.d/rc.inet1.conf.new
   #  * /etc/rc.d/rc.local.new
