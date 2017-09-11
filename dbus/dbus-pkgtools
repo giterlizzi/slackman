@@ -11,7 +11,7 @@ my @actions = ( 'install', 'remove', 'upgrade' );
 
 unless ($action && $package) {
   print "Usage: $0 [install|upgrade|remove] PACKAGE\n\n";
-  print "SlackMan sample D-Bus pkgtool program\n\n";
+  print "SlackMan sample D-Bus/PolicyKit wrapper for Slackware pkgtools\n\n";
   exit(1);
 }
 
@@ -29,12 +29,39 @@ if ($action ne 'remove') {
 
 }
 
-my $slackman = Net::DBus->system
-  ->get_service('org.lotarproject.SlackMan')
-  ->get_object('/org/lotarproject/SlackMan');
+my $bus = Net::DBus->system;
 
-$slackman->InstallPkg($package) if ($action eq 'install');
-$slackman->UpgradePkg($package) if ($action eq 'upgrade');
-$slackman->RemovePkg($package)  if ($action eq 'remove');
+# Set D-Bus timeout to 5min
+$bus->timeout(5 * 60 * 1000);
 
-exit(0);
+# Connect to SlackMan D-Bus interface
+my $slackman = $bus->get_service('org.lotarproject.SlackMan')
+                   ->get_object('/org/lotarproject/SlackMan');
+
+my $pkg_info = $slackman->PackageInfo($package);
+
+if ( $action eq 'remove' || $action eq 'upgrade' ) {
+  unless ( $pkg_info->{'name'} ) {
+    print "Package $package not installed!\n";
+    exit(1);
+  }
+}
+
+if ( $action eq 'install' && $pkg_info->{'name'} ) {
+  print "Package $package already installed!\n";
+  exit(1);
+}
+
+my $retval = undef;
+
+$retval = $slackman->InstallPkg($package) if ($action eq 'install');
+$retval = $slackman->UpgradePkg($package) if ($action eq 'upgrade');
+$retval = $slackman->RemovePkg($package)  if ($action eq 'remove');
+
+if ($retval) {
+  print "Problem during execution of program (exit: $retval)\n";
+} else {
+  print "done (exit: $retval)\n";
+}
+
+exit($retval);
