@@ -313,6 +313,11 @@ sub call_package_remove {
 
   my (@packages) = @_;
 
+  if ( ! @packages && ! $slackman_opts->{'obsolete-packages'} && ! $slackman_opts->{'category'} ) {
+    print "Usage: slackman remove PACKAGE\n";
+    exit(1);
+  }
+
   _check_package_duplicates();
 
   my @is_installed = ();
