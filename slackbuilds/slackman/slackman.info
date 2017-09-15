@@ -5,8 +5,6 @@ DOWNLOAD="https://codeload.github.com/LotarProject/slackman/tar.gz/v@VERSION@"
 MD5SUM="@MD5@"
 DOWNLOAD_x86_64=""
 MD5SUM_x86_64=""
-REQUIRES="perl-DBD-SQLite perl-Sort-Versions perl-net-dbus perl-IO-Socket-SSL"
+REQUIRES="perl-DBD-SQLite perl-Sort-Versions perl-net-dbus perl-IO-Socket-SSL Net-SSLeay"
 MAINTAINER="Giuseppe Di Terlizzi"
 EMAIL="giuseppe.diterlizzi@gmail.com"
-
-
