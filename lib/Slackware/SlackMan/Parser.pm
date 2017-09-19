@@ -64,7 +64,7 @@ sub parse_changelog {
   chomp($changelog_contents);
 
   my @changelogs = split(/$changelog_separator/, $changelog_contents);
-  my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description);
+  my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description issues);
   my @values     = ();
 
   &$callback_status('parse') if ($callback_status);
@@ -89,7 +89,8 @@ sub parse_changelog {
 
     foreach my $line (@changelog_lines) {
 
-      my ($package, $status, $name, $version, $arch, $tag, $build, $description, $security_fix, $text, $category);
+      my ($package, $status, $name, $version, $arch, $tag, $build, $description, $security_fix, $text, $category, $issues);
+      my @issues;
 
       $security_fix = 0;
 
@@ -196,6 +197,17 @@ sub parse_changelog {
       next     if (defined($version) && $version !~ /\d/);
       next unless ($status);
 
+      # Detect issues (CVE, etc) from ChangeLog description
+      if ($description) {
+
+        my @cve = ( $description =~ /(CVE\-\d{4}\-\d{1,10})/gim );
+        push( @issues, uniq(map { uc($_) } @cve) ) if (@cve);
+
+      }
+
+      $issues = join(",", @issues);
+      $issues = undef unless (length($issues));
+
       my @row = (
         $changelog_timestamp,    # timestamp
         $package,                # package
@@ -209,6 +221,7 @@ sub parse_changelog {
         $security_fix,           # security fix
         $category,               # category
         trim($description),      # description
+        $issues,                 # issues
       );
 
       push(@values, \@row);
