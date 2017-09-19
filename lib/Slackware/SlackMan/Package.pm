@@ -57,6 +57,7 @@ sub package_changelogs {
   my ($package) = @_;
 
   my $option_repo   = $slackman_opts->{'repo'};
+  my $option_cve    = $slackman_opts->{'cve'};
   my @repositories  = get_enabled_repositories();
   my @query_filters = ();
 
@@ -76,12 +77,18 @@ sub package_changelogs {
     push(@query_filters, sprintf('name LIKE %s', $dbh->quote($package)));
   }
 
+  # Filter by date range
   if (my $timestamp_options = timestamp_options_to_sql()) {
     push(@query_filters, $timestamp_options);
   }
 
+  # Filter Security Fix
   if ($slackman_opts->{'security-fix'}) {
     push(@query_filters, 'security_fix = 1');
+  }
+
+  if ($option_cve) {
+    push(@query_filters, sprintf('( "," || issues || "," LIKE %s )', $dbh->quote("%,$option_cve,%")));
   }
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
@@ -329,14 +336,10 @@ sub package_available_update {
                     AND packages.arch  = history.arch
                     AND packages.name  = ?
                     AND version_compare(old_version_build, new_version_build) < 0
-                    AND packages.repository IN (%s)
-                    AND packages.repository NOT IN (%s)
+                    AND (%s)
                ORDER BY packages.name, old_priority, new_priority/;
 
-  my $enabled_repository  = '"' . join('", "', get_enabled_repositories())  . '"';
-  my $disabled_repository = '"' . join('", "', get_disabled_repositories()) . '"';
-
-  $query = sprintf($query, $enabled_repository, $disabled_repository);
+  $query = sprintf($query, repo_option_to_sql('packages'));
 
   my $sth = $dbh->prepare($query);
   $sth->execute($package_name);
@@ -517,7 +520,7 @@ sub package_check_updates {
       FROM packages
      WHERE name = ?
        AND arch IN (?, "noarch")
-       AND repository IN (?)
+       AND (%s)
        AND NOT EXISTS (SELECT 1
                          FROM history
                        WHERE history.status = "installed"
@@ -552,6 +555,9 @@ sub package_check_updates {
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
 
   @update_packages = map { parse_module_name($_) } @update_packages if (@update_packages);
+
+  # Filter dependency only for active (or filtered) repository
+  $dependency_query = sprintf($dependency_query, repo_option_to_sql());
 
   if (@update_packages) {
 
@@ -603,7 +609,7 @@ sub package_check_updates {
 
       $update_pkgs->{$updatable_pkg_required_row->{name}} = $updatable_pkg_required_row;
 
-      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $arch, '"' . join('", "', get_disabled_repositories()) . ' "');
+      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $arch);
 
       next unless ($dependency_row->{name});
 
@@ -632,6 +638,11 @@ sub package_download {
   my $package_path   = sprintf('%s/%s',    $save_path, $pkg->{'package'});
   my @package_errors = ();
 
+  my $md5_failed_msg  = 'MD5 check failed';
+  my $gpg_failed_msg  = 'GPG verify failed';
+  my $md5_skipped_msg = 'Skipped MD5 check';
+  my $gpg_skipped_msg = 'Skipped GPG verify';
+
   make_path($save_path) unless (-d $save_path);
 
   unless (-e $package_path) {
@@ -652,12 +663,18 @@ sub package_download {
 
       logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
 
-      if (download_file($package_url, "$package_path.part", 'progress-bar')) {
+      my $download_package_status = download_file($package_url, "$package_path.part", 'progress-bar');
+
+      if ( $download_package_status == 200 ) {
+
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
         rename("$package_path.part", $package_path);
+
       } else {
+
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-        push(@package_errors, 'download');
+        push(@package_errors, "Download error ($download_package_status)");
+
       }
 
     }
@@ -666,7 +683,7 @@ sub package_download {
 
   unless (-e "$package_path.asc") {
 
-    if (download_file("$package_url.asc", "$package_path.asc")) {
+    if ( download_file("$package_url.asc", "$package_path.asc") == 200 ) {
       logger->info(sprintf("Downloaded signature of %s package", $pkg->{'package'}));
     }
 
@@ -680,14 +697,27 @@ sub package_download {
 
     unless ($slackman_conf{'main'}->{'checkmd5'}) {
       $md5_check = 1;
+      push(@package_errors, $md5_skipped_msg);
+    }
+
+    if ($slackman_opts->{'no-md5-check'}) {
+      $md5_check = 1;
+      push(@package_errors, $md5_skipped_msg);
     }
 
     unless ($slackman_conf{'main'}->{'checkgpg'}) {
       $gpg_verify = 1;
+      push(@package_errors, $gpg_skipped_msg);
+    }
+
+    if ($slackman_opts->{'no-gpg-check'}) {
+      $gpg_verify = 1;
+      push(@package_errors, $gpg_skipped_msg);
     }
 
     unless ($pkg->{'checksum'}) {
-      exit(0) unless(confirm(sprintf("\n%s %s package don't have a valid checksum. Do you want continue ? [Y/N]", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
+      $| = 1;
+      exit(0) unless(confirm(sprintf("\n%s %s package don't have a valid checksum.\nDo you want continue ? [Y/N] \b", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
       $skip_check = 1;
     }
 
@@ -696,7 +726,7 @@ sub package_download {
       logger->info(sprintf("MD5 checksum success for %s package", $pkg->{'package'}));
     } else {
       logger->error(sprintf("Error during MD5 checksum of %s package", $pkg->{'package'}));
-      push(@package_errors, 'checksum');
+      push(@package_errors, $md5_failed_msg);
     }
 
     if (gpg_verify($package_path)) {
@@ -704,7 +734,7 @@ sub package_download {
       $gpg_verify = 1;
     } else {
       logger->error(sprintf("Error during GPG signature verify of %s package", $pkg->{'package'}));
-      push(@package_errors, 'gpg');
+      push(@package_errors, $gpg_failed_msg);
     }
 
     unless ($skip_check) {
