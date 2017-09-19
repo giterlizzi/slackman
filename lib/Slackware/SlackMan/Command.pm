@@ -43,8 +43,10 @@ GetOptions( $slackman_opts,
   'after=s',
   'before=s',
   'category=s',
-  'config=s',
+  'cve=s',
+  'series=s',
   'color=s',
+  'config=s',
   'details',
   'download-only',
   'exclude-installed',
@@ -56,6 +58,8 @@ GetOptions( $slackman_opts,
   'new-packages',
   'no-deps',
   'no-excludes',
+  'no-gpg-check',
+  'no-md5-check',
   'no-priority',
   'no|n',
   'obsolete-packages',
@@ -72,6 +76,9 @@ GetOptions( $slackman_opts,
 
 
 $slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+
+# Options Alias
+$slackman_opts->{'category'} = $slackman_opts->{'series'} if ($slackman_opts->{'series'});
 
 # Verify terminal color capability using tput(1) utility
 if ($slackman_opts->{'color'} eq 'auto') {
