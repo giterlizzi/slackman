@@ -79,13 +79,21 @@ B<file> (default: F</var/log/slackman.log>)
 
 =over
 
-Define slackman log file
+Define SlackMan log file
+
+=back
+
+B<category> (default: F<none>)
+
+=over
+
+Define additional SlackMan logger categories (useful for debugging)
 
 =back
 
 =head1 [proxy] SECTION
 
-This section provide the proxy configuration for slackman.
+This section provide the proxy configuration for SlackMan.
 
 B<enable> (default: C<false>)
 
@@ -169,7 +177,7 @@ B<lib> (default: C</var/lib/slackman>)
 
 =over
 
-Lib directory for slackman database
+Lib directory for SlackMan database
 
 =back
 
