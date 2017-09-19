@@ -63,6 +63,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
   --download-only              Download only
   -y, --yes                    Assume yes
   -n, --no                     Assume no
+  --no-gpg-check               Disable GPG verify check
+  --no-md5-check               Disable MD5 checksum check
 
 =head1 EXAMPLES
 
