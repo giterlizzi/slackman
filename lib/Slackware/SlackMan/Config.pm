@@ -69,8 +69,9 @@ sub load_config {
   $slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
 
   # Set default logger values
-  $slackman_conf{'logger'}->{'level'} ||= 'debug';
-  $slackman_conf{'logger'}->{'file'}  ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+  $slackman_conf{'logger'}->{'level'}    ||= 'debug';
+  $slackman_conf{'logger'}->{'file'}     ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+  $slackman_conf{'logger'}->{'category'} ||= '';
 
   # Set default value for color output
   $slackman_conf{'main'}->{'color'} ||= 'always';
