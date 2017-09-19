@@ -117,7 +117,7 @@ sub call_package_info {
     'id', undef, parse_module_name($package)
   );
 
-  my @packages_to_installed;
+  my @packages_installed;
 
   print "Installed package(s)\n";
   print sprintf("%s\n\n", "-"x80);
@@ -128,7 +128,7 @@ sub call_package_info {
     my $description = $row->{description};
        $description =~ s/\n/\n    /g;
 
-    push @packages_to_installed, $row->{name};
+    push @packages_installed, $row->{name};
 
     my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
 
@@ -161,7 +161,7 @@ sub call_package_info {
   print "No installed packages found\n" unless (scalar keys %$installed_rows);
 
   my $available_query = sprintf('SELECT * FROM packages WHERE name LIKE ? AND name NOT IN (%s) AND repository NOT IN (%s)',
-    '"' . join('","', @packages_to_installed) . '"',
+    '"' . join('","', @packages_installed) . '"',
     '"' . join('","', get_disabled_repositories()) . '"');
   my $available_rows  = $dbh->selectall_hashref($available_query, 'id', undef, $package);
 
@@ -381,7 +381,7 @@ sub call_package_remove {
   }
 
   # Send the list of removed packages via D-Bus
-  dbus_slackman->Notify( 'PackageRemoved', undef, join(',', @is_installed) );
+  dbus_slackman->Notify( 'PackageRemoved', undef, join(',', @is_installed) ) if (@is_installed);
 
   exit(0);
 
@@ -535,7 +535,7 @@ sub call_package_install {
   _packages_installed(\@packages_for_pkgtool);
 
   # Send the list of installed packages via D-Bus
-  dbus_slackman->Notify( 'PackageInstalled', undef, join(',', @packages_for_pkgtool) );
+  dbus_slackman->Notify( 'PackageInstalled', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -837,7 +837,7 @@ sub call_package_upgrade {
     _kernel_update_message() if ($kernel_upgrade);
 
     # Send the list of upgraded packages via D-Bus
-    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) );
+    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
 
     # Search new configuration files (same as 'slackman new-config' command)
     call_package_new_config() if (@packages_for_pkgtool);
@@ -879,12 +879,17 @@ sub call_package_changelog {
   my ($package) = @_;
   my $changelogs = package_changelogs($package);
 
+  unless ( @{$changelogs} ) {
+    print "No Changelog!\n\n";
+    exit(1);
+  }
+
   unless ($slackman_opts->{'details'}) {
 
     print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
     print sprintf("%s\n", "-"x132);
 
-    foreach my $row (@{$changelogs}) {
+    foreach my $row ( @{$changelogs} ) {
 
       print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
         ($row->{'package'}      || ''),
@@ -892,8 +897,9 @@ sub call_package_changelog {
         ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
         ($row->{'status'}       || ''),
         ($row->{'timestamp'}    || ''),
-        ($row->{'repository'}   || '')
+        ($row->{'repository'}   || ''),
       );
+
     }
 
   }
@@ -905,8 +911,8 @@ sub call_package_changelog {
       my $description = $row->{'description'};
          $description =~ s/\(\* Security fix \*\)/colored("(* Security fix *)", 'red')/ge if $row->{'security_fix'};
 
-      print sprintf("%s (%s)\n%s:  %s\n%s\n",
-        colored($row->{'timestamp'}, 'green'),
+      print sprintf("%s (%s)\n%s:  %s\n%s\n\n",
+        $row->{'timestamp'},
         $row->{'repository'},
         colored($row->{'package'}, 'bold'),
         ucfirst($row->{'status'}),
@@ -1202,7 +1208,7 @@ sub _packages_errors {
   print sprintf("%s\n\n", "-"x80);
 
   foreach my $pkg (keys %$packages_errors) {
-    print sprintf("  * %-50s (%s error)\n", $pkg, join(' error, ', @{$packages_errors->{$pkg}}));
+    print sprintf("  * %-50s %s\n", $pkg, join(', ', @{$packages_errors->{$pkg}}));
   }
 
   print "\n\n";
@@ -1415,6 +1421,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   --before=DATE                         Filter changelog before date
   --details                             Display ChangeLog details
   --security-fix                        Display only ChangeLog Security Fix
+  --cve=CVE-YYYY-NNNNNN                 Search a CVE identifier into ChangeLogs
 
 =head2 INFO OPTIONS
 
@@ -1434,6 +1441,8 @@ slackman-package - Install, upgrade and display information of Slackware package
   --no-deps                             Disable dependency check
   -y, --yes                             Assume yes
   -n, --no                              Assume no
+  --no-gpg-check                        Disable GPG verify check
+  --no-md5-check                        Disable MD5 checksum check
 
 =head1 EXAMPLES
 
@@ -1462,6 +1471,10 @@ Search file using MANIFEST.bz2 repository file (C<slackman update manifest>):
 Display a ChangeLog:
 
   slackman changelog --repo slackware:packages
+
+Search a CVE into the ChangeLog and display the detail:
+
+  slackman changelog --cve CVE-2017-1000251 --details
 
 =head1 SEE ALSO
 
