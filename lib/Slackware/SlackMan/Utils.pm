@@ -54,6 +54,8 @@ BEGIN {
     trim
     uniq
     w3c_date_to_time
+    success_sign
+    failed_sign
 
   );
 
@@ -75,6 +77,7 @@ use HTTP::Tiny;
 use Carp ();
 use File::Basename;
 use Net::DBus;
+use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
@@ -348,11 +351,11 @@ sub download_file {
 
   if ( $response->{'success'} ) {
     logger->info("[DOWNLOAD] done");
-    return 1;
+    return $response->{status};
   }
 
   logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
-  return 0;
+  return $response->{status};
 
 }
 
@@ -518,7 +521,9 @@ sub repo_option_to_sql {
 
   push(@query_filters, sprintf(qq/$field NOT IN ("%s")/, join('","', @disabled_repo)));
 
-  return sprintf(' ( %s ) ', join(' AND ', @query_filters));
+  my $sql_filter = sprintf(' ( %s ) ', join(' AND ', @query_filters));
+
+  return $sql_filter;
 
 }
 
@@ -722,6 +727,14 @@ sub delete_lock {
   my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
 
+}
+
+sub success_sign {
+  return colored("\x{2713}", "green");
+}
+
+sub failed_sign {
+  return colored("\x{2717}", "red");
 }
 
 1;
