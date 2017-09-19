@@ -44,7 +44,7 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Config;
 
-use constant SLACKMAN_SCHEMA_VERSION => 1;
+use constant SLACKMAN_SCHEMA_VERSION => 2;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -127,7 +127,8 @@ use constant SLACKMAN_CHANGELOGS_TABLE => qq/CREATE TABLE IF NOT EXISTS "changel
   "category"          VARCHAR,
   "status"            VARCHAR,
   "description"       VARCHAR,
-  "security_fix"      BOOL)/;
+  "security_fix"      BOOL,
+  "issues"            VARCHAR)/;
 
 use constant SLACKMAN_METADATA_TABLE => qq/CREATE TABLE IF NOT EXISTS "metadata" (
   "id"                INTEGER PRIMARY KEY,
@@ -147,6 +148,86 @@ use constant SLACKMAN_SCHEMA => {
 
 use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );
 use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
+
+# Override built-in DBI module subroutines for loggin
+INIT {
+
+  if ( $slackman_conf{'logger'}->{'category'} =~ /sql/ ) {
+
+    no strict;
+    no warnings;
+
+    sub _log {
+
+      my ($sub, $dbh, $stmt, $bind) = @_;
+      my $message = "DBI::$sub - $stmt";
+      my $i = 0;
+
+      $message =~ s{\?}{$dbh->quote($bind->[$i++])}eg;
+      logger->debug($message);
+
+    }
+
+    my $orig_execute            = \&DBI::st::execute;
+    my $orig_selectall_arrayref = \&DBI::db::selectall_arrayref;
+    my $orig_selectcol_arrayref = \&DBI::db::selectcol_arrayref;
+    my $orig_selectall_hashref  = \&DBI::db::selectall_hashref;
+    my $orig_selectrow_arrayref = \&DBI::db::selectrow_arrayref;
+    my $orig_selectrow_array    = \&DBI::db::selectrow_array;
+    my $orig_selectrow_hashref  = \&DBI::db::selectrow_hashref;
+    my $orig_do                 = \&DBI::db::do;
+
+    *DBI::st::execute = sub {
+      my ($sth, @bind) = @_;
+      _log("execute", $sth->{Database}, $sth->{Statement}, \@bind);
+      return $orig_execute->($sth, @bind);
+    };
+
+    *DBI::db::selectall_arrayref = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("selectall_arrayref", $dbh, $stmt, \@bind);
+      return $orig_selectall_arrayref->($dbh, $stmt, $attr, @bind);
+    };
+
+    *DBI::db::selectcol_arrayref = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("selectcol_arrayref", $dbh, $stmt, \@bind);
+      return $orig_selectcol_arrayref->($dbh, $stmt, $attr, @bind);
+    };
+
+    *DBI::db::selectall_hashref = sub {
+      my ($dbh, $stmt, $key_field, $attr, @bind) = @_;
+      _log("selectall_hashref", $dbh, $stmt, \@bind);
+      return $orig_selectall_hashref->($dbh, $stmt, $key_field, $attr, @bind);
+    };
+
+    *DBI::db::selectrow_arrayref = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("selectrow_arrayref", $dbh, $stmt, \@bind);
+      return $orig_selectrow_arrayref->($dbh, $stmt, $attr, @bind);
+    };
+
+    *DBI::db::selectrow_array = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("selectrow_array", $dbh, $stmt, \@bind);
+      return $orig_selectrow_array->($dbh, $stmt, $attr, @bind);
+    };
+
+    *DBI::db::selectrow_hashref = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("selectrow_hashref", $dbh, $stmt, \@bind);
+      return $orig_selectrow_hashref->($dbh, $stmt, $attr, @bind);
+    };
+
+    *DBI::db::do = sub {
+      my ($dbh, $stmt, $attr, @bind) = @_;
+      _log("do", $dbh, $stmt, \@bind);
+      return $orig_do->($dbh, $stmt, $attr, @bind);
+    };
+
+  }
+
+}
 
 our $dbh = dbh();
 
