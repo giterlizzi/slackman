@@ -1,3 +1,5 @@
 theme: jekyll-theme-slate
 show_downloads: true
 google_analytics: UA-106797685-1
+github:
+  owner_name: Giuseppe Di Terlizzi
