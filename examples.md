@@ -23,6 +23,10 @@ Search file using MANIFEST.bz2 repository file (`slackman update manifest`):
 
     # slackman file-search firefox
 
+Add new repository:
+
+    # slackman repo add http://slackware.com/pub/slackman/repos.d/slackware.repo
+
 Enable a repository:
 
     # slackman repo enable slackware:multilib
@@ -30,6 +34,10 @@ Enable a repository:
 Display the ChangeLog:
 
     # slackman changelog --repo slackware:packages
+
+Search a CVE into the ChangeLog and display the detail:
+
+    # slackman changelog --cve CVE-2017-1000251 --details
 
 Bash Completion:
 
