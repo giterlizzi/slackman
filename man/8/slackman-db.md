@@ -1,3 +1,4 @@
+# slackman-db(8)
 # NAME
 
 slackman-db - Display information and manage SlackMan database

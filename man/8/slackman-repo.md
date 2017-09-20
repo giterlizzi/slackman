@@ -1,3 +1,4 @@
+# slackman-repo(8)
 # NAME
 
 slackman-repo - Display and manage Slackware repository

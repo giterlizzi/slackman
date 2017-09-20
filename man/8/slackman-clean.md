@@ -1,3 +1,4 @@
+# slackman-clean(8)
 # NAME
 
 slackman-clean - Clean and control SlackMan cache

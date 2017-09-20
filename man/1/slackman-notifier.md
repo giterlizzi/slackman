@@ -1,3 +1,4 @@
+# slackman-notifier(1)
 # NAME
 
 slackman-notifier - SlackMan Notification Tool

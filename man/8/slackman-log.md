@@ -1,3 +1,4 @@
+# slackman-log(8)
 # NAME
 
 slackman-log - Display SlackMan log

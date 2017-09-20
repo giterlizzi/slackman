@@ -1,3 +1,4 @@
+# slackman-config(8)
 # NAME
 
 slackman-config - Get and set SlackMan configuration

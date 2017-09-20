@@ -1,3 +1,4 @@
+# slackman-list(8)
 # NAME
 
 slackman-list - List packages and other info

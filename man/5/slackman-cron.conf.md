@@ -1,3 +1,4 @@
+# slackman-cron.conf(5)
 # NAME
 
 **slackman-cron.conf** - Configuration file for [slackman(8)](../8/slackman.md) Package Manager crontab utility

@@ -1,3 +1,4 @@
+# slackman(8)
 # NAME
 
 slackman - Slackware Package Manager wrapper for pkgtools

@@ -1,3 +1,4 @@
+# slackman.repo(5)
 # NAME
 
 **slackman.repo** - Configuration file for slackman repository

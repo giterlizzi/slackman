@@ -1,3 +1,4 @@
+# slackman-update(8)
 # NAME
 
 slackman-update - Perform update of repository metadata

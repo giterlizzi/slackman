@@ -1,3 +1,4 @@
+# slackman-package(8)
 # NAME
 
 slackman-package - Install, upgrade and display information of Slackware packages
