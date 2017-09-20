@@ -105,8 +105,8 @@ Search a CVE into the ChangeLog and display the detail:
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman-repo(8)](../8/slackman-repo), [slackman-update(8)](../8/slackman-update), [slackman.conf(5)](../5/slackman.conf),
-[slackman.repo(5)](../5/slackman.repo)
+[slackman(8)](../8/slackman.md), [slackman-repo(8)](../8/slackman-repo.md), [slackman-update(8)](../8/slackman-update.md), [slackman.conf(5)](../5/slackman.conf.md),
+[slackman.repo(5)](../5/slackman.repo.md)
 
 # BUGS
 

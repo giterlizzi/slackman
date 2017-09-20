@@ -21,7 +21,7 @@ Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove sum
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman-service(1)](../1/slackman-service), [dbus-monitor(1)](../1/dbus-monitor)
+[slackman(8)](../8/slackman.md), [slackman-service(1)](../1/slackman-service.md), [dbus-monitor(1)](../1/dbus-monitor.md)
 
 # BUGS
 

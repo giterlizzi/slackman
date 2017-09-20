@@ -10,11 +10,11 @@ slackman-log - Display SlackMan log
 
 # DESCRIPTION
 
-**slackman config** get and set SlackMan configuration in [slackman.conf(5)](../5/slackman.conf) file.
+**slackman config** get and set SlackMan configuration in [slackman.conf(5)](../5/slackman.conf.md) file.
 
 The default location of SlackMan log is `directory.log/slackman.log`.
 
-To see the current location of `directory.log` use [slackman-config(8)](../8/slackman-config) command:
+To see the current location of `directory.log` use [slackman-config(8)](../8/slackman-config.md) command:
 
     slackman config directory.log
 
@@ -32,7 +32,7 @@ To see the current location of `directory.log` use [slackman-config(8)](../8/sla
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 

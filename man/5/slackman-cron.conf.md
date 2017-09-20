@@ -1,16 +1,16 @@
 # NAME
 
-**slackman-cron.conf** - Configuration file for [slackman(8)](../8/slackman) Package Manager crontab utility
+**slackman-cron.conf** - Configuration file for [slackman(8)](../8/slackman.md) Package Manager crontab utility
 
 # DESCRIPTION
 
-The `slackman-cron.conf` file contain the configurations for [slackman(8)](../8/slackman) cronta utility.
+The `slackman-cron.conf` file contain the configurations for [slackman(8)](../8/slackman.md) cronta utility.
 
 # OPTIONS
 
 **SLACKMAN\_PARAMS** (default: ``)
 
-> Set extra params for [slackman(8)](../8/slackman) command
+> Set extra params for [slackman(8)](../8/slackman.md) command
 
 **UPDATE\_METADATA** (default: `yes`)
 
@@ -31,7 +31,7 @@ The `slackman-cron.conf` file contain the configurations for [slackman(8)](../8/
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 

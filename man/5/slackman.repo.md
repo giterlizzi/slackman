@@ -165,7 +165,7 @@ For display all variable values use `slackman list variables` command:
 `release`
 
 > Slackware version from `/etc/slackware-release` (eg. `14.2`) or `current`
-> (this variable follow the _slackware.version_ option in [slackman.conf(5)](../5/slackman.conf) file)
+> (this variable follow the _slackware.version_ option in [slackman.conf(5)](../5/slackman.conf.md) file)
 
 `release.real`
 
@@ -241,7 +241,7 @@ To display repository configuration you can use `slackman repo list` and
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 

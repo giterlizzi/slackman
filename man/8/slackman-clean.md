@@ -32,7 +32,7 @@ slackman-clean - Clean and control SlackMan cache
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 

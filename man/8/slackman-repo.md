@@ -83,7 +83,7 @@ Display repository informations:
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf), [slackman.repo(5)](../5/slackman.repo), [slackman-update(8)](../8/slackman-update)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md), [slackman.repo(5)](../5/slackman.repo.md), [slackman-update(8)](../8/slackman-update.md)
 
 # BUGS
 

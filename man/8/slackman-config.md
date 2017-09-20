@@ -11,7 +11,7 @@ slackman-config - Get and set SlackMan configuration
 
 # DESCRIPTION
 
-**slackman config** get and set SlackMan configuration in [slackman.conf(5)](../5/slackman.conf) file.
+**slackman config** get and set SlackMan configuration in [slackman.conf(5)](../5/slackman.conf.md) file.
 
 # OPTIONS
 
@@ -22,7 +22,7 @@ slackman-config - Get and set SlackMan configuration
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 

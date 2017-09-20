@@ -96,10 +96,10 @@ Enable a repository:
 
 # SEE ALSO
 
-[slackman-clean(8)](../8/slackman-clean), [slackman-config(8)](../8/slackman-config), [slackman-db(8)](../8/slackman-db), [slackman-list(8)](../8/slackman-list),
-[slackman-log(8)](../8/slackman-log), [slackman-package(8)](../8/slackman-package), [slackman-repo(8)](../8/slackman-repo), [slackman-update(8)](../8/slackman-update),
-[slackman.conf(5)](../5/slackman.conf), [slackman.repo(5)](../5/slackman.repo), [installpkg(8)](../8/installpkg), [makepkg(8)](../8/makepkg),
-[removepkg(8)](../8/removepkg), [explodepkg(8)](../8/explodepkg), [pkgtool(8)](../8/pkgtool), [upgradepkg(8)](../8/upgradepkg)
+[slackman-clean(8)](../8/slackman-clean.md), [slackman-config(8)](../8/slackman-config.md), [slackman-db(8)](../8/slackman-db.md), [slackman-list(8)](../8/slackman-list.md),
+[slackman-log(8)](../8/slackman-log.md), [slackman-package(8)](../8/slackman-package.md), [slackman-repo(8)](../8/slackman-repo.md), [slackman-update(8)](../8/slackman-update.md),
+[slackman.conf(5)](../5/slackman.conf.md), [slackman.repo(5)](../5/slackman.repo.md), [installpkg(8)](../8/installpkg.md), [makepkg(8)](../8/makepkg.md),
+[removepkg(8)](../8/removepkg.md), [explodepkg(8)](../8/explodepkg.md), [pkgtool(8)](../8/pkgtool.md), [upgradepkg(8)](../8/upgradepkg.md)
 
 # BUGS
 

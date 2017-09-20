@@ -1,10 +1,10 @@
 # NAME
 
-**slackman.conf** - Configuration file for [slackman(8)](../8/slackman) Package Manager
+**slackman.conf** - Configuration file for [slackman(8)](../8/slackman.md) Package Manager
 
 # DESCRIPTION
 
-The `slackman.conf` file contain the configurations for [slackman(8)](../8/slackman).
+The `slackman.conf` file contain the configurations for [slackman(8)](../8/slackman.md).
 
 To get all options use `slackman config` command.
 
@@ -136,7 +136,7 @@ This section provide the proxy configuration for SlackMan.
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.repo(5)](../5/slackman.repo)
+[slackman(8)](../8/slackman.md), [slackman.repo(5)](../5/slackman.repo.md)
 
 # BUGS
 

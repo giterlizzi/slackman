@@ -32,7 +32,7 @@ SlackMan store this files into a repository cache and into a database.
 
 The default location of SlackMan cache is `directory.cache`.
 
-To see the current location of `directory.cache` use [slackman-config(8)](../8/slackman-config) command:
+To see the current location of `directory.cache` use [slackman-config(8)](../8/slackman-config.md) command:
 
     slackman config directory.cache
 
@@ -58,7 +58,7 @@ To see the current location of `directory.cache` use [slackman-config(8)](../8/s
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman-repo(8)](../8/slackman-repo), [slackman.conf(5)](../5/slackman.conf), [slackman.repo(5)](../5/slackman.repo)
+[slackman(8)](../8/slackman.md), [slackman-repo(8)](../8/slackman-repo.md), [slackman.conf(5)](../5/slackman.conf.md), [slackman.repo(5)](../5/slackman.repo.md)
 
 # BUGS
 

@@ -15,7 +15,7 @@ slackman-db - Display information and manage SlackMan database
 SlackMan store all informations (metadata, changelog, history, etc.) into a SQLite
 database. The default location of database is `directory.lib/db.sqlite`.
 
-To see the current location of `directory.lib` use [slackman-config(8)](../8/slackman-config) command:
+To see the current location of `directory.lib` use [slackman-config(8)](../8/slackman-config.md) command:
 
     slackman config directory.lib
 
@@ -34,7 +34,7 @@ To see the current location of `directory.lib` use [slackman-config(8)](../8/sla
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman), [slackman.conf(5)](../5/slackman.conf)
+[slackman(8)](../8/slackman.md), [slackman.conf(5)](../5/slackman.conf.md)
 
 # BUGS
 
