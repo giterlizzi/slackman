@@ -72,6 +72,7 @@ docs/usage.md
 docs/dbus.md
 pod/Makefile
 pod/slackman.conf.5.pod
+pod/slackman-cron.conf.5.pod
 pod/slackman.repo.5.pod
 slackbuilds/slackman/doinst.sh
 slackbuilds/slackman/slackman.info

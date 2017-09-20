@@ -1,0 +1,74 @@
+=head1 NAME
+
+B<slackman-cron.conf> - Configuration file for L<slackman(8)> Package Manager crontab utility
+
+=head1 DESCRIPTION
+
+The F<slackman-cron.conf> file contain the configurations for L<slackman(8)> cronta utility.
+
+=head1 OPTIONS
+
+B<SLACKMAN_PARAMS> (default: C<>)
+
+=over
+
+Set extra params for L<slackman(8)> command
+
+=back
+
+B<UPDATE_METADATA> (default: C<yes>)
+
+=over
+
+Update new packages and changelog metadata from the repositories
+
+=back
+
+B<UPDATE_MANIFEST_METADATA> (deefault: C<no>)
+
+=over
+
+Update new manifest metadata from the repositories
+
+=back
+
+B<DOWNLOAD_UPGRADED_PACKAGES> (default: C<no>)
+
+=over
+
+Download upgraded packages
+
+=back
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/slackman-cron.conf
+
+=item /etc/slackman/slackman.conf
+
+=back
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.conf(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

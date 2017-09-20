@@ -24,6 +24,7 @@ install:
 	mkdir -p $(DESTINSTALLMAN8DIR)
 	$(POD2MAN) --section 5 --perm_rw=$(PERM_RW) -u \
 	  slackman.conf.5.pod $(DESTINSTALLMAN5DIR)/slackman.conf.5 \
+	  slackman-cron.conf.5.pod $(DESTINSTALLMAN5DIR)/slackman-cron.conf.5 \
 	  slackman.repo.5.pod $(DESTINSTALLMAN5DIR)/slackman.repo.5
 	$(POD2MAN) --section 8 --perm_rw=$(PERM_RW) -u \
 	  ../bin/slackman $(DESTINSTALLMAN8DIR)/slackman.8
