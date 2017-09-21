@@ -39,12 +39,12 @@ Follow this easy steps:
  - Create new text file with **.repo** (eg. **custom.repo** ) extension into `/etc/slackman/repos.d` directory
  - Copy and paste the below text into new **.repo** file
 
-
+```
     [packages]
     name=My personal repository
     enabled=true
     mirror=http://example.org/my-personal-repository
-
+```
 
  - Update the repository metadata using `slackman update --repo custom:packages`
  - Enjoy!
