@@ -5,7 +5,7 @@
 SlackMan is written in Perl and require this extra Perl modules installed on your machine:
 
 Module            | Usage
---------------------------------------------------------------------------------
+------------------|-------------------------------------------------------------
 `DBD::SQLite`     | SQLite library to manage SlackMan database
 `Sort::Versions`  | This module is used to compare the package version
 `Net::DBus`       | Notify new packages update and expose methods via D-Bus
