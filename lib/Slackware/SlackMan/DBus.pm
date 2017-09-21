@@ -102,7 +102,7 @@ sub ChangeLog {
 
   $slackman_opts = {};
 
-  $slackman_opts->{'after'}  = '-7 days';
+  $slackman_opts->{'after'}  = '-7d';
   $slackman_opts->{'limits'} = 256;
   $slackman_opts->{'repo'}   = $repo_id if ($repo_id);
 
@@ -129,7 +129,7 @@ sub SecurityFix {
   $slackman_opts = {};
 
   $slackman_opts->{'repo'}         = 'slackware';
-  $slackman_opts->{'after'}        = '-7 days';
+  $slackman_opts->{'after'}        = '-7d';
   $slackman_opts->{'limits'}       = 256;
   $slackman_opts->{'security-fix'} = 1;
 
