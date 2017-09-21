@@ -1,6 +1,6 @@
 # Supported Respositories
 
-### Slackware & Multilib
+## Slackware & Multilib
 
 Slackware **main** and **patches** repository enabled by default with additional
 **extra**, **pasture** and **testing** repository support.
@@ -17,7 +17,7 @@ slackware:testing  | Slackware testing directory
 slackware:multilib | MultiLib repository (only for x86_64)
 
 
-### AlienBob SlackBuilds
+## AlienBob SlackBuilds
 
 Eric Hameleers (AlienBob) SlackBuilds.
 
@@ -30,7 +30,7 @@ alienbob:packages   | AlienBob SlackBuilds
 alienbob:restricted | AlienBob Restricted SlackBuilds
 
 
-### Robby Workman's Slackware Package
+## Robby Workman's Slackware Package
 
 Robby Workman (rlworkman) Slackware Packages for latest stable Slackware
 release (14.2). This repository also contain packages for oldest Slackware
@@ -44,7 +44,7 @@ Repo ID            | Note
 rlworkman:packages | 
 
 
-### Slackers (Slackware Current Repository)
+## Slackers (Slackware Current Repository)
 
  - File: slackers.repo
 
@@ -53,7 +53,7 @@ Repo ID            | Note
 slackers:packages  | This repository support **only** Slackware64-current
 
 
-### Slacky (Slackware Italian Community Repository)
+## Slacky (Slackware Italian Community Repository)
 
  - Home-Page: https://slacky.eu
  - File: slackers.repo
@@ -63,7 +63,7 @@ Repo ID            | Note
 slackers:packages  | 
 
 
-### SlackOnly SlackBuilds
+## SlackOnly SlackBuilds
 
 SlackOnly is a third party software repository for Slackware Linux that
 provides binary packages built from SlackBuilds.org build scripts.
@@ -82,7 +82,7 @@ Repo ID            | Note
 slackonly:packages | 
 
 
-### KDE Plasma5
+## KDE Plasma5
 
 KDE Plasma 5 is the fifth generation of the desktop environment created by KDE
 primarily for Linux systems.
@@ -95,7 +95,7 @@ Repo ID            | Note
 ktown:packages     | 
 
 
-### Cinnamon SlackBuilds - CSB
+## Cinnamon SlackBuilds - CSB
 
 These SlackBuilds are intended to provide a means for a user to build and
 install the Cinnamon Desktop Environment on Slackware Linux.
@@ -108,7 +108,7 @@ Repo ID            | Note
 csb:packages       | 
 
 
-### MATE SlackBuilds - MSB
+## MATE SlackBuilds - MSB
 
 These SlackBuilds are intended to provide a means for a user to build and
 install the MATE Desktop Environment on Slackware Linux.
@@ -130,7 +130,7 @@ msb:1.6            | MATE v1.6 (14.1 *, 14.0 *)
 (*) "latest" repository version for this Slackware release
 
 
-### Microlinux Enterprise
+## Microlinux Enterprise
 
 MLED is a full-blown production desktop based on Slackware Linux and the Xfce
 desktop environment, with many enhancements.
@@ -154,7 +154,7 @@ microlinux:extras  | Microlinux Enterprise - Extras
 microlinux:server  | Microlinux Enterprise - Server
 
 
-### Salix
+## Salix
 
 Salix is a GNU/Linux distribution based on Slackware that is simple, fast and
 easy to use, with stability being a primary goal. Salix is also fully
@@ -172,7 +172,7 @@ salix:extra        | Salix extra
 salix:packages     | Salix packages
 
 
-### Studioware
+## Studioware
 
 Studioware is a project aimed at providing build scripts and packages of the 
 best open source audio, video and photo editing software available for 
@@ -190,7 +190,7 @@ studioware:packages | This repository support only Slackware64 release
 
 
 
-### SlackE18
+## SlackE18
 
 SlackE18 is pre-built packages of E18 for Linux Slackware. It contains the
 Enlightenment DR18 (E18) window manager and other enlightenment related 
