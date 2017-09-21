@@ -23,6 +23,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - [Install & Build](install.md)
  - [Examples](examples.md)
  - [Repository](repo.md)
+   - [Supported repository](supported-repo.md)
  - [Variables](variables.md)
  - [D-Bus interface](dbus.md)
  - [Man Pages](man.md)
