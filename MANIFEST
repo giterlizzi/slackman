@@ -35,6 +35,7 @@ t/pod-coverage.t
 t/pod.t
 etc/Makefile
 etc/repos.d/extra/README.md
+etc/repos.d/extra/repo.sample
 etc/repos.d/extra/alienbob.repo
 etc/repos.d/extra/csb.repo
 etc/repos.d/extra/ktown.repo
