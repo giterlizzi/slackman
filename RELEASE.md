@@ -18,6 +18,8 @@
   * Added package `tag` field for `slackman history` command
   * Added `Slackware::SlackMan::Pkgtools` module wrapper for Slackware Package Tools
   * Added sample script `dbus-pkgtools` to emulate Slackware PkgTools via D-Bus + PolicyKit
+  * Added new options to disable GPG and MD5 check (`--no-gpg-check`, `--no-md5-check`) during download of package
+  * Added new option to search a CVE (Common Vulnerabilities and Exposures) into the ChangeLogs (`--cve=CVE-YYYY-NNNN`)
 
 ## Fixed
 
