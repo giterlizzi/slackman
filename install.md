@@ -1,6 +1,19 @@
-# SlackMan Install & SlackBuild
+# SlackMan Requirements, Install & SlackBuild
 
-## Installation
+## Requirements
+
+SlackMan is written in Perl and require this extra Perl modules installed on your machine:
+
+Module            | Usage
+--------------------------------------------------------------------------------
+`DBD::SQLite`     | SQLite library to manage SlackMan database
+`Sort::Versions`  | This module is used to compare the package version
+`Net::DBus`       | Notify new packages update and expose methods via D-Bus
+`IO::Socket::SSL` | SSL module for `HTTP::Tiny` module
+`Net::SSLeay`     | SSL module for `HTTP::Tiny` module
+`HTTP::Tiny`      | Used by SlackMan for download a package (included from Perl v5.14)
+
+## Install from source
 
 To install SlackMan, run the following commands:
 
