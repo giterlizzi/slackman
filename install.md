@@ -16,7 +16,11 @@ Module            | Usage
 You can download and compile the SlackBuild of this package from [SlackBuilds.org](https://slackbuilds.org)
 or via `sbopkg`:
 
-    sbopkg -i perl-DBD-SQLite -i perl-Sort-Versions -i perl-net-dbus -i perl-IO-Socket-SSL -i Net-SSLeay
+    sbopkg -i perl-DBD-SQLite \
+           -i perl-Sort-Versions \
+           -i perl-net-dbus \
+           -i perl-IO-Socket-SSL \
+           -i Net-SSLeay
 
 ## Create SlackBuild package
 
