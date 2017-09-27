@@ -344,8 +344,8 @@ sub call_package_remove {
 
     foreach (@packages) {
 
-      if ($_ =~ /^aaa\_(base|elflibs|terminfo)/) {
-        print sprintf("%-25s Never remove this package !!!\n", colored(sprintf('%-20s', $_), 'red bold'));
+      if ($_ =~ /^(aaa\_(base|elflibs|terminfo)|slackman)/) {
+        print sprintf("%-25s Never remove this package !!!\n", $_);
       } else {
 
         my $pkg = package_info($_);
