@@ -13,14 +13,10 @@ Module            | Usage
 `Net::SSLeay`     | SSL module for `HTTP::Tiny` module
 `HTTP::Tiny`      | Used by SlackMan for download a package (included from Perl v5.14)
 
-## Install from source
+You can download and compile the SlackBuild of this package from [SlackBuilds.org](https://slackbuilds.org)
+or via `sbopkg`:
 
-To install SlackMan, run the following commands:
-
-    perl Makefile.PL
-    make
-    make test
-    make install
+    sbopkg -i perl-DBD-SQLite -i perl-Sort-Versions -i perl-net-dbus -i perl-IO-Socket-SSL -i Net-SSLeay
 
 ## Create SlackBuild package
 
@@ -29,3 +25,12 @@ To automate a creation of SlackBuild package, run the following commands:
     perl Makefile.PL
     make slackbuild
     upgradepkg --install-new /tmp/slackman-x.y.z-noarch-1_lotar.tgz
+
+## Install from source
+
+To install SlackMan from source, run the following commands:
+
+    perl Makefile.PL
+    make
+    make test
+    make install

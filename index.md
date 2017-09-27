@@ -9,12 +9,11 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 ## Features
 
- - Multiple repository support
+ - Multiple [repository](repo.md) support
  - Dependency resolution
  - Bash Completion support
- - More configurable
- - Flexible configuration via variables
- - D-Bus interface (via `org.lotarproject.SlackMan`)
+ - Flexible repository configuration via [variables][variables.md]
+ - [D-Bus interface](dbus.md) (via `org.lotarproject.SlackMan`)
  - Userspace D-Bus client to notify update & changelogs (via `org.freedesktop.Notification`) service
  - ... and more
 
