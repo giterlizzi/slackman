@@ -1,5 +1,6 @@
 theme: jekyll-theme-minimal
 show_downloads: true
 google_analytics: UA-106797685-1
+repository: LotarProject/slackman
 github:
   owner_name: Giuseppe Di Terlizzi
