@@ -69,7 +69,6 @@ docs/variables.md
 docs/examples.md
 docs/install.md
 docs/index.md
-docs/usage.md
 docs/dbus.md
 pod/Makefile
 pod/slackman.conf.5.pod
