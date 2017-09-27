@@ -153,7 +153,7 @@ _slackman_repo_info() {
 
 _slackman_repo() {
 
-  local subcommands="help list info disable enable"
+  local subcommands="help list info disable enable add config"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
