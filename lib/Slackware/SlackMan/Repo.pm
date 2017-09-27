@@ -24,6 +24,10 @@ BEGIN {
     download_repository_metadata
     update_repo_data
     load_repositories
+    set_repository_value
+    get_raw_repository_value
+    get_raw_repository_values
+    get_raw_repository_config
   };
 
   %EXPORT_TAGS = (
@@ -62,7 +66,7 @@ sub load_repositories {
       my $repo_cfg = $repo_config{$repo};
       my $repo_id  = "$config_name:$repo";
       my $mirror   = $repo_cfg->{'mirror'};
-        $mirror   =~ s/\/$//;
+         $mirror   =~ s/\/$//;
 
       $repo_cfg->{'exclude'}     = parse_variables($repo_cfg->{'exclude'}) if ($repo_cfg->{'exclude'});
       $repo_cfg->{'config_file'} = $file;
@@ -103,7 +107,7 @@ sub load_repositories {
 
 }
 
-sub _write_repository_config {
+sub set_repository_value {
 
   my ($repo_id, $key, $value) = @_;
 
@@ -120,7 +124,38 @@ sub _write_repository_config {
     exit(255);
   }
 
+  logger->debug(qq{$repo_id - Set "$key" = "$value"});
   file_write($repo_file, set_config(file_read($repo_file), "[$repo_section]", $key, $value));
+
+}
+
+sub get_raw_repository_config {
+
+  my ($repo_conf) = @_;
+  my %repo_data = read_config(sprintf('%s/%s.repo', $slackman_conf{'directory'}->{'repos'}, $repo_conf));
+
+  return %repo_data
+
+}
+
+sub get_raw_repository_values {
+
+  my ($repo_id) = @_;
+  my ($repo_conf, $repo_section) = split(/:/, $repo_id);
+
+  my %repo_data = get_raw_repository_config($repo_conf);
+
+  return $repo_data{$repo_section};
+
+}
+
+sub get_raw_repository_value {
+
+  my ($repo_id, $key) = @_;
+
+  my $repo_data = get_raw_repository_values($repo_id);
+
+  return $repo_data->{$key};
 
 }
 
@@ -128,7 +163,7 @@ sub disable_repository {
 
   my ($repo_id) = @_;
 
-  _write_repository_config($repo_id, 'enabled', 'false');
+  set_repository_value($repo_id, 'enabled', 'false');
   return 1;
 
 }
@@ -137,7 +172,7 @@ sub enable_repository {
 
   my ($repo_id) = @_;
 
-  _write_repository_config($repo_id, 'enabled', 'true');
+  set_repository_value($repo_id, 'enabled', 'true');
   return 1;
 
 }

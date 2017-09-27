@@ -46,6 +46,7 @@ use constant COMMANDS_DISPATCHER => {
   'repo.info'    => \&call_repo_info,
   'repo.list'    => \&call_repo_list,
   'repo.add'     => \&call_repo_add,
+  'repo.config'  => \&call_repo_config,
 
 };
 
@@ -344,6 +345,40 @@ sub call_repo_info {
 }
 
 
+sub call_repo_config {
+
+  my ($repo_id, $key, $value) = @_;
+
+  unless ($repo_id) {
+    print "Usage: slackman repo config REPOSITORY [PARAM [VALUE]]\n";
+    exit(255);
+  }
+
+  my $repo_data = get_raw_repository_values($repo_id);
+
+  unless($repo_data) {
+    print "Repository not found!\n";
+    exit(255);
+  }
+
+  unless ($key) {
+    print sprintf("%s=%s\n", $_, $repo_data->{$_}) foreach ( keys %{$repo_data} );
+    exit(0);
+  }
+
+  if ($value) {
+    set_repository_value($repo_id, $key, $value);
+    exit(0);
+  }
+
+  if ($key) {
+    print sprintf("%s=%s\n", $key, get_raw_repository_value($repo_id, $key));
+    exit(0);
+  }
+
+}
+
+
 1;
 __END__
 =head1 NAME
@@ -356,6 +391,9 @@ slackman-repo - Display and manage Slackware repository
   slackman repo enable REPOSITORY
   slackman repo disable REPOSITORY
   slackman repo add REPOSITORY-FILE
+  slackman repo config REPOSITORY
+  slackman repo config REPOSITORY PARAM
+  slackman repo config REPOSITORY PARAM VALUE
   slackman repo list
   slackman repo help
 
@@ -366,12 +404,15 @@ directory.
 
 =head1 COMMANDS
 
-  slackman repo list                   List available repositories
-  slackman repo add REPOSITORY-FILE    Add new repository file into F</etc/slackman/repod.d> directory
-  slackman repo enable REPOSITORY      Enable repository
-  slackman repo disable REPOSITORY     Disable repository
-  slackman repo info REPOSITORY        Display repository information
-  slackman repo help                   Display repo command help usage
+  slackman repo list                           List available repositories
+  slackman repo add REPOSITORY-FILE            Add new repository file into F</etc/slackman/repod.d> directory
+  slackman repo enable REPOSITORY              Enable repository
+  slackman repo disable REPOSITORY             Disable repository
+  slackman repo info REPOSITORY                Display repository information
+  slackman repo config REPOSITORY              Get all raw repo config values (same as C<slackman repo info> command)
+  slackman repo config REPOSITORY PARAM        Get raw config value
+  slackman repo config REPOSITORY PARAM VALUE  Set raw config value
+  slackman repo help                           Display repo command help usage
 
 =head1 OPTIONS
 
