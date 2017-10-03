@@ -1,6 +1,8 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
-## [Develop]
+## [v1.2.0]
+
+This release introduce new features, new commands and improved the stability and performance. Added new D-Bus methods/properties and integrated SlackMan via PolicyKit.
 
 ## Added
 
@@ -20,6 +22,7 @@
   * Added sample script `dbus-pkgtools` to emulate Slackware PkgTools via D-Bus + PolicyKit
   * Added new options to disable GPG and MD5 check (`--no-gpg-check`, `--no-md5-check`) during download of package
   * Added new option to search a CVE (Common Vulnerabilities and Exposures) into the ChangeLogs (`--cve=CVE-YYYY-NNNN`)
+  * Added `slackman repo config` command to edit via CLI repository configuration
 
 ## Fixed
 
@@ -101,6 +104,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.2.0]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/LotarProject/slackman/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/LotarProject/slackman/compare/v1.0.4...v1.1.0
 [v1.0.4]: https://github.com/LotarProject/slackman/compare/v1.0.3...v1.0.4
