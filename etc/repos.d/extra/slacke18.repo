@@ -1,5 +1,12 @@
 # Slackware Enlightenment DR18 (E18)
 
+# SlackE18 is pre-built packages of E18 for Linux Slackware. It contains the
+# Enlightenment DR18 (E18) window manager and other enlightenment related 
+# applications. SlackE18 provides tested Slackware packages so you can use E18 
+# without compiling anything.
+
+# Home-Page: http://slacke18.sourceforge.net/
+
 [packages]
 name    = Slackware Enlightenment DR18 (E18) Packages
 enabled = false

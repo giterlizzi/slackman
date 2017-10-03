@@ -7,23 +7,22 @@ use 5.010;
 
 use Net::DBus;
 use Net::DBus::Reactor;
+
 use POSIX;
 use Getopt::Long qw(:config);
 use Pod::Usage;
-
-use Data::Dumper;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
-my $VERSION = "v1.1.2";
+my $VERSION = "v1.2.0";
 my $options = {};
 
 GetOptions( $options,
-  'daemon|d',
   'help|h',
   'version|v',
+  'action=s',
   'man'
 );
 
@@ -37,63 +36,26 @@ my $user_config_file = "$home_dir/.slackman-notifier";
 
 create_user_config() unless (-e $user_config_file);
 
-print STDOUT "SlackMan Notifier ($VERSION)\n";
+my $action = $options->{'action'} || 'main';
 
-# Daemonize the script
-if ($options->{'daemon'}) {
+print STDOUT "SlackMan Notifier $VERSION ($action - pid:$$)\n";
 
-  print STDOUT "Run in background mode... ";
+if ($options->{'action'}) {
 
-  my $pid = daemonize();
+  action_listner()  if ($options->{'action'} eq 'listner');
+  action_notifier() if ($options->{'action'} eq 'notifier');
 
-  unless($pid) {
-    print STDOUT "failed\n";
-    exit(255);
-  }
+} else {
 
-  print STDOUT "done (pid:$$)\n";
+  fork or exec('/usr/libexec/slackman/slackman-notifier --action=listner');
+  fork or exec('/usr/libexec/slackman/slackman-notifier --action=notifier');
 
 }
 
-while (1) {
+while(1) { wait(); }
 
-  # Check latest Security Advisories from all Slackware repository ChangeLogs
-  check_security_advisories();
-
-  sleep(5);
-
-  # Check latest Slackware ChangeLogs from all Slackware repository
-  check_changelogs();
-
-  sleep(5);
-
-  # Check local package upgrade
-  check_upgrade();
-
-  sleep(3600);
-
-}
-
-print STDOUT "Exit from SlackMan Notifier (pid:$$)\n";
+print STDOUT "Exit from SlackMan Notifier ($action - pid:$$)\n";
 exit(0);
-
-
-# SlackMan DBus interface
-#
-sub SlackMan {
-  return Net::DBus->system
-    ->get_service('org.lotarproject.SlackMan')
-    ->get_object('/org/lotarproject/SlackMan');
-}
-
-
-# Notification DBus interface
-#
-sub Notifications {
-  return Net::DBus->session
-    ->get_service('org.freedesktop.Notifications')
-    ->get_object('/org/freedesktop/Notifications');
-}
 
 
 # Notify via freedesktop.org Notification service
@@ -119,7 +81,7 @@ sub notify {
       $actions{$id} = $actions->{$id}->{'label'};
     }
 
-    Notifications->connect_to_signal("ActionInvoked" => sub {
+    dbus_notifications->connect_to_signal("ActionInvoked" => sub {
 
       my ($to_id, $action_key) = @_;
       logger->info("org.freedesktop.Notify->ActionInvoked: action invoked (id:$to_id, key:$action_key)");
@@ -136,7 +98,7 @@ sub notify {
 
   logger->info(sprintf("Send notification via org.freedesktop.Notify (id:%s)", $id));
 
-  Notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
+  dbus_notifications->Notify($app_name, $id, $app_icon, $summary, $body, [ %actions ], {}, $timeout);
 
   if ( keys %actions ) {
 
@@ -156,6 +118,8 @@ sub notify {
 #
 sub daemonize {
 
+  my ($cmd) = @_;
+
   chdir("/")                  || die "can't chdir to /: $!";
   open(STDIN,  "< /dev/null") || die "can't read /dev/null: $!";
   #open(STDOUT, "> /dev/null") || die "can't write to /dev/null: $!";
@@ -163,6 +127,8 @@ sub daemonize {
   exit if $pid;               # non-zero now means I am the parent
   (setsid() != -1)            || die "Can't start a new session: $!";
   open(STDERR, ">&STDOUT")    || die "can't dup stdout: $!";
+
+  system($cmd);
 
   return $$; # Return effective PID
 
@@ -173,7 +139,7 @@ sub check_upgrade {
 
   logger->info('Check packages upgrade using SlackMan D-Bus service');
 
-  my $upgrades = SlackMan->CheckUpgrade();
+  my $upgrades = dbus_slackman->CheckUpgrade();
   my $max_timestamp = 0; # Max timestamp
   my $upgrades_body = '';
 
@@ -223,7 +189,7 @@ sub check_changelogs {
 
   logger->info('Get new ChangeLog items from SlackMan D-Bus service');
 
-  my $changelogs = SlackMan->ChangeLog();
+  my $changelogs = dbus_slackman->ChangeLog( undef ); # Get ChangeLogs for all repositories
   my $max_timestamp  = 0; # Max ChangeLog entry timestamp
   my $changelog_body = '';
 
@@ -272,7 +238,7 @@ sub check_security_advisories {
 
   logger->info('Get new Security Advisories from SlackMan D-Bus service');
 
-  my $security_fix  = SlackMan->SecurityFix();
+  my $security_fix  = dbus_slackman->SecurityFix();
   my $max_timestamp = 0; # Max ChangeLog entry timestamp
 
   return unless ( keys %{$security_fix} );
@@ -328,6 +294,82 @@ sub check_security_advisories {
 }
 
 
+sub action_notifier {
+
+  do {
+
+    # Check latest Security Advisories from all Slackware repository ChangeLogs
+    check_security_advisories();
+
+    sleep(5);
+
+    # Check latest Slackware ChangeLogs from all Slackware repository
+    check_changelogs();
+
+    sleep(5);
+
+    # Check local package upgrade
+    check_upgrade();
+
+    sleep(3600);
+
+  } while (1);
+
+}
+
+
+sub action_listner {
+
+  my $SlackMan = dbus_slackman();
+
+  sub _notify {
+
+    my ($action, $package) = @_;
+
+    my $body = '';
+
+    foreach (split(',', $package)) {
+
+      if (lc($action) eq 'removed') {
+
+        $body .= " ● $_\n";
+
+      } else {
+
+        my $pkg_info = get_package_info($_);
+        $body .= sprintf(" ● %s (%s)\n", $pkg_info->{'name'} || $_, $pkg_info->{'version'} || '');
+
+      }
+    }
+
+    notify ({
+      'icon'    => '/usr/share/slackman/slackware.png',
+      'summary' => "Slackware - $action packages",
+      'body'    => $body
+    });
+
+  }
+
+  sub _notify_installed { _notify('Installed', @_) };
+  sub _notify_upgraded  { _notify('Upgraded',  @_) };
+  sub _notify_removed   { _notify('Removed',   @_) };
+
+  $SlackMan->connect_to_signal("PackageInstalled", \&_notify_installed);
+  logger->debug('Listening to "org.lotarproject.SlackManPackageInstalled" signal');
+
+  $SlackMan->connect_to_signal("PackageUpgraded", \&_notify_upgraded);
+  logger->debug('Listening to "org.lotarproject.PackageUpgraded" signal');
+
+  $SlackMan->connect_to_signal("PackageRemoved", \&_notify_removed);
+  logger->debug('Listening to "org.lotarproject.PackageRemoved" signal');
+
+  my $reactor=Net::DBus::Reactor->main();
+  $reactor->run();
+  exit 0;
+
+}
+
+
 # Create an empty config file
 #
 sub create_user_config {
@@ -374,18 +416,18 @@ slackman-notifier - SlackMan Notification Tool
 
 B<slackman-notifier> is user-space utility to receive a desktop notification via
 D-Bus (using B<org.freedesktop.Notification> service) for Slackware Security
-Advisories, ChangeLogs and new packages upgrade.
+Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
 
 =head1 OPTIONS
 
-  -d, --daemon                 Run SlackMan Notifier in background mode
+  --action=[listner,notifier]  Execute in listner or notifier mode
   -h, --help                   Display help and exit
   --man                        Display man page
   --version                    Display version information
 
 =head1 SEE ALSO
 
-L<slackman(8)>, L<dbus-monitor(1)>
+L<slackman(8)>, L<slackman-service(1)>, L<dbus-monitor(1)>
 
 =head1 BUGS
 

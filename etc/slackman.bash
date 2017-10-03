@@ -153,7 +153,7 @@ _slackman_repo_info() {
 
 _slackman_repo() {
 
-  local subcommands="help list info disable enable"
+  local subcommands="help list info disable enable add config"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --download-only --summary --no-deps --category"
+  local slackman_options="--repo --exclude --download-only --summary --no-deps --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -225,7 +225,7 @@ _slackman_upgrade() {
 
 _slackman_changelog() {
 
-  local slackman_options="--repo --limit --details --security-fix --before --after"
+  local slackman_options="--repo --limit --details --security-fix --before --after --cve"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,7 +239,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --download-only --new-packages --no-deps --category"
+  local slackman_options="--repo --exclude --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -258,7 +258,7 @@ _slackman_install() {
 
 _slackman_reinstall() {
 
-  local slackman_options="--repo --exclude --download-only --category"
+  local slackman_options="--repo --exclude --download-only --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -308,7 +308,7 @@ _slackman_help() {
 
 _slackman_list() {
 
-  local slackman_options="--exclude-installed"
+  local slackman_options="--exclude-installed --after --before"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -317,7 +317,7 @@ _slackman_list() {
     return 0
   fi
 
-  local subcommands="installed obsoletes packages repo orphan variables"
+  local subcommands="installed obsoletes removed upgraded packages orphan variables"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 

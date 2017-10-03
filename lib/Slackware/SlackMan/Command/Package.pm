@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.2';
+  $VERSION     = 'v1.2.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -117,7 +117,7 @@ sub call_package_info {
     'id', undef, parse_module_name($package)
   );
 
-  my @packages_to_installed;
+  my @packages_installed;
 
   print "Installed package(s)\n";
   print sprintf("%s\n\n", "-"x80);
@@ -128,7 +128,7 @@ sub call_package_info {
     my $description = $row->{description};
        $description =~ s/\n/\n    /g;
 
-    push @packages_to_installed, $row->{name};
+    push @packages_installed, $row->{name};
 
     my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
 
@@ -161,7 +161,7 @@ sub call_package_info {
   print "No installed packages found\n" unless (scalar keys %$installed_rows);
 
   my $available_query = sprintf('SELECT * FROM packages WHERE name LIKE ? AND name NOT IN (%s) AND repository NOT IN (%s)',
-    '"' . join('","', @packages_to_installed) . '"',
+    '"' . join('","', @packages_installed) . '"',
     '"' . join('","', get_disabled_repositories()) . '"');
   my $available_rows  = $dbh->selectall_hashref($available_query, 'id', undef, $package);
 
@@ -214,8 +214,9 @@ sub call_package_reinstall {
 
   my (@packages) = @_;
 
+  _check_package_duplicates();
+
   my @is_installed = ();
-  my $option_repo  = $slackman_opts->{'repo'};
 
   my @packages_to_downloads = ();
   my @packages_for_pkgtool  = ();
@@ -268,14 +269,8 @@ sub call_package_reinstall {
     push(@filters, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
   }
 
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@filters, sprintf('repository LIKE %s', $dbh->quote($option_repo)));
-  } else {
-    push(@filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
-  }
-
-  push(@filters, 'repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
+  # Filter repository
+  push(@filters, repo_option_to_sql());
 
   my $query = 'SELECT * FROM packages WHERE ' . join(' AND ', @filters);
   my $rows  = $dbh->selectall_hashref($query, 'id', undef);
@@ -300,15 +295,16 @@ sub call_package_reinstall {
     print "Reinstall package(s)\n\n";
     print sprintf("%s\n", "-"x80);
 
-    foreach (@packages_for_pkgtool) {
-      package_upgrade($_);
+    foreach my $package_path (@packages_for_pkgtool) {
+
+      package_upgrade($package_path);
+
     }
 
   }
 
   _packages_errors($packages_errors);
 
-  _fork_update_local_database();
   exit(0);
 
 }
@@ -317,12 +313,19 @@ sub call_package_remove {
 
   my (@packages) = @_;
 
+  if ( ! @packages && ! $slackman_opts->{'obsolete-packages'} && ! $slackman_opts->{'category'} ) {
+    print "Usage: slackman remove PACKAGE\n";
+    exit(1);
+  }
+
+  _check_package_duplicates();
+
   my @is_installed = ();
 
   if ($slackman_opts->{'obsolete-packages'}) {
 
-    # Get list from "slackman list obsoletes"
-    @is_installed = call_list_obsoletes();
+    # Get list from "slackman list obsoletes" command
+    @is_installed = Slackware::SlackMan::Command::List::call_list_obsoletes();
 
   } else {
 
@@ -341,8 +344,8 @@ sub call_package_remove {
 
     foreach (@packages) {
 
-      if ($_ =~ /^aaa\_(base|elflibs|terminfo)/) {
-        print sprintf("%-25s Never remove this package !!!\n", colored(sprintf('%-20s', $_), 'red bold'));
+      if ($_ =~ /^(aaa\_(base|elflibs|terminfo)|slackman)/) {
+        print sprintf("%-25s Never remove this package !!!\n", $_);
       } else {
 
         my $pkg = package_info($_);
@@ -371,11 +374,15 @@ sub call_package_remove {
 
   _check_root();
 
-  foreach (@is_installed) {
-    package_remove($_);
+  foreach my $package_path (@is_installed) {
+
+    package_remove($package_path);
+
   }
 
-  _fork_update_local_database();
+  # Send the list of removed packages via D-Bus
+  dbus_slackman->Notify( 'PackageRemoved', undef, join(',', @is_installed) ) if (@is_installed);
+
   exit(0);
 
 }
@@ -395,6 +402,7 @@ sub call_package_install {
   }
 
   _check_last_metadata_update();
+  _check_package_duplicates();
 
   my $packages_to_install   = {};
   my @packages_to_downloads = ();
@@ -515,8 +523,10 @@ sub call_package_install {
     print "Install package(s)\n";
     print sprintf("%s\n\n", "-"x80);
 
-    foreach (@packages_for_pkgtool) {
-      package_install($_);
+    foreach my $package_path (@packages_for_pkgtool) {
+
+      package_install($package_path);
+
     }
 
   }
@@ -524,7 +534,8 @@ sub call_package_install {
   _packages_errors($packages_errors);
   _packages_installed(\@packages_for_pkgtool);
 
-  _fork_update_local_database() if (@packages_for_pkgtool);
+  # Send the list of installed packages via D-Bus
+  dbus_slackman->Notify( 'PackageInstalled', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -621,6 +632,8 @@ sub call_package_search {
 
 sub call_package_history {
 
+  # FIXME Packages installed and removed but not upgraded and reinstalled
+
   my ($package) = @_;
 
   unless ($package) {
@@ -636,8 +649,10 @@ sub call_package_history {
     exit 1;
   }
 
+  my $row_pattern = "%-10s %-20s %-10s %-25s %-20s %-25s\n";
+
   print sprintf("History of @{[ BOLD ]}%s@{[ RESET ]} package:\n\n", $package);
-  print sprintf("%-10s %-20s %-25s %-20s %-25s\n", "Status", "Version", "Timestamp", "Previous", "Upgraded");
+  print sprintf($row_pattern, "Status", "Version", "Tag", "Timestamp", "Previous", "Upgraded");
   print sprintf("%s\n", "-"x132);
 
   my $prev_version   = '';
@@ -651,6 +666,7 @@ sub call_package_history {
     my $version   = $row->{'version'} . '-' . $row->{'build'};
     my $timestamp = $row->{'timestamp'};
     my $upgraded  = $row->{'upgraded'};
+    my $tag       = $row->{'tag'};
 
     $status_history = $status;
     $status_history = 'upgraded'       if ($status eq 'installed');
@@ -660,10 +676,12 @@ sub call_package_history {
     $prev_version   = ''               if ($status_history eq 'removed');
     $prev_version   = ''               if ($status_history eq 'installed');
 
-    print sprintf("%-10s %-20s %-25s %-20s %-25s\n",
-      $status_history,
-      $version,  $timestamp,
-      $prev_version, $upgraded);
+    print sprintf(
+      $row_pattern,
+      $status_history, $version,
+      $tag, $timestamp,
+      $prev_version, $upgraded
+    );
 
     $prev_version = $version;
     $prev_status  = $status;
@@ -681,6 +699,7 @@ sub call_package_upgrade {
   my (@update_package) = @_;
 
   _check_last_metadata_update();
+  _check_package_duplicates();
 
   my $packages_to_update    = {};  # Updatable packages list
   my $packages_to_install   = {};  # Required packages to install
@@ -799,8 +818,11 @@ sub call_package_upgrade {
       print sprintf("%s\n\n", "-"x80);
 
       foreach my $package_path (@packages_for_pkgtool) {
+
         $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
+
         package_upgrade($package_path);
+
       }
 
     }
@@ -814,8 +836,8 @@ sub call_package_upgrade {
     # Display Kernel Update message
     _kernel_update_message() if ($kernel_upgrade);
 
-    # Update history metadata in background
-    _fork_update_local_database() if (@packages_for_pkgtool);
+    # Send the list of upgraded packages via D-Bus
+    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
 
     # Search new configuration files (same as 'slackman new-config' command)
     call_package_new_config() if (@packages_for_pkgtool);
@@ -857,12 +879,17 @@ sub call_package_changelog {
   my ($package) = @_;
   my $changelogs = package_changelogs($package);
 
+  unless ( @{$changelogs} ) {
+    print "No Changelog!\n\n";
+    exit(1);
+  }
+
   unless ($slackman_opts->{'details'}) {
 
     print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
     print sprintf("%s\n", "-"x132);
 
-    foreach my $row (@{$changelogs}) {
+    foreach my $row ( @{$changelogs} ) {
 
       print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
         ($row->{'package'}      || ''),
@@ -870,8 +897,9 @@ sub call_package_changelog {
         ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
         ($row->{'status'}       || ''),
         ($row->{'timestamp'}    || ''),
-        ($row->{'repository'}   || '')
+        ($row->{'repository'}   || ''),
       );
+
     }
 
   }
@@ -883,8 +911,8 @@ sub call_package_changelog {
       my $description = $row->{'description'};
          $description =~ s/\(\* Security fix \*\)/colored("(* Security fix *)", 'red')/ge if $row->{'security_fix'};
 
-      print sprintf("%s (%s)\n%s:  %s\n%s\n",
-        colored($row->{'timestamp'}, 'green'),
+      print sprintf("%s (%s)\n%s:  %s\n%s\n\n",
+        $row->{'timestamp'},
         $row->{'repository'},
         colored($row->{'package'}, 'bold'),
         ucfirst($row->{'status'}),
@@ -907,9 +935,9 @@ sub call_package_new_config {
     $etc_directory = $ENV{ROOT} . '/etc';
   }
 
-  print "Search for new configuration files... ";
+  STDOUT->printflush("Search for new configuration files... ");
 
-  # Find .new files in /etc directory excluding files listed in UPGRADE.TXT doc:
+  # Find .new files in /etc directory excluding files listed in Slackware UPGRADE.TXT doc:
   #
   #  * /etc/rc.d/rc.inet1.conf.new
   #  * /etc/rc.d/rc.local.new
@@ -1029,7 +1057,7 @@ sub _new_config_file_manual {
 
   print "\n\n$new_config_file\n";
 
-  my $answer = sprintf("What do you want [%seep/%svervrite/%semove/%siff/%serge] ?", 
+  my $answer = sprintf("What do you want [%seep/%sverwrite/%semove/%siff/%serge] ?", 
                         colored('K', 'bold'),
                         colored('O', 'bold'),
                         colored('R', 'bold'),
@@ -1137,7 +1165,7 @@ sub _packages_upgraded {
 
   foreach (@$packages) {
 
-    my $pkg = package_parse_name(basename($_));
+    my $pkg = get_package_info(basename($_));
 
     print sprintf("  * %s upgraded to %s version\n",
       colored($pkg->{'name'}, 'bold'),
@@ -1161,7 +1189,7 @@ sub _packages_installed {
   print sprintf("%s\n\n", "-"x80);
 
   foreach (@$packages) {
-    my $pkg = package_parse_name(basename($_));
+    my $pkg = get_package_info(basename($_));
     print sprintf("  * installed %s %s version\n", $pkg->{'name'}, $pkg->{'version'});
   }
 
@@ -1180,7 +1208,7 @@ sub _packages_errors {
   print sprintf("%s\n\n", "-"x80);
 
   foreach my $pkg (keys %$packages_errors) {
-    print sprintf("  * %-50s (%s error)\n", $pkg, join(' error, ', @{$packages_errors->{$pkg}}));
+    print sprintf("  * %-50s %s\n", $pkg, join(', ', @{$packages_errors->{$pkg}}));
   }
 
   print "\n\n";
@@ -1296,26 +1324,47 @@ sub _check_root {
 
 }
 
-sub _fork_update_local_database {
+sub _check_package_duplicates {
 
-  # Delete all lock file
-  delete_lock();
+  my $rows_ref = $dbh->selectall_hashref("SELECT name, count(*) AS num FROM history WHERE status = 'installed' GROUP BY LOWER(name) HAVING num > 1", 'name', undef);
+  my $row_nums = scalar keys %$rows_ref;
 
-  # Force update metadata of installed packages commands in background and set ROOT environment
-  my $cmd  = "slackman update %s --force";
-     $cmd .= sprintf(" --root %s", $ENV{ROOT}) if ($ENV{ROOT});
-     $cmd .= " > /dev/null &";
+  return (0) unless ($row_nums);
 
-  my $update_installed_cmd = sprintf($cmd, 'installed');
+  print "Found duplicate package(s):\n\n";
 
-  logger->debug("Call update metadata of installed packages in background ($update_installed_cmd)");
-  qx{ $update_installed_cmd };
+  foreach my $pkg (keys %$rows_ref) {
 
-  my $update_history_cmd = sprintf($cmd, 'history');
+    my $pkg_rows_ref = $dbh->selectall_hashref("SELECT * FROM history WHERE status = 'installed' AND name = ?", 'package', undef, $pkg);
 
-  logger->debug("Call update metadata of history packages in background ($update_history_cmd)");
-  qx{ $update_history_cmd };
+    print "$pkg:\n";
 
+    my $pkg_id = 0;
+    my @packages;
+
+    foreach (keys %$pkg_rows_ref) {
+
+      $pkg_id++;
+
+      my $row = $pkg_rows_ref->{$_};
+      push(@packages, $row->{'package'});
+
+      print sprintf("   %s) %-40s (%s)\n", $pkg_id, $row->{'package'}, $row->{'timestamp'});
+
+    }
+
+    print "\n";
+
+    my $pkg_id_regex = "([1-$pkg_id])";
+    my $choice = confirm_choice("Do you want remove package [1-$pkg_id] ?", qr/$pkg_id_regex/);
+
+    package_remove($packages[$choice-1]);
+
+    print "\n\n";
+
+  }
+
+  return(0);
 
 }
 
@@ -1372,6 +1421,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   --before=DATE                         Filter changelog before date
   --details                             Display ChangeLog details
   --security-fix                        Display only ChangeLog Security Fix
+  --cve=CVE-YYYY-NNNNNN                 Search a CVE identifier into ChangeLogs
 
 =head2 INFO OPTIONS
 
@@ -1385,11 +1435,14 @@ slackman-package - Install, upgrade and display information of Slackware package
   --new-packages                        Check for new packages
   --obsolete-packages                   Check for obsolete packages
   -x, --exclude=PACKAGE                 Exclude package
+  --tag=TAG                             Force upgrade of installed package with specified tag
   --no-priority                         Disable repository priority check
   --no-excludes                         Disable exclude repo configuration
   --no-deps                             Disable dependency check
   -y, --yes                             Assume yes
   -n, --no                              Assume no
+  --no-gpg-check                        Disable GPG verify check
+  --no-md5-check                        Disable MD5 checksum check
 
 =head1 EXAMPLES
 
@@ -1418,6 +1471,10 @@ Search file using MANIFEST.bz2 repository file (C<slackman update manifest>):
 Display a ChangeLog:
 
   slackman changelog --repo slackware:packages
+
+Search a CVE into the ChangeLog and display the detail:
+
+  slackman changelog --cve CVE-2017-1000251 --details
 
 =head1 SEE ALSO
 

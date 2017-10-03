@@ -1,0 +1,101 @@
+=head1 NAME
+
+B<org.lotarproject.SlackMan> - D-Bus interface for L<slackman(8)> Package Manager
+
+=head1 DESCRIPTION
+
+The SlackMan service is  accessed  through the D-Bus object at /org/lotarproject/SlackMan.
+Which provides the following interface.
+
+=head1 METHODS
+
+=head2 ChangeLog
+
+ChangeLog ( in: 's' I<repo_id>, out 'a{saa{ss}}' )
+
+=head2 CheckUpgrade
+
+CheckUpgrade ( out 'a{sa{ss}}' )
+
+=head2 SecurityFix
+
+SecurityFix ( out 'a{saa{ss}}' )
+
+=head2 PackageInfo
+
+PackageInfo ( in 's' I<package_name>, out 'a{ss}' )
+
+=head2 InstallPkg
+
+InstallPkg ( in 's' I<package_path>, out 'i' )
+
+Install a package using L<installpkg(8)> command and emit C<PackageInstalled> signal.
+
+=head2 UpgradePkg
+
+UpgradePkg ( in 's' I<package_path>, out 'i' )
+
+Upgrade a package using L<upgradepkg(8)> command and emit C<PackageUpgraded> signal.
+
+=head2 RemovePkg
+
+RemovePkg ( in 's' I<package_name>, out 'i' )
+
+Remove a package using L<removepkg(8)> command and emit C<PackageRemoved> signal.
+
+=head2 Notify
+
+Notify ( in 's' I<action>, in 's' I<summary>, in 's' I<body>)
+
+Send notification to L<slackman-service(1)>
+
+=head1 PROPERTIES
+
+=head2 version
+
+version (out 's')
+
+Return the SlackMan version
+
+=head2 slackware
+
+slackware (out 's')
+
+Return the Slackware version (eg. I<14.2> or I<current>)
+
+=head1 SIGNALS
+
+=head2 PackageInstalled
+
+This signal is emitted when a package is installed.
+
+=head2 PackageUpgraded
+
+This signal is emitted when a package is upgraded.
+
+=head2 PackageRemoved
+
+This signal is emitted when a package is removed.
+
+=head1 SEE ALSO
+
+L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-notifier(1)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

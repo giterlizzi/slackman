@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.2';
+  $VERSION     = 'v1.2.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -41,7 +41,6 @@ use constant COMMANDS_DISPATCHER => {
   'update.gpg-key'   => \&call_update_repo_gpg_key,
   'update.help'      => \&call_update_help,
   'update.history'   => \&call_update_history,
-  'update.installed' => \&call_update_installed,
   'update.manifest'  => \&call_update_repo_manifest,
   'update.packages'  => \&call_update_repo_packages,
 };
@@ -188,18 +187,10 @@ sub call_update_repo_manifest {
 
 }
 
-sub call_update_installed {
-
-  STDOUT->printflush("\nUpdate installed packages metadata: ");
-  parse_history('installed', \&callback_status);
-  STDOUT->printflush(colored("done\n", 'green'));
-
-}
-
 sub call_update_history {
 
-  STDOUT->printflush("\nUpdate history (upgraded & removed) packages metadata: ");
-  parse_history('removed', \&callback_status);
+  STDOUT->printflush("\nUpdate history (installed, upgraded & removed) packages metadata: ");
+  parse_history(\&callback_status);
   STDOUT->printflush(colored("done\n", 'green'));
 
 }
@@ -209,7 +200,6 @@ sub call_update_metadata {
   call_update_repo_packages();
   call_update_repo_changelog();
 
-  call_update_installed();
   call_update_history();
 
   print "\n";
@@ -228,7 +218,6 @@ sub call_update_all_metadata {
   call_update_repo_changelog();
   call_update_repo_manifest();
 
-  call_update_installed();
   call_update_history();
 
   print "\n";
@@ -283,8 +272,7 @@ To see the current location of C<directory.cache> use L<slackman-config(8)> comm
 =head1 COMMANDS
 
   slackman update                      Update repository and local history packages metadata
-  slackman update installed            Update local installed metadata
-  slackman update history              Update local packages history metadata
+  slackman update history              Update local packages history metadata (installed, upgraded & removed)
   slackman update packages             Update repository metadata (using PACKAGES.TXT file)
   slackman update changelog            Update repository ChangeLog (using ChangeLog.txt)
   slackman update manifest             Update repository Manifest (using MANIFEST.bz2)

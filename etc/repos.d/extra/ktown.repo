@@ -1,4 +1,9 @@
-# KDE5 "ktown"
+# KDE Plasma 5 "ktown" Packages
+
+# KDE Plasma 5 is the fifth generation of the desktop environment created by KDE
+# primarily for Linux systems.
+
+# Home-Page: http://alien.slackbook.org/ktown/
 
 [packages]
 name      = KDE5 ktown packages

@@ -14,6 +14,15 @@ To install this module, run the following commands:
     make test
     make install
 
+### SLACKBUILD PACKAGE
+
+To automate a creation of SlackBuild package, run the following commands:
+
+    perl Makefile.PL
+    make slackbuild
+    upgradepkg --install-new /tmp/slackman-x.y.z-noarch-1_lotar.tgz
+
+
 ## SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation for this module with the

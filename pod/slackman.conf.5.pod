@@ -79,13 +79,21 @@ B<file> (default: F</var/log/slackman.log>)
 
 =over
 
-Define slackman log file
+Define SlackMan log file
+
+=back
+
+B<category> (default: F<none>)
+
+=over
+
+Define additional SlackMan logger categories (useful for debugging)
 
 =back
 
 =head1 [proxy] SECTION
 
-This section provide the proxy configuration for slackman.
+This section provide the proxy configuration for SlackMan.
 
 B<enable> (default: C<false>)
 
@@ -169,7 +177,7 @@ B<lib> (default: C</var/lib/slackman>)
 
 =over
 
-Lib directory for slackman database
+Lib directory for SlackMan database
 
 =back
 
@@ -210,3 +218,22 @@ Root directory
 =head1 SEE ALSO
 
 L<slackman(8)>, L<slackman.repo(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

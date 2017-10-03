@@ -1,5 +1,19 @@
 # Mate SlackBuilds (MSB) repository
 
+# These SlackBuilds are intended to provide a means for a user to build and
+# install the MATE Desktop Environment on Slackware Linux. Some of the goals of
+# the project are:
+
+#   * Do not replace any stock Slackware packages unless absolutely necessary
+#     (thus far, no packages need to be replaced);
+#   * Keep the upstream default theme and settings;
+#   * Try and minimize outside dependencies as much as possible; and
+#   * Make it easy to build and install by using standard style SlackBuild
+#     scripts and slack-desc and doinst.sh files that most Slackware users have
+#     become familiar with by using the SlackBuilds repository.
+
+# MSB/Slackware version matrix
+
 # MSB repo | Slackware version
 # ---------|-----------------------
 # latest   | stable, current
@@ -12,6 +26,8 @@
 # 1.6      | 14.1 * 14.0 *
 #
 # (*) "latest" repository version
+
+# Home-Page: https://mateslackbuilds.github.io/
 
 [latest]
 name      = MATE SlackBuilds (MSB) - latest

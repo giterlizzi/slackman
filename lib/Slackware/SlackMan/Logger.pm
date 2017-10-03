@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.1.2';
+  $VERSION   = 'v1.2.0';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
@@ -85,6 +85,8 @@ sub log {
   unless(open(LOG, '>>', $file)) {
     open(LOG, '>&STDERR'); # Fallback to STDERR
   }
+
+  LOG->autoflush(1);
 
   print LOG sprintf("%s [%7s] %s [pid:%s] %s\n",
                       $time->datetime, uc($level), $category, $$, $message);

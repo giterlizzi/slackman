@@ -1,5 +1,19 @@
 # Cinnamon SlackBuilds (CSB)
 
+# These SlackBuilds are intended to provide a means for a user to build and
+# install the Cinnamon Desktop Environment on Slackware Linux. Some of the goals
+# of the project are:
+
+#   * Do not replace any stock Slackware packages unless absolutely necessary
+#     (thus far, no packages need to be replaced);
+#   * Keep the upstream default theme and settings;
+#   * Try and minimize outside dependencies as much as possible; and
+#   * Make it easy to build and install by using standard style SlackBuild
+#     scripts and slack-desc and doinst.sh files that most Slackware users have
+#     become familiar with by using the SlackBuilds repository.
+
+# Home-Page: https://cinnamonslackbuilds.github.io/
+
 [packages]
 name      = Cinnamon SlackBuilds (CSB)
 enabled   = false

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.2';
+  $VERSION = 'v1.2.0';
   @ISA     = qw(Exporter);
 
   @EXPORT = qw{
@@ -62,14 +62,16 @@ sub load_config {
   # Set default slackman directories
   $slackman_conf{'directory'}->{'root'}  ||= $root;
   $slackman_conf{'directory'}->{'conf'}  ||= "$root/etc/slackman";
+  $slackman_conf{'directory'}->{'repos'} ||= "$root/etc/slackman/repos.d";
   $slackman_conf{'directory'}->{'log'}   ||= "$root/var/log";
   $slackman_conf{'directory'}->{'lib'}   ||= "$root/var/lib/slackman";
   $slackman_conf{'directory'}->{'cache'} ||= "$root/var/cache/slackman";
   $slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
 
   # Set default logger values
-  $slackman_conf{'logger'}->{'level'} ||= 'debug';
-  $slackman_conf{'logger'}->{'file'}  ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+  $slackman_conf{'logger'}->{'level'}    ||= 'debug';
+  $slackman_conf{'logger'}->{'file'}     ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+  $slackman_conf{'logger'}->{'category'} ||= '';
 
   # Set default value for color output
   $slackman_conf{'main'}->{'color'} ||= 'always';

@@ -11,11 +11,10 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.2';
+  $VERSION = 'v1.2.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
-    package_parse_name
     package_version_compare
     package_install
     package_upgrade
@@ -51,13 +50,14 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
-
+use Slackware::SlackMan::Pkgtools;
 
 sub package_changelogs {
 
   my ($package) = @_;
 
   my $option_repo   = $slackman_opts->{'repo'};
+  my $option_cve    = $slackman_opts->{'cve'};
   my @repositories  = get_enabled_repositories();
   my @query_filters = ();
 
@@ -69,15 +69,7 @@ sub package_changelogs {
   elsif ($arch =~ /arm(.*)/)       { push(@query_filters, '(arch = "noarch" OR arch LIKE "arm%" OR arch IS NULL)')}
 
   # Filter repository
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@query_filters, qq/repository LIKE "$option_repo"/);
-  } else {
-    push(@query_filters, 'repository IN ("' . join('", "', get_enabled_repositories()) . '")');
-  }
-
-  # Filter disabled repository
-  push(@query_filters, sprintf('repository NOT IN ("%s")', join('","', get_disabled_repositories())));
+  push(@query_filters, repo_option_to_sql());
 
   # Filter specified package name
   if ($package) {
@@ -85,67 +77,27 @@ sub package_changelogs {
     push(@query_filters, sprintf('name LIKE %s', $dbh->quote($package)));
   }
 
+  # Filter by date range
   if (my $timestamp_options = timestamp_options_to_sql()) {
     push(@query_filters, $timestamp_options);
   }
 
+  # Filter Security Fix
   if ($slackman_opts->{'security-fix'}) {
     push(@query_filters, 'security_fix = 1');
+  }
+
+  if ($option_cve) {
+    push(@query_filters, sprintf('( "," || issues || "," LIKE %s )', $dbh->quote("%,$option_cve,%")));
   }
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
      $query = sprintf($query, join(' AND ', @query_filters), ($slackman_opts->{'limit'} || 25));
 
-  logger->debug($query);
-
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
   return $sth->fetchall_arrayref({});
-
-}
-
-sub package_parse_name {
-
-  my $package_name = shift;
-
-  # Add default extension
-  $package_name .= '.tgz' unless ($package_name =~ /\.(txz|tgz|tbz|tlz)/);
-
-  my $package_basename;
-  my $package_version;
-  my $package_build;
-  my $package_tag;
-  my $package_arch;
-  my $package_type;
-
-  my @package_name_parts    = split(/-/, $package_name);
-  my $package_build_tag_ext = $package_name_parts[$#package_name_parts];
-     $package_build_tag_ext =~ /^(\d+)(.*)\.(txz|tgz|tbz|tlz)/;
-
-  $package_build   = $1;
-  $package_tag     = $2;
-  $package_type    = $3;
-
-  $package_arch    = $package_name_parts[$#package_name_parts-1];
-  $package_version = $package_name_parts[$#package_name_parts-2];
-
-  for (my $i=0; $i<$#package_name_parts-2; $i++) {
-    $package_basename .= $package_name_parts[$i] . '-';
-  }
-
-  $package_tag      =~ s/^_// if ($package_tag);
-  $package_basename =~ s/-$// if ($package_basename);
-
-  return {
-    'name'    => $package_basename,
-    'package' => $package_name,
-    'version' => $package_version,
-    'build'   => $package_build,
-    'tag'     => $package_tag,
-    'arch'    => $package_arch,
-    'type'    => $package_type,
-  }
 
 }
 
@@ -207,7 +159,7 @@ sub package_metadata {
     @file_list = split(/\n/, $file_list) if ($file_list);
   }
 
-  my $package_info     = package_parse_name($package_name);
+  my $package_info     = get_package_info($package_name);
   my $package_basename = $package_info->{name};
 
   return undef unless($package_basename);
@@ -259,8 +211,8 @@ sub package_version_compare {
 
   my ($old, $new) = @_;
 
-  my $old_info = package_parse_name($old);
-  my $new_info = package_parse_name($new);
+  my $old_info = get_package_info($old);
+  my $new_info = get_package_info($new);
 
   my $old_version  = $old_info->{version};
   my $new_version  = $new_info->{version};
@@ -283,15 +235,8 @@ sub package_install {
 
   my $package = shift;
 
-  logger->debug(qq/Install $package/);
-
-  system('/sbin/upgradepkg', '--install-new', $package);
-  unlink($package) or warn "Failed to delete file $package: $!";
-
-  my $pkg_info = package_parse_name(basename($package));
-
-  logger->info(sprintf("Installed %s package with %s version",
-    $pkg_info->{'name'}, $pkg_info->{'version'}));
+  installpkg($package);
+  _update_history($package);
 
 }
 
@@ -300,15 +245,15 @@ sub package_upgrade {
 
   my $package = shift;
 
-  logger->debug(qq/Upgrade $package/);
+  my $pkg_info = get_package_info(basename($package));
 
-  system('/sbin/upgradepkg', '--reinstall', '--install-new', $package);
-  unlink($package) or warn "Failed to delete file: $!";
+  my $package_installed = ($dbh->selectrow_arrayref("SELECT package FROM history WHERE status = 'installed' AND name = ?", undef, $pkg_info->{'name'}))->[0];
 
-  my $pkg_info = package_parse_name(basename($package));
+  my $package_cmd = $package;
+     $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
-  logger->info(sprintf("Upgraded %s package to %s version",
-    $pkg_info->{'name'}, $pkg_info->{'version'}));
+  upgradepkg($package_cmd, 'reinstall', 'install-new');
+  _update_history($package);
 
 }
 
@@ -317,8 +262,8 @@ sub package_remove {
 
   my $package = shift;
 
-  logger->debug(qq/Remove $package/);
-  system('/sbin/removepkg', $package);
+  removepkg($package);
+  _update_history($package);
 
 }
 
@@ -389,16 +334,12 @@ sub package_available_update {
                   WHERE history.status = "installed"
                     AND history.name   = packages.name
                     AND packages.arch  = history.arch
-                    AND packages.name = ?
+                    AND packages.name  = ?
                     AND version_compare(old_version_build, new_version_build) < 0
-                    AND packages.repository IN (%s)
-                    AND packages.repository NOT IN (%s)
+                    AND (%s)
                ORDER BY packages.name, old_priority, new_priority/;
 
-  my $enabled_repository  = '"' . join('", "', get_enabled_repositories())  . '"';
-  my $disabled_repository = '"' . join('", "', get_disabled_repositories()) . '"';
-
-  $query = sprintf($query, $enabled_repository, $disabled_repository);
+  $query = sprintf($query, repo_option_to_sql('packages'));
 
   my $sth = $dbh->prepare($query);
   $sth->execute($package_name);
@@ -415,21 +356,12 @@ sub package_check_install {
 
   my (@install_packages) = @_;
 
-  my $install_pkgs          = {};
-  my $dependency_pkgs       = {};
-  my $arch                  = get_arch();
-  my $option_repo           = $slackman_opts->{'repo'};
-  my $option_exclude        = $slackman_opts->{'exclude'};
-  my @repositories          = get_enabled_repositories();
-  my @query_filters         = ();
-  my @filter_repository     = ();
-
-  @repositories = qq\$option_repo\ if ($option_repo); # TODO verificare se repository è disabilitato
-
-  foreach my $repository (@repositories) {
-    $repository .= ":%" unless ($repository =~ m/\:/);
-    push(@filter_repository, sprintf('packages.repository LIKE %s', $dbh->quote($repository)));
-  }
+  my $install_pkgs    = {};
+  my $dependency_pkgs = {};
+  my $arch            = get_arch();
+  my $option_repo     = $slackman_opts->{'repo'};
+  my $option_exclude  = $slackman_opts->{'exclude'};
+  my @query_filters   = ();
 
   @install_packages = map { parse_module_name($_) } @install_packages if (@install_packages);
 
@@ -450,23 +382,20 @@ sub package_check_install {
 
     $packages_filter .= '(';
     $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
-    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
-    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+    $packages_filter .= ' OR '                                         if (@packages_in && @packages_like);
+    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))  if (@packages_like);
     $packages_filter .= ')';
 
     push(@query_filters, $packages_filter);
 
   }
 
-  push(@query_filters, '( ' . join(' OR ', @filter_repository) . ' )');
+  # Filter repository
+  push(@query_filters, repo_option_to_sql('packages'));
 
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
     push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
-  }
-
-  foreach my $repository (get_disabled_repositories()) {
-    push(@query_filters, sprintf('( packages.repository != %s )', $dbh->quote($repository)));
   }
 
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
@@ -504,7 +433,11 @@ sub package_check_install {
                               FROM packages
                              WHERE name = ?
                                AND repository = ?
-                               AND arch IN (?, "noarch")/;
+                               AND arch IN (?, "noarch")
+                               AND NOT EXISTS (SELECT 1
+                                                 FROM history
+                                                WHERE history.status = "installed"
+                                                  AND history.name = packages.name)/;
 
   $query_packages = $query_new_packages if ($slackman_opts->{'new-packages'});
   $query_packages = sprintf($query_packages, join(' AND ', @query_filters));
@@ -587,7 +520,11 @@ sub package_check_updates {
       FROM packages
      WHERE name = ?
        AND arch IN (?, "noarch")
-       AND repository IN (?)/;
+       AND (%s)
+       AND NOT EXISTS (SELECT 1
+                         FROM history
+                       WHERE history.status = "installed"
+                         AND history.name = packages.name)/;
 
   my $arch           = get_arch();
   my @query_filters  = ();
@@ -595,18 +532,21 @@ sub package_check_updates {
   my $install_pkgs   = {};  # Required packages to install
   my $option_repo    = $slackman_opts->{'repo'};
   my $option_exclude = $slackman_opts->{'exclude'};
+  my $option_tag     = $slackman_opts->{'tag'};
 
+  # Exclude package
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
     push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
   }
 
-  if ($option_repo) {
-    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
-    push(@query_filters, qq/packages.repository LIKE "$option_repo"/);
-  } else {
-    push(@query_filters, 'packages.repository IN ("' . join('", "', get_enabled_repositories()) . '")');
+  # Filter installed package with tag
+  if ($option_tag) {
+    push(@query_filters, qq/history.tag = "$option_tag"/);
   }
+
+  # Filter repository
+  push(@query_filters, repo_option_to_sql('packages'));
 
   # Skip excluded packages
   push(@query_filters, 'packages.excluded = 0') unless ($slackman_opts->{'no-excludes'});
@@ -614,10 +554,10 @@ sub package_check_updates {
   # Upgrade only packages in category
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
 
-  # Exclude disabled repository
-  push(@query_filters, 'packages.repository NOT IN ("' . join('", "', get_disabled_repositories()) . '")');
-
   @update_packages = map { parse_module_name($_) } @update_packages if (@update_packages);
+
+  # Filter dependency only for active (or filtered) repository
+  $dependency_query = sprintf($dependency_query, repo_option_to_sql());
 
   if (@update_packages) {
 
@@ -637,8 +577,8 @@ sub package_check_updates {
     $packages_filter .= '(';
 
     $packages_filter .= sprintf('packages.name IN ("%s")', join('","', @packages_in)) if (@packages_in);
-    $packages_filter .= ' OR '                                                        if (@packages_in && @packages_like);
-    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like))                 if (@packages_like);
+    $packages_filter .= ' OR '                                        if (@packages_in && @packages_like);
+    $packages_filter .= sprintf('(%s)', join(' OR ', @packages_like)) if (@packages_like);
 
     $packages_filter .= ')';
 
@@ -669,7 +609,7 @@ sub package_check_updates {
 
       $update_pkgs->{$updatable_pkg_required_row->{name}} = $updatable_pkg_required_row;
 
-      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $arch, '"' . join('", "', get_disabled_repositories()) . ' "');
+      my $dependency_row = $dbh->selectrow_hashref($dependency_query, undef, $pkg_required, $arch);
 
       next unless ($dependency_row->{name});
 
@@ -698,6 +638,11 @@ sub package_download {
   my $package_path   = sprintf('%s/%s',    $save_path, $pkg->{'package'});
   my @package_errors = ();
 
+  my $md5_failed_msg  = 'MD5 check failed';
+  my $gpg_failed_msg  = 'GPG verify failed';
+  my $md5_skipped_msg = 'Skipped MD5 check';
+  my $gpg_skipped_msg = 'Skipped GPG verify';
+
   make_path($save_path) unless (-d $save_path);
 
   unless (-e $package_path) {
@@ -718,12 +663,18 @@ sub package_download {
 
       logger->info(sprintf("Starting download of %s package", $pkg->{'package'}));
 
-      if (download_file($package_url, "$package_path.part", 'progress-bar')) {
+      my $download_package_status = download_file($package_url, "$package_path.part", 'progress-bar');
+
+      if ( $download_package_status == 200 ) {
+
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
         rename("$package_path.part", $package_path);
+
       } else {
+
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-        push(@package_errors, 'download');
+        push(@package_errors, "Download error ($download_package_status)");
+
       }
 
     }
@@ -732,7 +683,7 @@ sub package_download {
 
   unless (-e "$package_path.asc") {
 
-    if (download_file("$package_url.asc", "$package_path.asc")) {
+    if ( download_file("$package_url.asc", "$package_path.asc") == 200 ) {
       logger->info(sprintf("Downloaded signature of %s package", $pkg->{'package'}));
     }
 
@@ -746,14 +697,27 @@ sub package_download {
 
     unless ($slackman_conf{'main'}->{'checkmd5'}) {
       $md5_check = 1;
+      push(@package_errors, $md5_skipped_msg);
+    }
+
+    if ($slackman_opts->{'no-md5-check'}) {
+      $md5_check = 1;
+      push(@package_errors, $md5_skipped_msg);
     }
 
     unless ($slackman_conf{'main'}->{'checkgpg'}) {
       $gpg_verify = 1;
+      push(@package_errors, $gpg_skipped_msg);
+    }
+
+    if ($slackman_opts->{'no-gpg-check'}) {
+      $gpg_verify = 1;
+      push(@package_errors, $gpg_skipped_msg);
     }
 
     unless ($pkg->{'checksum'}) {
-      exit(0) unless(confirm(sprintf("%s %s package don't have a valid checksum. Do you want continue ? [Y/N]", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
+      $| = 1;
+      exit(0) unless(confirm(sprintf("\n%s %s package don't have a valid checksum.\nDo you want continue ? [Y/N] \b", colored('WARNING', 'yellow bold'), colored($pkg->{'package'}, 'bold'))));
       $skip_check = 1;
     }
 
@@ -762,7 +726,7 @@ sub package_download {
       logger->info(sprintf("MD5 checksum success for %s package", $pkg->{'package'}));
     } else {
       logger->error(sprintf("Error during MD5 checksum of %s package", $pkg->{'package'}));
-      push(@package_errors, 'checksum');
+      push(@package_errors, $md5_failed_msg);
     }
 
     if (gpg_verify($package_path)) {
@@ -770,7 +734,7 @@ sub package_download {
       $gpg_verify = 1;
     } else {
       logger->error(sprintf("Error during GPG signature verify of %s package", $pkg->{'package'}));
-      push(@package_errors, 'gpg');
+      push(@package_errors, $gpg_failed_msg);
     }
 
     unless ($skip_check) {
@@ -800,6 +764,10 @@ sub package_list_installed {
     push(@filters, sprintf('(name LIKE %s)', $dbh->quote($item)));
   }
 
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@filters, $timestamp_options);
+  }
+
   if (@filters) {
     $query_filter = sprintf('AND (%s)', join(' OR ', @filters));
   }
@@ -827,10 +795,7 @@ sub package_list_obsoletes {
                     AND history.status    = "installed"
                     AND changelogs.repository %s
                     AND changelogs.repository NOT IN (%s)
-                    AND NOT EXISTS (SELECT 1
-                                      FROM changelogs clog
-                                     WHERE clog.name = changelogs.name
-                                       AND clog.timestamp >= changelogs.timestamp)/;
+                    AND changelogs.timestamp > history.timestamp/;
 
   my $enabled_repositories  = 'IN ("' . join('", "', get_enabled_repositories())  . '")';
   my $disabled_repositories = '"' . join('", "', get_disabled_repositories()) . '"';
@@ -878,6 +843,24 @@ sub package_search_files {
 }
 
 
+sub _update_history {
+
+  my ($package) = @_;
+
+  if ( $package =~ /\.(txz|tgz|tbz|tlz)/ ) {
+
+    my $pkg_basename = basename($package);
+    my $pkg_meta     = get_package_info($pkg_basename);
+
+    $package = $pkg_meta->{'name'};
+
+  }
+
+  parse_package_history($package);
+
+}
+
+
 1;
 __END__
 
@@ -889,7 +872,7 @@ Slackware::SlackMan::Package - SlackMan Package module
 
   use Slackware::SlackMan::Package qw(:all);
 
-  my $pkg_info = package_parse_name('aaa_base-14.2-x86_64-1.tgz');
+  my $pkg_info = get_package_info('aaa_base-14.2-x86_64-1.tgz');
 
 =head1 DESCRIPTION
 

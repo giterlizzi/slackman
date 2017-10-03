@@ -1,5 +1,11 @@
 # rlworkman's Slackware Packages
 
+# Robby Workman (rlworkman) Slackware Packages for latest stable Slackware
+# release (14.2). This repository also contain packages for oldest Slackware
+# release (from 11.0 to 14.1).
+
+# Home-Page: https://rlworkman.net/
+
 [packages]
 name      = Robby Workman's Slackware Packages
 enabled   = false

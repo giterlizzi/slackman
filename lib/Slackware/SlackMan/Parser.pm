@@ -14,7 +14,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.2';
+  $VERSION = 'v1.2.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -24,6 +24,7 @@ BEGIN {
     parse_manifest
     parse_changelog
     parse_module_name
+    parse_package_history
   };
 
   %EXPORT_TAGS = (
@@ -63,7 +64,7 @@ sub parse_changelog {
   chomp($changelog_contents);
 
   my @changelogs = split(/$changelog_separator/, $changelog_contents);
-  my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description);
+  my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description issues);
   my @values     = ();
 
   &$callback_status('parse') if ($callback_status);
@@ -88,7 +89,8 @@ sub parse_changelog {
 
     foreach my $line (@changelog_lines) {
 
-      my ($package, $status, $name, $version, $arch, $tag, $build, $description, $security_fix, $text, $category);
+      my ($package, $status, $name, $version, $arch, $tag, $build, $description, $security_fix, $text, $category, $issues);
+      my @issues;
 
       $security_fix = 0;
 
@@ -105,7 +107,7 @@ sub parse_changelog {
         $description =~ s/\|/\n/g  if ($description);
         $description =~ s/^  //gm  if ($description);
 
-        my $package_info = package_parse_name(basename($package));
+        my $package_info = get_package_info(basename($package));
 
         $name    = $package_info->{'name'};
         $version = $package_info->{'version'};
@@ -172,7 +174,7 @@ sub parse_changelog {
 
         if (defined($package) && $package =~ /t?z/) {
 
-          my $package_info = package_parse_name(basename($package));
+          my $package_info = get_package_info(basename($package));
 
           $name    = $package_info->{'name'};
           $version = $package_info->{'version'};
@@ -195,6 +197,17 @@ sub parse_changelog {
       next     if (defined($version) && $version !~ /\d/);
       next unless ($status);
 
+      # Detect issues (CVE, etc) from ChangeLog description
+      if ($description) {
+
+        my @cve = ( $description =~ /(CVE\-\d{4}\-\d{1,10})/gim );
+        push( @issues, uniq(map { uc($_) } @cve) ) if (@cve);
+
+      }
+
+      $issues = join(",", @issues);
+      $issues = undef unless (length($issues));
+
       my @row = (
         $changelog_timestamp,    # timestamp
         $package,                # package
@@ -208,6 +221,7 @@ sub parse_changelog {
         $security_fix,           # security fix
         $category,               # category
         trim($description),      # description
+        $issues,                 # issues
       );
 
       push(@values, \@row);
@@ -383,7 +397,7 @@ sub parse_manifest {
     my ($package_location) = $manifest =~ /Package:\s+(.*)/;
     my $package            = basename($package_location);
     my $location           = dirname($package_location);
-    my $pkg_info           = package_parse_name($package);
+    my $pkg_info           = get_package_info($package);
     my $name               = $pkg_info->{'name'};
     my $version            = $pkg_info->{'version'};
     my $arch               = $pkg_info->{'arch'};
@@ -437,63 +451,127 @@ sub parse_manifest {
 }
 
 
+sub parse_package_history {
+
+  my ($package) = @_;
+
+  my $slackware_root = $ENV{ROOT} || '';
+
+  my @files = grep { -f } glob("$slackware_root/var/log/*packages/$package*");
+
+  logger->info("Update history of $package package");
+
+  $dbh->do('DELETE FROM history WHERE LOWER(name) = LOWER(?)', undef, $package);
+
+  my @values  = ();
+  my @columns = qw(name package version build tag arch status timestamp upgraded
+                   summary description size_compressed size_uncompressed);
+
+  foreach my $file (@files) {
+
+    my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
+        $atime, $mtime, $ctime, $blksize, $blocks) = stat($file);
+
+    my $status;
+    my $filename       = basename($file);
+    my $dirname        = dirname($file);
+    my $timestamp      = time_to_timestamp($mtime);
+    my $upgraded       = '';
+    my $directory_type = ( $dirname =~ /removed/ ) ? 'removed' : 'installed';
+
+    if ($filename =~ /\-upgraded/) {
+
+      $filename  =~ /\-upgraded\-(\d{4}\-\d{2}\-\d{2}),(\d{2}\:\d{2}\:\d{2})/;
+      $upgraded  = "$1 $2";
+      $filename  =~ s/\-upgraded(.*)//;
+      $status    = 'upgraded';
+
+    } else {
+
+      $status    = $directory_type;
+      $timestamp = time_to_timestamp($ctime) if ($status eq 'removed');
+
+    }
+
+    next unless (get_package_info($filename)->{'name'} eq $package);
+
+    my $metadata = package_metadata(file_read($file));
+
+    my @row = (
+      $metadata->{'name'},               # name
+      $filename,                         # package
+      $metadata->{'version'},            # version
+      $metadata->{'build'},              # build
+      $metadata->{'tag'},                # tag
+      $metadata->{'arch'},               # arch
+      $status,                           # status
+      $timestamp,                        # timestamp
+      $upgraded,                         # upgraded
+      $metadata->{'summary'},            # summary
+      $metadata->{'description'},        # description
+      $metadata->{'size_compressed'},    # size_compressed
+      $metadata->{'size_uncompressed'},  # size_uncompressed
+    );
+
+    push(@values, \@row);
+
+  }
+
+  db_bulk_insert(
+    'table'   => 'history',
+    'columns' => \@columns,
+    'values'  => \@values,
+  );
+
+  $dbh->do('PRAGMA VACUUM');
+
+}
+
+
 sub parse_history {
 
-  my ($type, $callback_status) = @_;
+  my ($callback_status) = @_;
 
-  my $slackware_root    = $ENV{ROOT} || '';
+  my $slackware_root     = $ENV{ROOT} || '';
   my $slackware_log_path = "$slackware_root/var/log";
 
-  my $installed_packages = qx{ ls -l $slackware_log_path/packages/ | wc -l };
-  my $removed_packages   = qx{ ls -l $slackware_log_path/removed_packages/ | wc -l };
+  my @files           = grep { -f } glob("$slackware_log_path/*packages/*");
+  my @installed_files = grep { -f } glob("$slackware_log_path/packages/*");
+  my @removed_files   = grep { -f } glob("$slackware_log_path/removed_packages/*");
 
-  chomp($installed_packages);
-  chomp($removed_packages);
+  my $local_history   = scalar @files;
+  my $local_installed = scalar @installed_files;
+  my $local_removed   = scalar @removed_files;
 
-  my $meta_installed_packages = 0;
-  my $meta_removed_packages   = 0;
+  my $db_installed = 0;
+  my $db_removed   = 0;
 
-  # Detect force flag
+  # Detect "force" flag
   unless ($slackman_opts->{'force'}) {
-    $meta_installed_packages = db_meta_get('installed-packages') || 0;
-    $meta_removed_packages   = db_meta_get('removed-packages')   || 0;
+    $db_installed = ($dbh->selectrow_arrayref("SELECT COUNT(*) FROM history WHERE status = 'installed'", undef))->[0];
+    $db_removed   = ($dbh->selectrow_arrayref("SELECT COUNT(*) FROM history WHERE status != 'installed'", undef))->[0];
   }
 
-  given($type) {
+  logger->debug("Installed (db: $db_installed, fs: $local_installed)");
+  logger->debug("Removed & Upgraded (db: $db_removed, fs: $local_removed)");
 
-    when('installed') {
+  return(0) if (    $local_installed == $db_installed
+                 && $local_removed   == $db_removed );
 
-      return(0) if (   $installed_packages == $meta_installed_packages
-                    && $removed_packages   == $meta_removed_packages);
+  logger->debug('Delete all history rows');
 
-      $slackware_log_path .= "/packages";
-
-      $dbh->do(qq/DELETE FROM history WHERE status = 'installed'/);
-      db_meta_set('installed-packages', $installed_packages);
-
-    }
-
-    when(/(removed|upgraded)/) {
-
-      return(0) if ($removed_packages == $meta_removed_packages);
-
-      $slackware_log_path .= "/removed_packages";
-
-      $dbh->do(qq/DELETE FROM history WHERE status IN ('upgraded', 'removed')/);
-      db_meta_set('removed-packages', $removed_packages);
-
-    }
-
-  }
+  $dbh->do('DELETE FROM history');
+  $dbh->do('PRAGMA VACUUM');
 
   my @values  = ();
   my @columns = qw(name package version build tag arch status timestamp upgraded
                    summary description size_compressed size_uncompressed);
 
   &$callback_status('parse') if ($callback_status);
+  logger->debug('Parsing all local history files from /var/log/packages & /var/log/removed_packages directories');
 
   my $i = 0;
-  my @files = grep { -f } glob("$slackware_log_path/*");
+  my $tmp_percentage = -1;
 
   foreach my $file (@files) {
 
@@ -502,19 +580,32 @@ sub parse_history {
     my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
         $atime, $mtime, $ctime, $blksize, $blocks) = stat($file);
 
-    my $filename  = basename($file);
+    my $percentage = sprintf("%d", ($i / $local_history ) * 100);
+
+    if ($percentage % 25 == 0 && $tmp_percentage ne $percentage) {
+      &$callback_status("$percentage%");
+      $tmp_percentage = $percentage;
+    }
+
     my $status;
-    my $timestamp = time_to_timestamp($mtime);
-    my $upgraded  = '';
+    my $filename       = basename($file);
+    my $dirname        = dirname($file);
+    my $timestamp      = time_to_timestamp($mtime);
+    my $upgraded       = '';
+    my $directory_type = ( $dirname =~ /removed/ ) ? 'removed' : 'installed';
 
     if ($filename =~ /\-upgraded/) {
+
       $filename  =~ /\-upgraded\-(\d{4}\-\d{2}\-\d{2}),(\d{2}\:\d{2}\:\d{2})/;
       $upgraded  = "$1 $2";
       $filename  =~ s/\-upgraded(.*)//;
       $status    = 'upgraded';
+
     } else {
-      $status    = $type;
+
+      $status    = $directory_type;
       $timestamp = time_to_timestamp($ctime) if ($status eq 'removed');
+
     }
 
     my $metadata = package_metadata(file_read($file));
@@ -573,7 +664,7 @@ sub parse_variables {
   $release_suffix = $arch_family if ($arch_family eq 'arm');
   $release_suffix = $arch_bit    if ($arch_bit eq '64');
 
-  # Remove "{" and "}" char from string
+  # Remove "{" and "}" chars from string
   $string =~ s/(\{|\})//g;
 
   # Replace $arch variables

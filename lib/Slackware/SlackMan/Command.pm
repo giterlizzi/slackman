@@ -12,7 +12,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.1.2';
+  $VERSION     = 'v1.2.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -43,8 +43,10 @@ GetOptions( $slackman_opts,
   'after=s',
   'before=s',
   'category=s',
-  'config=s',
+  'cve=s',
+  'series=s',
   'color=s',
+  'config=s',
   'details',
   'download-only',
   'exclude-installed',
@@ -56,6 +58,8 @@ GetOptions( $slackman_opts,
   'new-packages',
   'no-deps',
   'no-excludes',
+  'no-gpg-check',
+  'no-md5-check',
   'no-priority',
   'no|n',
   'obsolete-packages',
@@ -65,12 +69,16 @@ GetOptions( $slackman_opts,
   'security-fix',
   'show-files',
   'summary',
+  'tag=s',
   'version',
   'yes|y',
 );
 
 
 $slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+
+# Options Alias
+$slackman_opts->{'category'} = $slackman_opts->{'series'} if ($slackman_opts->{'series'});
 
 # Verify terminal color capability using tput(1) utility
 if ($slackman_opts->{'color'} eq 'auto') {
@@ -97,7 +105,7 @@ exit show_version() if $slackman_opts->{'version'};
 
 # Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
-  warn ("\n\nAction cancelled by user!\n");
+  logger->warning("Action cancelled by user!");
   exit(1);
 };
 

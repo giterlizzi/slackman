@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.1.2';
+  $VERSION = 'v1.2.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw(
@@ -26,6 +26,8 @@ BEGIN {
     curl_cmd
     datetime_calc
     datetime_h
+    dbus_notifications
+    dbus_slackman
     delete_lock
     directory_files
     download_file
@@ -38,18 +40,22 @@ BEGIN {
     get_arch
     get_last_modified
     get_lock_pid
+    get_package_info
     get_slackware_release
     gpg_import_key
     gpg_verify
     http
     ldd
     md5_check
+    repo_option_to_sql
     time_to_timestamp
-    timestamp_to_time
     timestamp_options_to_sql
+    timestamp_to_time
     trim
     uniq
     w3c_date_to_time
+    success_sign
+    failed_sign
 
   );
 
@@ -70,6 +76,8 @@ use Time::Seconds;
 use HTTP::Tiny;
 use Carp ();
 use File::Basename;
+use Net::DBus;
+use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config qw(:all);
@@ -118,6 +126,25 @@ sub http {
   return $http;
 
 }
+
+
+# SlackMan DBus interface
+#
+sub dbus_slackman {
+  return Net::DBus->system
+    ->get_service('org.lotarproject.SlackMan')
+    ->get_object('/org/lotarproject/SlackMan');
+}
+
+
+# Notification DBus interface
+#
+sub dbus_notifications {
+  return Net::DBus->session
+    ->get_service('org.freedesktop.Notifications')
+    ->get_object('/org/freedesktop/Notifications');
+}
+
 
 sub uniq {
   my %seen;
@@ -324,11 +351,11 @@ sub download_file {
 
   if ( $response->{'success'} ) {
     logger->info("[DOWNLOAD] done");
-    return 1;
+    return $response->{status};
   }
 
   logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
-  return 0;
+  return $response->{status};
 
 }
 
@@ -468,6 +495,39 @@ sub time_to_timestamp {
 
 }
 
+
+sub repo_option_to_sql {
+
+  my ($table) = @_;
+
+  my $field = 'repository';
+     $field = "$table.$field" if ($table);
+
+  my $option_repo = $slackman_opts->{'repo'};
+
+  my @query_filters;
+
+  my @enabled_repo  = Slackware::SlackMan::Repo::get_enabled_repositories();
+  my @disabled_repo = Slackware::SlackMan::Repo::get_disabled_repositories();
+
+  if ($option_repo) {
+
+    $option_repo .= ":%" unless ($option_repo =~ m/\:/);
+    push(@query_filters, qq/$field LIKE "$option_repo"/);
+
+  } else {
+    push(@query_filters, sprintf(qq/$field IN ("%s")/, join('", "', @enabled_repo)));
+  }
+
+  push(@query_filters, sprintf(qq/$field NOT IN ("%s")/, join('","', @disabled_repo)));
+
+  my $sql_filter = sprintf(' ( %s ) ', join(' AND ', @query_filters));
+
+  return $sql_filter;
+
+}
+
+
 sub timestamp_options_to_sql {
 
   my $option_after  = $slackman_opts->{'after'};
@@ -572,6 +632,52 @@ sub get_slackware_release {
   return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
 
+sub get_package_info {
+
+  my ($package_name) = @_;
+
+  # Add default extension
+  $package_name .= '.tgz' unless ($package_name =~ /\.(txz|tgz|tbz|tlz)/);
+
+  $package_name = basename($package_name);
+
+  my $package_basename;
+  my $package_version;
+  my $package_build;
+  my $package_tag;
+  my $package_arch;
+  my $package_type;
+
+  my @package_name_parts    = split(/-/, $package_name);
+  my $package_build_tag_ext = $package_name_parts[$#package_name_parts];
+     $package_build_tag_ext =~ /^(\d+)(.*)\.(txz|tgz|tbz|tlz)/;
+
+  $package_build   = $1;
+  $package_tag     = $2;
+  $package_type    = $3;
+
+  $package_arch    = $package_name_parts[$#package_name_parts-1];
+  $package_version = $package_name_parts[$#package_name_parts-2];
+
+  for (my $i=0; $i<$#package_name_parts-2; $i++) {
+    $package_basename .= $package_name_parts[$i] . '-';
+  }
+
+  $package_tag      =~ s/^_// if ($package_tag);
+  $package_basename =~ s/-$// if ($package_basename);
+
+  return {
+    'name'    => $package_basename,
+    'package' => $package_name,
+    'version' => $package_version,
+    'build'   => $package_build,
+    'tag'     => $package_tag,
+    'arch'    => $package_arch,
+    'type'    => $package_type,
+  }
+
+}
+
 sub md5_check {
 
   my ($file, $checksum) = @_;
@@ -623,6 +729,14 @@ sub delete_lock {
 
 }
 
+sub success_sign {
+  return colored("\x{2713}", "green");
+}
+
+sub failed_sign {
+  return colored("\x{2717}", "red");
+}
+
 1;
 __END__
 
@@ -638,7 +752,7 @@ Slackware::SlackMan::Utils - SlackMan utility module
 
 =head1 DESCRIPTION
 
-Config module for SlackMan.
+utility module for SlackMan.
 
 =head1 EXPORT
 
