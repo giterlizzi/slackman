@@ -5,8 +5,23 @@ use warnings;
 
 use 5.010;
 
-use Slackware::SlackMan::Command qw(run);
-exit run;
+my @required_modules = qw(DBD::SQLite Sort::Versions Net::DBus IO::Socket::SSL Net::SSLeay HTTP::Tiny);
+my @missing_modules  = ();
+
+foreach (@required_modules) {
+  push(@missing_modules, $_) unless ( eval("require $_;") );
+}
+
+if (@missing_modules) {
+  print "\nATTENTION! Missing required Perl modules:\n\n";
+  print "  * $_\n" foreach (@missing_modules);
+  print "\n";
+  exit(255);
+}
+
+require Slackware::SlackMan::Command;
+
+exit Slackware::SlackMan::Command->run();
 
 __END__
 =head1 NAME
