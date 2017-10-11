@@ -1,5 +1,9 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.2.1]
+
+This release fix an issue for SlackMan build (#10 thanks to @axpira)
+
 ## [v1.2.0]
 
 This release introduce new features, new commands and improved the stability and performance. Added new D-Bus methods/properties and integrated SlackMan via PolicyKit.
@@ -104,6 +108,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.2.1]: https://github.com/LotarProject/slackman/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/LotarProject/slackman/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/LotarProject/slackman/compare/v1.0.4...v1.1.0
