@@ -798,7 +798,14 @@ sub call_package_upgrade {
   if (@packages_to_downloads) {
 
     unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-      exit(0) unless(confirm("Perform upgrade of selected packages? [Y/N]"));
+
+      my $choice = confirm_choice("Perform upgrade of selected packages? [Y/N/d]", qr/(Y|N|D)/i);
+
+      exit(0) unless ($choice);
+      exit(0)     if ($choice eq 'N');
+
+      $slackman_opts->{'download-only'} = 1 if ($choice eq 'D');
+
     }
 
     print "\n\n";
