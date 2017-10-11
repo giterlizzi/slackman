@@ -1,9 +1,12 @@
 # SlackMan TODO
 
- - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
- - [ ] Add rule in `.repo` file for 32-bit or ARM directory variant (i386, i486, i586, i686, x86, armv5, armv7, armel, etc.)
- - [ ] Add rule in `.repo` file to allow the repository only for particular arch (eg. `slackware:multilib` is only for `x86_64` arch)
- - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
+ - [ ] FEATURE: Check dependencies command (eg. `slackman check-deps PACKAGE`)
+ - [ ] FEATURE: Add rule in `.repo` file for 32-bit or ARM directory variant (i386, i486, i586, i686, x86, armv5, armv7, armel, etc.)
+ - [ ] FEATURE: Add rule in `.repo` file to allow the repository only for particular arch (eg. `slackware:multilib` is only for `x86_64` arch)
+ - [ ] FEATURE: Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
+ - [ ] FIX: Display installed date in `slackman history` for packages installed and removed (never upgraded). Now dsplay only the removed date
+ - [ ] FEATURE: Add option `d` in answer when using `slackman install` & `slackman upgrade` commands for download the packages (eg. `Perform upgrade of selected packages? [Y/N/d]`)
+ - [ ] FEATURE: Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
 
 ## SlackMan 1.1
 
