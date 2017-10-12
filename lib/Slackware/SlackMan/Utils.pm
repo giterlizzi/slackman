@@ -56,6 +56,7 @@ BEGIN {
     w3c_date_to_time
     success_sign
     failed_sign
+    versioncmp
 
   );
 
@@ -143,6 +144,57 @@ sub dbus_notifications {
   return Net::DBus->session
     ->get_service('org.freedesktop.Notifications')
     ->get_object('/org/freedesktop/Notifications');
+}
+
+# Code from Sort::Versions module
+#
+sub versioncmp( $$ ) {
+
+  my @A = ($_[0] =~ /([-.]|\d+|[^-.\d]+)/g);
+  my @B = ($_[1] =~ /([-.]|\d+|[^-.\d]+)/g);
+
+  my ($A, $B);
+
+  while (@A and @B) {
+
+    $A = shift @A;
+    $B = shift @B;
+
+    if ($A eq '-' and $B eq '-') {
+      next;
+
+    } elsif ( $A eq '-' ) {
+      return -1;
+
+    } elsif ( $B eq '-') {
+      return 1;
+
+    } elsif ($A eq '.' and $B eq '.') {
+      next;
+
+    } elsif ( $A eq '.' ) {
+      return -1;
+
+    } elsif ( $B eq '.' ) {
+      return 1;
+
+    } elsif ($A =~ /^\d+$/ and $B =~ /^\d+$/) {
+      if ($A =~ /^0/ || $B =~ /^0/) {
+        return $A cmp $B if $A cmp $B;
+      } else {
+        return $A <=> $B if $A <=> $B;
+      }
+
+    } else {
+      $A = uc $A;
+      $B = uc $B;
+      return $A cmp $B if $A cmp $B;
+    }
+
+  }
+
+  @A <=> @B;
+
 }
 
 

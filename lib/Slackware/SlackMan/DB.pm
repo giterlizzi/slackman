@@ -38,7 +38,6 @@ BEGIN {
 }
 
 use DBI;
-use Sort::Versions;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils   qw(:all);
@@ -264,7 +263,7 @@ sub dbh {
 sub db_check {
 
   my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
-  
+
   # Init database if "user_version" pragma is not defined
   #
   unless ($slackman_schema_version) {
@@ -275,16 +274,16 @@ sub db_check {
   # Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
   #
   if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
-  
+
     logger->debug(sprintf('Detected previous SlackMan schema version (actual: %s, required: %s)',
       $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
-    
+
     logger->debug('Re-create SlackMan database');
 
     db_drop();
     db_compact();
     db_init();
-  
+
   }
 
 }

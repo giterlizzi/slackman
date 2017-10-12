@@ -40,7 +40,6 @@ BEGIN {
 
 use File::Basename;
 use File::Path qw(make_path remove_tree);
-use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
