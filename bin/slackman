@@ -5,7 +5,7 @@ use warnings;
 
 use 5.010;
 
-my @required_modules = qw(DBD::SQLite Sort::Versions Net::DBus IO::Socket::SSL Net::SSLeay HTTP::Tiny);
+my @required_modules = qw(DBD::SQLite Net::DBus IO::Socket::SSL Net::SSLeay HTTP::Tiny);
 my @missing_modules  = ();
 
 foreach (@required_modules) {
