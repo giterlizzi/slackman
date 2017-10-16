@@ -149,7 +149,7 @@ use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manife
 use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
 # Override built-in DBI module subroutines for loggin
-INIT {
+BEGIN {
 
   if ( $slackman_conf{'logger'}->{'category'} =~ /sql/ ) {
 
@@ -385,8 +385,6 @@ sub db_bulk_insert {
   $dbh->begin_work();
 
   my $sth = $dbh->prepare($query);
-
-  logger->debug(qq/$query/);
 
   foreach my $row (@$values) {
     $sth->execute(@$row);
