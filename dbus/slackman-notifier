@@ -5,6 +5,8 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
+use lib qw(/usr/share/slackman-libsupport/lib);
+
 use Net::DBus;
 use Net::DBus::Reactor;
 
@@ -410,7 +412,7 @@ slackman-notifier - SlackMan Notification Tool
 
 =head1 SYNOPSIS
 
-  /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version]
+  /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version] [--man]
 
 =head1 DESCRIPTION
 

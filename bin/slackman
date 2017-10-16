@@ -5,8 +5,12 @@ use warnings;
 
 use 5.010;
 
-my @required_modules = qw(DBD::SQLite Net::DBus IO::Socket::SSL Net::SSLeay HTTP::Tiny);
+use lib qw(/usr/share/slackman-libsupport/lib);
+
+my @required_modules = qw(DBD::SQLite Net::DBus IO::Socket::SSL Net::SSLeay);
 my @missing_modules  = ();
+
+push(@required_modules, 'HTTP::Tiny') if ($] < 5.014000);
 
 foreach (@required_modules) {
   push(@missing_modules, $_) unless ( eval("require $_;") );

@@ -3,6 +3,9 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+# Use slackman-libsupport libraries if available
+use lib '/usr/share/slackman-libsupport/lib';
+
 WriteMakefile(
     NAME             => 'Slackware::SlackMan',
     AUTHOR           => q{Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>},

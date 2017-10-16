@@ -5,10 +5,46 @@
 use strict;
 use warnings;
 
+use lib qw(/usr/share/slackman-libsupport/lib);
+
+use Getopt::Long qw(:config);
+use Pod::Usage;
+
 use Net::DBus;
 use Net::DBus::Reactor;
 
 use Slackware::SlackMan::DBus;
+
+my $VERSION = "v1.2.1";
+my $options = {};
+
+GetOptions( $options,
+  'help|h',
+  'version|v',
+  'man',
+);
+
+show_help()    if ($options->{'help'});
+show_version() if ($options->{'version'});
+
+pod2usage(-exitval => 0, -verbose => 2) if $options->{'man'};
+
+sub show_version {
+  print sprintf("SlackMan - Slackware Package Manager D-Bus Service %s\n\n", $VERSION);
+  exit(0);
+}
+
+sub show_help {
+
+  pod2usage(
+    -message  => "SlackMan - Slackware Package Manager D-Bus Service $VERSION\n",
+    -exitval  => 0,
+    -verbose  => 99,
+    -sections => 'SYNOPSIS|OPTIONS',
+  );
+
+}
+
 
 my $slackman_service = Net::DBus->system->export_service('org.lotarproject.SlackMan');
 my $slackman_object  = Slackware::SlackMan::DBus->new($slackman_service);
@@ -16,3 +52,46 @@ my $slackman_object  = Slackware::SlackMan::DBus->new($slackman_service);
 Net::DBus::Reactor->main->run();
 
 exit(0);
+
+__END__
+=head1 NAME
+
+slackman-service - SlackMan D-Bus Service
+
+=head1 SYNOPSIS
+
+  /usr/libexec/slackman/slackman-service [-h|--help] [-v|--version] [--man]
+
+=head1 DESCRIPTION
+
+B<slackman-service> is a daemon that expose B<org.lotarproject.SlackMan> D-Bus
+interface (L<org.lotarproject.SlackMan(7)>).
+
+=head1 OPTIONS
+
+  -h, --help                   Display help and exit
+  --man                        Display man page
+  --version                    Display version information
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<org.lotarproject.SlackMan(7)>, L<slackman-notifier(1)>, L<dbus-monitor(1)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>
