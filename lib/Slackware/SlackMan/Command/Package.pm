@@ -264,10 +264,13 @@ sub call_package_reinstall {
   }
 
   my @filters = ();
+  my @filter_packages = ();
 
   foreach (@is_installed) {
-    push(@filters, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
+    push(@filter_packages, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
   }
+
+  push(@filters, sprintf('( %s )', join(' OR ', @filter_packages)));
 
   # Filter repository
   push(@filters, repo_option_to_sql());
@@ -504,7 +507,14 @@ sub call_package_install {
   exit(0) unless (@packages_to_downloads);
 
   unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-    exit(0) unless(confirm("Install selected packages? [Y/N]"));
+
+    my $choice = confirm_choice("Install selected packages? [Y/N/d]", qr/(Y|N|D)/i);
+
+    exit(0) unless ($choice);
+    exit(0)     if ($choice eq 'N');
+
+    $slackman_opts->{'download-only'} = 1 if ($choice eq 'D');
+
   }
 
   print "\n\n";
