@@ -1,0 +1,19 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.
+# Line up the first '|' above the ':' following the base package name, and
+# the '|' on the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':' except on otherwise blank lines.
+
+                   |-----handy-ruler------------------------------------------------------|
+slackman-libsupport: slackman-libsupport (Perl library for SlackMan Package Manager)
+slackman-libsupport:
+slackman-libsupport:  - HTTP::Tiny (included in Perl v5.14.0)
+slackman-libsupport:  - Net::DBus
+slackman-libsupport:  - XML::Twig
+slackman-libsupport:  - IO::Socket:SSL
+slackman-libsupport:  - Net::SSLeay
+slackman-libsupport: 
+slackman-libsupport: 
+slackman-libsupport: Home-Page: https://lotarproject.github.io/slackman/
+slackman-libsupport:
