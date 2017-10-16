@@ -1,28 +1,26 @@
-# slackman-notifier(1)
+# slackman-service(1)
 # NAME
 
-slackman-notifier - SlackMan Notification Tool
+slackman-service - SlackMan D-Bus Service
 
 # SYNOPSIS
 
-    /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version] [--man]
+    /usr/libexec/slackman/slackman-service [-h|--help] [-v|--version] [--man]
 
 # DESCRIPTION
 
-**slackman-notifier** is user-space utility to receive a desktop notification via
-D-Bus (using **org.freedesktop.Notification** service) for Slackware Security
-Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
+**slackman-service** is a daemon that expose **org.lotarproject.SlackMan** D-Bus
+interface ([org.lotarproject.SlackMan(7)](../7/org.lotarproject.SlackMan)).
 
 # OPTIONS
 
-    --action=[listner,notifier]  Execute in listner or notifier mode
     -h, --help                   Display help and exit
     --man                        Display man page
     --version                    Display version information
 
 # SEE ALSO
 
-[slackman(8)](../8/slackman.md), [slackman-service(1)](../1/slackman-service.md), [dbus-monitor(1)](../1/dbus-monitor.md)
+[slackman(8)](../8/slackman.md), [org.lotarproject.SlackMan(7)](../7/org.lotarproject.SlackMan), [slackman-notifier(1)](../1/slackman-notifier.md), [dbus-monitor(1)](../1/dbus-monitor.md)
 
 # BUGS
 

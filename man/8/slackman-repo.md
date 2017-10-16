@@ -9,6 +9,9 @@ slackman-repo - Display and manage Slackware repository
     slackman repo enable REPOSITORY
     slackman repo disable REPOSITORY
     slackman repo add REPOSITORY-FILE
+    slackman repo config REPOSITORY
+    slackman repo config REPOSITORY PARAM
+    slackman repo config REPOSITORY PARAM VALUE
     slackman repo list
     slackman repo help
 
@@ -19,12 +22,15 @@ directory.
 
 # COMMANDS
 
-    slackman repo list                   List available repositories
-    slackman repo add REPOSITORY-FILE    Add new repository file into F</etc/slackman/repod.d> directory
-    slackman repo enable REPOSITORY      Enable repository
-    slackman repo disable REPOSITORY     Disable repository
-    slackman repo info REPOSITORY        Display repository information
-    slackman repo help                   Display repo command help usage
+    slackman repo list                           List available repositories
+    slackman repo add REPOSITORY-FILE            Add new repository file into F</etc/slackman/repod.d> directory
+    slackman repo enable REPOSITORY              Enable repository
+    slackman repo disable REPOSITORY             Disable repository
+    slackman repo info REPOSITORY                Display repository information
+    slackman repo config REPOSITORY              Get all raw repo config values (same as C<slackman repo info> command)
+    slackman repo config REPOSITORY PARAM        Get raw config value
+    slackman repo config REPOSITORY PARAM VALUE  Set raw config value
+    slackman repo help                           Display repo command help usage
 
 # OPTIONS
 

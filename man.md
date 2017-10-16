@@ -18,6 +18,8 @@
  - [slackman-cron.conf(5)](man/5/slackman-cron.conf.md)
  - [slackman.repo(5)](man/5/slackman.repo.md)
 
-### SlackMan clients
+### SlackMan D-Bus
 
+ - [slackman-service(1)](man/1/slackman-service.md)
  - [slackman-notifier(1)](man/1/slackman-notifier.md)
+ - [org.lotarproject.SlackMan(7)](man/7/org.lotarproject.SlackMan.md)
