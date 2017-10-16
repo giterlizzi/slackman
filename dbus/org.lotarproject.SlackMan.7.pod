@@ -79,7 +79,7 @@ This signal is emitted when a package is removed.
 
 =head1 SEE ALSO
 
-L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-notifier(1)>
+L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-service(1)>, L<slackman-notifier(1)>
 
 =head1 BUGS
 
