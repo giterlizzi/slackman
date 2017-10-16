@@ -846,16 +846,11 @@ sub _update_history {
 
   my ($package) = @_;
 
-  if ( $package =~ /\.(txz|tgz|tbz|tlz)/ ) {
+  my $pkg_basename = basename($package);
+  my $pkg_meta     = get_package_info($pkg_basename);
+  my $pkg_name     = $pkg_meta->{'name'};
 
-    my $pkg_basename = basename($package);
-    my $pkg_meta     = get_package_info($pkg_basename);
-
-    $package = $pkg_meta->{'name'};
-
-  }
-
-  parse_package_history($package);
+  parse_package_history($pkg_name);
 
 }
 
