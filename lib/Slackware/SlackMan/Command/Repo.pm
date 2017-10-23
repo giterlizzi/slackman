@@ -29,7 +29,6 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find       qw(pod_where);
 use File::Temp      qw(tempfile);
 use File::Basename;
 use File::Copy;
@@ -62,7 +61,7 @@ use constant COMMANDS_HELP => {
 sub call_repo_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -72,7 +71,7 @@ sub call_repo_man {
 sub call_repo_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]

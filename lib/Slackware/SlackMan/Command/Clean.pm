@@ -28,7 +28,6 @@ use Slackware::SlackMan::Utils qw(:all);
 use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -55,7 +54,7 @@ use constant COMMANDS_HELP => {
 sub call_clean_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -65,7 +64,7 @@ sub call_clean_man {
 sub call_clean_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]

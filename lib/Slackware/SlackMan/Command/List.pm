@@ -30,7 +30,7 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+
 
 use constant COMMANDS_DISPATCHER => {
 
@@ -59,7 +59,7 @@ use constant COMMANDS_HELP => {
 sub call_list_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -69,7 +69,7 @@ sub call_list_man {
 sub call_list_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]

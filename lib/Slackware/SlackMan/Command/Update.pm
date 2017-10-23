@@ -30,7 +30,6 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -57,7 +56,7 @@ use constant COMMANDS_HELP => {
 sub call_update_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -67,7 +66,7 @@ sub call_update_man {
 sub call_update_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -101,6 +100,9 @@ sub call_update_repo_packages {
 
   # Set last-metadata-update
   db_meta_set('last-metadata-update', time());
+
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedPackages', undef, undef );
 
 }
 
@@ -159,6 +161,9 @@ sub call_update_repo_changelog {
   }
 
   print "\n";
+
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedChangeLogs', undef, undef );
 
 }
 
