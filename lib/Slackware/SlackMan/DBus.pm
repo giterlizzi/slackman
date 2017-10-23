@@ -49,6 +49,10 @@ dbus_signal('PackageInstalled', [ 'string' ]);
 dbus_signal('PackageRemoved',   [ 'string' ]);
 dbus_signal('PackageUpgraded',  [ 'string' ]);
 
+# Signal for "slackman update" command
+dbus_signal('UpdatedChangeLogs', [ 'string' ]);
+dbus_signal('UpdatedPackages',   [ 'string' ]);
+
 dbus_property('version', 'string', 'read');
 dbus_property('slackware', 'string', 'read');
 
@@ -71,9 +75,18 @@ sub Notify {
 
   logger->debug("Call org.lotarproject.SlackMan.Notify method (args: action=$action,summary=$summary,body=$body)");
 
-  $self->emit_signal('PackageInstalled', $body) if ($action eq 'PackageInstalled');
-  $self->emit_signal('PackageRemoved',   $body) if ($action eq 'PackageRemoved');
-  $self->emit_signal('PackageUpgraded',  $body) if ($action eq 'PackageUpgraded');
+  my $action_to_signal = {
+    'PackageInstalled'  => 'PackageInstalled',
+    'PackageRemoved'    => 'PackageRemoved',
+    'PackageUpgraded'   => 'PackageUpgraded',
+    'UpdatedChangeLogs' => 'UpdatedChangeLogs',
+    'UpdatedPackages'   => 'UpdatedPackages',
+  };
+
+  if (defined($action_to_signal->{$action})) {
+    logger->debug(sprintf("Emit signal org.lotarproject.Slackman.%s for %s action", $action_to_signal->{$action}, $action));
+    $self->emit_signal($action_to_signal->{$action}, $body);
+  }
 
 }
 

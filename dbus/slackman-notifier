@@ -13,6 +13,7 @@ use Net::DBus::Reactor;
 use POSIX;
 use Getopt::Long qw(:config);
 use Pod::Usage;
+use FindBin;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config  qw(:all);
@@ -49,8 +50,8 @@ if ($options->{'action'}) {
 
 } else {
 
-  fork or exec('/usr/libexec/slackman/slackman-notifier --action=listner');
-  fork or exec('/usr/libexec/slackman/slackman-notifier --action=notifier');
+  fork or exec("$FindBin::Bin/slackman-notifier --action=listner");
+  fork or exec("$FindBin::Bin/slackman-notifier --action=notifier");
 
 }
 
@@ -356,14 +357,23 @@ sub action_listner {
   sub _notify_upgraded  { _notify('Upgraded',  @_) };
   sub _notify_removed   { _notify('Removed',   @_) };
 
-  $SlackMan->connect_to_signal("PackageInstalled", \&_notify_installed);
-  logger->debug('Listening to "org.lotarproject.SlackManPackageInstalled" signal');
 
-  $SlackMan->connect_to_signal("PackageUpgraded", \&_notify_upgraded);
-  logger->debug('Listening to "org.lotarproject.PackageUpgraded" signal');
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageInstalled" signal');
+  $SlackMan->connect_to_signal('PackageInstalled', \&_notify_installed);
 
-  $SlackMan->connect_to_signal("PackageRemoved", \&_notify_removed);
-  logger->debug('Listening to "org.lotarproject.PackageRemoved" signal');
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageUpgraded" signal');
+  $SlackMan->connect_to_signal('PackageUpgraded', \&_notify_upgraded);
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageRemoved" signal');
+  $SlackMan->connect_to_signal('PackageRemoved', \&_notify_removed);
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedChangeLogs" signal');
+  $SlackMan->connect_to_signal('UpdatedChangeLogs', sub { check_changelogs;
+                                                          check_security_advisories });
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedPackages" signal');
+  $SlackMan->connect_to_signal('UpdatedPackages', sub { check_upgrade() });
+
 
   my $reactor=Net::DBus::Reactor->main();
   $reactor->run();

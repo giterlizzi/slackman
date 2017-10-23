@@ -77,6 +77,14 @@ This signal is emitted when a package is upgraded.
 
 This signal is emitted when a package is removed.
 
+=head2 UpdatedChangeLogs
+
+This signal is emitted when run C<slackman update> or C<slackman update changelog> command.
+
+=head2 UpdatedPackages
+
+This signal is emitted when run C<slackman update> or C<slackman update packages> command.
+
 =head1 SEE ALSO
 
 L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-service(1)>, L<slackman-notifier(1)>
