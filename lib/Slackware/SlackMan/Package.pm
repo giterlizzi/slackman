@@ -235,7 +235,7 @@ sub package_install {
   my $package = shift;
 
   installpkg($package);
-  _update_history($package);
+  _update_history($package, 'install');
 
 }
 
@@ -252,7 +252,7 @@ sub package_upgrade {
      $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
   upgradepkg($package_cmd, 'reinstall', 'install-new');
-  _update_history($package);
+  _update_history($package, 'upgrade');
 
 }
 
@@ -262,7 +262,7 @@ sub package_remove {
   my $package = shift;
 
   removepkg($package);
-  _update_history($package);
+  _update_history($package, 'remove');
 
 }
 
@@ -844,7 +844,12 @@ sub package_search_files {
 
 sub _update_history {
 
-  my ($package) = @_;
+  my ($package, $action) = @_;
+
+  if ( $action eq 'remove' ) {
+    parse_package_history($package);
+    return 0;
+  }
 
   my $pkg_basename = basename($package);
   my $pkg_meta     = get_package_info($pkg_basename);
