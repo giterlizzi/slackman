@@ -100,7 +100,9 @@ my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
 
-exit show_version() if $slackman_opts->{'version'};
+exit show_man()         if ($slackman_opts->{'man'} && ! $command);
+exit show_version()     if ($slackman_opts->{'version'});
+exit show_help()    unless ($command);
 
 # Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
@@ -109,8 +111,6 @@ $SIG{INT} = sub {
 };
 
 sub run {
-
-  show_help() unless ($command);
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
   my @skip_lock     = qw(update.history update.installed log.tail);
@@ -231,6 +231,16 @@ sub run {
 sub show_version {
   print sprintf("SlackMan - Slackware Package Manager %s\n\n", $VERSION);
   exit(0);
+}
+
+
+sub show_man {
+
+ pod2usage(
+    -exitval => 0,
+    -verbose => 2
+  );
+
 }
 
 
