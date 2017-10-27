@@ -150,7 +150,7 @@ sub check_upgrade {
 
   return unless ( keys %{$upgrades} );
 
-  foreach my $package ( keys %{$upgrades} ) {
+  foreach my $package ( sort keys %{$upgrades} ) {
 
     push(@pkgs, $package);
 
