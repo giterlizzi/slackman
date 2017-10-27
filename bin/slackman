@@ -7,22 +7,6 @@ use 5.010;
 
 use lib qw(/usr/share/slackman-libsupport/lib);
 
-my @required_modules = qw(DBD::SQLite Net::DBus IO::Socket::SSL Net::SSLeay);
-my @missing_modules  = ();
-
-push(@required_modules, 'HTTP::Tiny') if ($] < 5.014000);
-
-foreach (@required_modules) {
-  push(@missing_modules, $_) unless ( eval("require $_;") );
-}
-
-if (@missing_modules) {
-  print "\nATTENTION! Missing required Perl modules:\n\n";
-  print "  * $_\n" foreach (@missing_modules);
-  print "\n";
-  exit(255);
-}
-
 require Slackware::SlackMan::Command;
 
 exit Slackware::SlackMan::Command->run();
