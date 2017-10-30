@@ -5,6 +5,9 @@ use warnings;
 use Test::More;
 use File::Basename;
 
+# Use slackman-libsupport libraries if available
+use lib '/usr/share/slackman-libsupport/lib';
+
 plan tests => 8;
 
 BEGIN {
