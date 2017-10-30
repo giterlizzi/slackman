@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --download-only --summary --no-deps --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,7 +239,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -258,7 +258,7 @@ _slackman_install() {
 
 _slackman_reinstall() {
 
-  local slackman_options="--repo --exclude --download-only --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --category --no-gpg-check --no-md5-check"
 
   __slackman_complete_options "$cur" "$prev" && return
 
