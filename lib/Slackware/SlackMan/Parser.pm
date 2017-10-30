@@ -53,7 +53,7 @@ sub parse_changelog {
 
   return(0) unless(download_repository_metadata($repository, 'changelog', \&$callback_status));
 
-  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $changelog_file = sprintf("%s/ChangeLog.txt", $repo->{'cache_directory'});
   return(0) unless (-e $changelog_file);
 
   my $changelog_contents = file_read($changelog_file);
@@ -249,7 +249,7 @@ sub parse_checksums {
 
   return(0) unless(download_repository_metadata($repo->{'id'}, 'checksums', \&$callback_status));
 
-  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf{'directory'}->{'cache'}, $repo->{'id'});
+  my $checksums_file = sprintf("%s/CHECKSUMS.md5", $repo->{'cache_directory'});
   return(0) unless (-e $checksums_file);
 
   my $checksums_contents = file_read($checksums_file);
@@ -277,7 +277,7 @@ sub parse_packages {
   my $repository = $repo->{'id'};
   my $mirror     = $repo->{'mirror'};
 
-  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $packages_file = sprintf("%s/PACKAGES.TXT", $repo->{'cache_directory'});
 
   return(0) unless (-e $packages_file);
 
@@ -366,7 +366,7 @@ sub parse_manifest {
 
   return(0) unless(download_repository_metadata($repository, 'manifest', \&$callback_status));
 
-  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $manifest_file = sprintf("%s/MANIFEST.bz2", $repo->{'cache_directory'});
   return(0) unless(-e $manifest_file);
 
   my $manifest_input = file_read($manifest_file);

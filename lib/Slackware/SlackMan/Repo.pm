@@ -95,9 +95,12 @@ sub load_repositories {
         $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
       }
 
+      my $repo_cache_directory = $repo_id;
+         $repo_cache_directory =~ s|\:|/|g;
+
       $repo_cfg->{'priority'}       += 0;
       $repo_cfg->{'id'}              = $repo_id;
-      $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id);
+      $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_cache_directory);
 
       $repository{"$config_name:$repo"} = $repo_cfg;
 
@@ -227,7 +230,7 @@ sub download_repository_metadata {
   my ($repo_id, $metadata, $callback_status) = @_;
 
   my $metadata_url  = $repository{$repo_id}->{$metadata};
-  my $metadata_file = sprintf("%s/%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_id, basename($metadata_url));
+  my $metadata_file = sprintf("%s/%s", $repository{$repo_id}->{cache_directory}, basename($metadata_url));
 
   unless($metadata_url) {
     logger->debug(sprintf('[REPO/%s] "%s" metadata disabled', $repo_id, $metadata));

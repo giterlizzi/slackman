@@ -328,7 +328,7 @@ sub call_repo_info {
   print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
   print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{priority});
   print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
-  print sprintf("%-15s : %s/%s\n",  "Directory",     $slackman_conf{directory}->{cache}, $repo_data->{id});
+  print sprintf("%-15s : %s/%s\n",  "Directory",     $repo_data->{cache_directory});
 
   print "\nRepository URLs :\n";
 
