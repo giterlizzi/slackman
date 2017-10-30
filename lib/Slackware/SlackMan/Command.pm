@@ -3,7 +3,6 @@ package Slackware::SlackMan::Command;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
