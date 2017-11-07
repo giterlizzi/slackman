@@ -45,16 +45,20 @@ sub new {
 
 dbus_no_strict_exports();
 
+# Signal with Installed/Removed/Upgraded packages
 dbus_signal('PackageInstalled', [ 'string' ]);
 dbus_signal('PackageRemoved',   [ 'string' ]);
 dbus_signal('PackageUpgraded',  [ 'string' ]);
 
 # Signal for "slackman update" command
-dbus_signal('UpdatedChangeLogs', [ 'string' ]);
-dbus_signal('UpdatedPackages',   [ 'string' ]);
+dbus_signal('UpdatedChangeLog', [ 'string' ]);
+dbus_signal('UpdatedPackages',  [ 'string' ]);
+dbus_signal('UpdatedManifest',  [ 'string' ]);
 
-dbus_property('version', 'string', 'read');
+# Slackware and SlackMan version properties
+dbus_property('version',   'string', 'read');
 dbus_property('slackware', 'string', 'read');
+
 
 dbus_method('ChangeLog',    [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
 dbus_method('SecurityFix',  [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
@@ -66,6 +70,7 @@ dbus_method('InstallPkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names
 dbus_method('RemovePkg',    [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_name' ] });
 dbus_method('UpgradePkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
 
+# SlackMan notification
 dbus_method('Notify', [ 'string', 'string', 'string' ], [], { no_return => 1, param_names => [ 'action', 'summary', 'body' ] });
 
 
@@ -76,16 +81,22 @@ sub Notify {
   logger->debug("Call org.lotarproject.SlackMan.Notify method (args: action=$action,summary=$summary,body=$body)");
 
   my $action_to_signal = {
+
     'PackageInstalled'  => 'PackageInstalled',
     'PackageRemoved'    => 'PackageRemoved',
     'PackageUpgraded'   => 'PackageUpgraded',
-    'UpdatedChangeLogs' => 'UpdatedChangeLogs',
+
+    'UpdatedChangeLog'  => 'UpdatedChangeLog',
     'UpdatedPackages'   => 'UpdatedPackages',
+    'UpdatedManifest'   => 'UpdatedManifest',
+
   };
 
   if (defined($action_to_signal->{$action})) {
     logger->debug(sprintf("Emit signal org.lotarproject.Slackman.%s for %s action", $action_to_signal->{$action}, $action));
     $self->emit_signal($action_to_signal->{$action}, $body);
+  } else {
+    logger->error("Unknown action: $action");
   }
 
 }

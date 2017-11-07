@@ -367,9 +367,9 @@ sub action_listner {
   logger->debug('Listening to "org.lotarproject.SlackMan.PackageRemoved" signal');
   $SlackMan->connect_to_signal('PackageRemoved', \&_notify_removed);
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedChangeLogs" signal');
-  $SlackMan->connect_to_signal('UpdatedChangeLogs', sub { check_changelogs;
-                                                          check_security_advisories });
+  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedChangeLog" signal');
+  $SlackMan->connect_to_signal('UpdatedChangeLog', sub { check_changelogs;
+                                                         check_security_advisories });
 
   logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedPackages" signal');
   $SlackMan->connect_to_signal('UpdatedPackages', sub { check_upgrade() });

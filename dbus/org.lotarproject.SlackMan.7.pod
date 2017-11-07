@@ -77,13 +77,17 @@ This signal is emitted when a package is upgraded.
 
 This signal is emitted when a package is removed.
 
-=head2 UpdatedChangeLogs
+=head2 UpdatedChangeLog
 
 This signal is emitted when run C<slackman update> or C<slackman update changelog> command.
 
 =head2 UpdatedPackages
 
 This signal is emitted when run C<slackman update> or C<slackman update packages> command.
+
+=head2 UpdatedManifest
+
+This signal is emitted when run C<slackman update manifest> command.
 
 =head1 SEE ALSO
 
