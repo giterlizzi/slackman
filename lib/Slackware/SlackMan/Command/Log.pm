@@ -48,8 +48,6 @@ use constant COMMANDS_HELP => {
 };
 
 
-my $log_file = $slackman_conf{'logger'}->{'file'};
-
 sub call_log_man {
 
  pod2usage(
@@ -73,6 +71,8 @@ sub call_log_help {
 
 sub call_log_clean {
 
+  my $log_file = $slackman_conf{'logger'}->{'file'};
+
   if (confirm('Are you sure? [Y/N]')) {
 
     STDOUT->printflush("\nClean $log_file...");
@@ -86,6 +86,8 @@ sub call_log_clean {
 }
 
 sub call_log_tail {
+
+  my $log_file = $slackman_conf{'logger'}->{'file'};
 
   system("tail -f $log_file");
   exit(0);
