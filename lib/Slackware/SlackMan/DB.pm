@@ -43,7 +43,7 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Config;
 
-use constant SLACKMAN_SCHEMA_VERSION => 2;
+use constant SLACKMAN_SCHEMA_VERSION => 3;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -106,8 +106,7 @@ use constant SLACKMAN_MANIFEST_TABLE => qq/CREATE TABLE IF NOT EXISTS "manifest"
   "arch"              VARCHAR,
   "build"             INTEGER,
   "tag"               VARCHAR,
-  "directory"         VARCHAR,
-  "file"              VARCHAR)/;
+  "files"             TEXT)/;
 
 use constant SLACKMAN_MANIFEST_INDEX => qq/CREATE INDEX IF NOT EXISTS "manifest_idx" ON "manifest" (
   "directory"         ASC,
@@ -247,10 +246,25 @@ sub dbh {
   $dbh->do('PRAGMA temp_store   = MEMORY');
   $dbh->do('PRAGMA cache_size   = 800000');
 
+
   $dbh->sqlite_create_function('version_compare', -1, sub {
     my ($old, $new) = @_;
     return versioncmp($old, $new);
   });
+
+
+  # Implement REGEXP function
+  # (see "The LIKE, GLOB, REGEXP, and MATCH operators" in https://sqlite.org/lang_expr.html)
+  #
+  $dbh->sqlite_create_function('regexp', -1, sub {
+
+    my ($string, $pattern) = @_;
+    my ($matches) = ( $string =~ /$pattern/ );
+
+    return $matches;
+
+  });
+
 
   logger->debug("Connected to $dsn");
 
