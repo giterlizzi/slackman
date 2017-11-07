@@ -190,11 +190,13 @@ sub call_package_info {
 
       print sprintf("\n%-15s :\n\n", 'File lists');
 
-      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY directory, file');
+      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY files');
       $sth->execute($row->{'package'});
 
-      while(my $row = $sth->fetchrow_hashref()) {
-        print sprintf("    %s%s\n", $row->{'directory'}, ($row->{'file'} || ''));
+      my $row = $sth->fetchrow_hashref();
+
+      foreach my $file ( split(/\n/, $row->{'files'}) ) {
+        print sprintf("    %s\n", $file);
       }
 
     }
@@ -480,7 +482,7 @@ sub call_package_install {
 
       print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
-        $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
+        $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -878,10 +880,15 @@ sub call_package_file_search {
 
   my $rows = package_search_files($file);
 
-  foreach my $row (@$rows) {
+  foreach my $row ( @{$rows} ) {
 
-    print sprintf("%s/@{[ BOLD ]}%s@{[ RESET ]}: %s (%s)\n",
-      $row->{'directory'}, $row->{'file'}, $row->{'package'}, $row->{'repository'});
+    my @files = split(/\n/, $row->{'files'});
+
+    foreach my $path (@files) {
+      if ( $path =~ /$file$/ ) {
+        print sprintf("%-50s: %s (%s)\n", $path, $row->{'package'}, $row->{'repository'});
+      }
+    }
 
   }
 
@@ -985,7 +992,7 @@ sub call_package_new_config {
       $package = "(" . $manifest->[0]->{'package'} . ")";
     }
 
-    print "  * $new_config_file\t\t$package\n";
+    print sprintf("  * %-50s %s\n", $new_config_file, $package);
 
   }
 
