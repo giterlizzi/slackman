@@ -815,27 +815,10 @@ sub package_search_files {
 
   my ($file) = @_;
 
-  $file =~ s/\*/%/g;
+  $file = "/$file" unless ($file =~ /^\//);
 
-  my $dir = '';
-
-  my $query = qq{ SELECT *, directory || '/' || file AS fullpath FROM manifest WHERE file LIKE ? };
-
-  if ($file =~ /\//) {
-
-    $dir    = dirname($file);
-    $file   = basename($file);
-    $query .= ' AND directory LIKE ?';
-
-  }
-
-  my $sth = $dbh->prepare($query);
-
-  if ($dir) {
-    $sth->execute($file, $dir);
-  } else {
-    $sth->execute($file);
-  }
+  my $sth = $dbh->prepare('SELECT * FROM manifest WHERE files REGEXP(?)');
+  $sth->execute(qr/$file/);
 
   return $sth->fetchall_arrayref({});
 
