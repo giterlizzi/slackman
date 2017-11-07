@@ -29,7 +29,6 @@ use IO::Handle;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
-use Module::Load;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
@@ -158,7 +157,7 @@ sub run {
 
   # Load Commands Modules
   foreach (@command_modules) {
-    load "Slackware::SlackMan::Command::$_";
+    eval "require Slackware::SlackMan::Command::$_";
   }
 
   # Commands dispatch table
