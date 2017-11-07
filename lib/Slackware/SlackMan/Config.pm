@@ -41,7 +41,7 @@ sub load_config {
 
   # Set root directory for SlackMan (configuration, database, etc)
   my $root = '';
-    $root = $ENV{ROOT} if($ENV{ROOT});
+     $root = $ENV{ROOT} if($ENV{ROOT});
 
   my $config_file = "$root/etc/slackman/slackman.conf";
      $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'});
@@ -60,18 +60,19 @@ sub load_config {
   my %slackman_conf = read_config($config_file);
 
   # Set default slackman directories
-  $slackman_conf{'directory'}->{'root'}  ||= $root;
-  $slackman_conf{'directory'}->{'conf'}  ||= "$root/etc/slackman";
-  $slackman_conf{'directory'}->{'repos'} ||= "$root/etc/slackman/repos.d";
-  $slackman_conf{'directory'}->{'log'}   ||= "$root/var/log";
-  $slackman_conf{'directory'}->{'lib'}   ||= "$root/var/lib/slackman";
-  $slackman_conf{'directory'}->{'cache'} ||= "$root/var/cache/slackman";
-  $slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
+  $slackman_conf{'directory'}->{'root'}    ||= $root;
+  $slackman_conf{'directory'}->{'conf'}    ||= "$root/etc/slackman";
+  $slackman_conf{'directory'}->{'repos'}   ||= "$root/etc/slackman/repos.d";
+  $slackman_conf{'directory'}->{'renames'} ||= "$root/etc/slackman/renames.d";
+  $slackman_conf{'directory'}->{'log'}     ||= "$root/var/log";
+  $slackman_conf{'directory'}->{'lib'}     ||= "$root/var/lib/slackman";
+  $slackman_conf{'directory'}->{'cache'}   ||= "$root/var/cache/slackman";
+  $slackman_conf{'directory'}->{'lock'}    ||= "$root/var/lock";
 
   # Set default logger values
-  $slackman_conf{'logger'}->{'level'}    ||= 'debug';
-  $slackman_conf{'logger'}->{'file'}     ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
-  $slackman_conf{'logger'}->{'category'} ||= '';
+  $slackman_conf{'logger'}->{'level'}      ||= 'debug';
+  $slackman_conf{'logger'}->{'file'}       ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
+  $slackman_conf{'logger'}->{'category'}   ||= '';
 
   # Set default value for color output
   $slackman_conf{'main'}->{'color'} ||= 'always';
@@ -84,6 +85,30 @@ sub load_config {
 
   # Set config file location
   $slackman_conf{'config'}->{'file'} = $config_file;
+
+  # Set default renames
+  $slackman_conf{'renames'} = ();
+
+  # Collect renames config files
+  if ( -d $slackman_conf{'directory'}->{'renames'} ) {
+
+    my %global_renames = ();
+
+    my @renames_files = grep { -f } glob(sprintf('%s/*.renames', $slackman_conf{'directory'}->{'renames'}));
+
+    foreach my $renames_file (@renames_files) {
+
+      my %local_renames = read_config($renames_file);
+
+      foreach ( keys %local_renames ) {
+        $global_renames{$_} = $local_renames{$_};
+      }
+
+    }
+
+    $slackman_conf{'renames'} = \%global_renames;
+
+  }
 
   return %slackman_conf;
 
