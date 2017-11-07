@@ -45,7 +45,6 @@ use constant COMMANDS_HELP => {
   'config' => \&call_config_help
 };
 
-my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_config_man {
 
@@ -68,6 +67,7 @@ sub call_config_help {
 
 }
 
+
 sub call_config {
 
   my ($config_key, $config_value) = @_;
@@ -87,6 +87,9 @@ sub call_config {
   # Get or display all SlackMan config values
 
   foreach my $section (sort keys %slackman_conf) {
+
+    next if ($section eq 'renames'); # Skip renames !!!
+
     foreach my $parameter (sort keys %{$slackman_conf{$section}}) {
 
       my $param_value = $slackman_conf{$section}->{$parameter};
