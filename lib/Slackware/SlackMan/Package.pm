@@ -457,6 +457,12 @@ sub package_check_install {
 
       next unless ($dependency_row->{'name'});
 
+      # Check dependency renamed package or alias
+      if ( defined($slackman_conf{'renames'}->{$pkg_required}) ) {
+        logger->debug(sprintf('Found renamed package (from: %s, to: %s)', $pkg_required, $slackman_conf{'renames'}->{$pkg_required}));
+        $pkg_required = $slackman_conf{'renames'}->{$pkg_required};
+      }
+
       unless (package_info($pkg_required)) {
 
         $dependency_pkgs->{$pkg_required} = $dependency_row;
