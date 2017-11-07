@@ -380,7 +380,7 @@ sub parse_manifest {
   $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
 
   my @columns = ('repository', 'name', 'package', 'version',
-                 'arch', 'build', 'tag', 'directory', 'file');
+                 'arch', 'build', 'tag', 'files');
   my @values  = ();
 
   my $i = 0;
@@ -400,6 +400,7 @@ sub parse_manifest {
     my $arch               = $pkg_info->{'arch'};
     my $build              = $pkg_info->{'build'};
     my $tag                = $pkg_info->{'tag'};
+    my @files              = ();
 
     foreach my $line (@lines) {
 
@@ -416,22 +417,13 @@ sub parse_manifest {
       my ($directory, $file);
 
       $path = "/$path";
-
-      if ($permission =~ /^d/) {
-        $directory = $path;
-        $file      = undef;
-      }
-
-      if ($permission =~ /^-/) {
-        $file      = basename($path);
-        $directory = dirname($path);
-      }
-
-      my @row = ( $repository, $name, $package, $version, $arch, $build, $tag,
-                  $directory, $file );
-      push(@values, \@row);
+      push(@files, $path);
 
     }
+
+    my @row = ( $repository, $name, $package, $version, $arch, $build, $tag,
+                join("\n", @files) );
+    push(@values, \@row);
 
   }
 
