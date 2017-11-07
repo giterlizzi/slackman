@@ -190,6 +190,9 @@ sub call_update_repo_manifest {
 
   print "\n";
 
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedManifest', undef, undef );
+
 }
 
 sub call_update_history {
