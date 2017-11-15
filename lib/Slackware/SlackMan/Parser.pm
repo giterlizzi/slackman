@@ -348,6 +348,7 @@ sub parse_packages {
 
   # Delete repository manifest data
   $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
+  db_meta_delete("manifest-last-update.$repository");
 
   db_compact();
 
