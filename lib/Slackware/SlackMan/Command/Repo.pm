@@ -47,6 +47,8 @@ use constant COMMANDS_DISPATCHER => {
   'repo.add'     => \&call_repo_add,
   'repo.config'  => \&call_repo_config,
 
+  'list.repo'    => \&call_repo_list, # Alias
+
 };
 
 use constant COMMANDS_MAN => {

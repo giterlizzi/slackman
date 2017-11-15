@@ -177,7 +177,7 @@ sub call_list_installed {
     print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
       $row->{'name'},
       $row->{'arch'},
-      ( $row->{version} . '-' . $row->{build} ),
+      ( $row->{'version'} . '-' . $row->{'build'} ),
       $row->{'tag'},
       filesize_h(($row->{'size_compressed'} * 1024), 1, 1),
       $row->{'timestamp'});
@@ -339,6 +339,7 @@ slackman-list - List packages and other info
   slackman list obsoletes
   slackman list orphan
   slackman list variables
+  slackman list repo
   slackman list help
 
 =head1 DESCRIPTION
@@ -349,6 +350,7 @@ B<slackman list> display information of:
     * available packages
     * orphan packages
     * obsolete packages
+    * available repositories
 
 =head1 COMMANDS
 
@@ -357,6 +359,7 @@ B<slackman list> display information of:
   slackman list packages       List available packages
   slackman list orphan         List orphan packages installed from unknown repository
   slackman list variables      List variables for ".repo" configurations
+  slackman list repo           List available repositories (alias of "slackman repo list" command)
 
 =head1 OPTIONS
 
