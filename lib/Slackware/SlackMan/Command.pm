@@ -34,6 +34,16 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
 use Slackware::SlackMan::Repo  qw(:all);
 
+# SlacMan Command Modules
+use Slackware::SlackMan::Command::Clean;
+use Slackware::SlackMan::Command::Config;
+use Slackware::SlackMan::Command::DB;
+use Slackware::SlackMan::Command::List;
+use Slackware::SlackMan::Command::Log;
+use Slackware::SlackMan::Command::Package;
+use Slackware::SlackMan::Command::Update;
+use Slackware::SlackMan::Command::Repo;
+
 use Getopt::Long qw(:config);
 
 GetOptions( $slackman_opts,
@@ -51,6 +61,7 @@ GetOptions( $slackman_opts,
   'force|f',
   'help|h',
   'limit=i',
+  'local',
   'man',
   'new-packages',
   'no-deps',
@@ -89,7 +100,6 @@ $ENV{ANSI_COLORS_DISABLED} = 1 if ($slackman_opts->{'color'} eq 'never');
 # Disable color if slackman STDOUT are in "pipe" (eg. slackman changelog --details | more)
 $ENV{ANSI_COLORS_DISABLED} = 1 unless (-t STDOUT);
 
-my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
 my $lock_check  = get_lock_pid();
 my $command     = $ARGV[0] || undef;
@@ -111,14 +121,14 @@ $SIG{INT} = sub {
 sub run {
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
-  my @skip_lock     = qw(update.history update.installed log.tail);
+  my @skip_lock     = qw(log.tail);
 
   my $cmd  = join( " ", $0, @ARGV );
   my $opts = join( ', ', map { $_ . '=' . $slackman_opts->{$_} } keys %$slackman_opts);
 
   logger->debug(sprintf('Call "%s" command (cmd: "%s", opts: "%s", pid: %s)', $command, $cmd, $opts, $$)) if ($command);
 
-  # Check running slackman instance and block certain commands
+  # Check running slackman instance and block commands in blacklist
   #
   # NOTE: only informational commands are available
   #
@@ -148,16 +158,11 @@ sub run {
     my $repo  = $slackman_opts->{'repo'};
        $repo .= ':' unless ($repo =~ /:/);
 
-    unless (/^$repo/ ~~ @repos) {
-      print "Unknown repository!\n\n";
+    unless ( grep(/^$repo/, @repos) ) {
+      print sprintf("%s Unknown repository!\n\n", colored('WARNING', 'yellow bold'));
       exit(1);
     }
 
-  }
-
-  # Load Commands Modules
-  foreach (@command_modules) {
-    eval "require Slackware::SlackMan::Command::$_";
   }
 
   # Commands dispatch table
@@ -168,6 +173,8 @@ sub run {
 
   my $commands_man  = {};
   my $commands_help = {};
+
+  my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
   foreach (@command_modules) {
 
