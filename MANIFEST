@@ -34,6 +34,7 @@ t/manifest.t
 t/pod-coverage.t
 t/pod.t
 etc/Makefile
+etc/renames.d/00-default.renames
 etc/repos.d/extra/README.md
 etc/repos.d/extra/repo.sample
 etc/repos.d/extra/alienbob.repo

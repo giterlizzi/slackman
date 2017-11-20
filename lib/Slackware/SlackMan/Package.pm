@@ -483,6 +483,8 @@ sub package_check_updates {
 
   my (@update_packages) = @_;
 
+  # TODO Add check for renamed package
+
   my $updatable_packages_query = qq/
     SELECT packages.name,
            packages.arch,
@@ -490,6 +492,8 @@ sub package_check_updates {
            packages.package,
            packages.package AS new_package,
            history.package  AS old_package,
+           packages.name    AS new_name,
+           history.name     AS old_name,
            packages.version AS new_version,
            history.version  AS old_version,
            history.build    AS old_build,
@@ -505,7 +509,7 @@ sub package_check_updates {
            packages.location,
            packages.checksum
       FROM packages, history
-     WHERE history.name   = packages.name
+     WHERE ( history.name = packages.name %s )
        AND history.status = "installed"
        AND old_version_build != new_version_build
        AND version_compare(old_version_build, new_version_build) < 0
@@ -531,13 +535,14 @@ sub package_check_updates {
                        WHERE history.status = "installed"
                          AND history.name = packages.name)/;
 
-  my $arch           = get_arch();
-  my @query_filters  = ();
-  my $update_pkgs    = {};  # Updatable packages
-  my $install_pkgs   = {};  # Required packages to install
-  my $option_repo    = $slackman_opts->{'repo'};
-  my $option_exclude = $slackman_opts->{'exclude'};
-  my $option_tag     = $slackman_opts->{'tag'};
+  my $arch            = get_arch();
+  my @query_filters   = ();
+  my @renamed_filters = ();
+  my $update_pkgs     = {};  # Updatable packages
+  my $install_pkgs    = {};  # Required packages to install
+  my $option_repo     = $slackman_opts->{'repo'};
+  my $option_exclude  = $slackman_opts->{'exclude'};
+  my $option_tag      = $slackman_opts->{'tag'};
 
   # Exclude package
   if ($option_exclude) {
@@ -548,6 +553,15 @@ sub package_check_updates {
   # Filter installed package with tag
   if ($option_tag) {
     push(@query_filters, qq/history.tag = "$option_tag"/);
+  }
+
+  foreach ( keys %{$slackman_conf{'renames'}} ) {
+
+    my $old_package_name = $_;
+    my $new_package_name = $slackman_conf{'renames'}->{$_};
+
+    push(@renamed_filters, qq/(history.name = "$old_package_name" AND packages.name = "$new_package_name")/);
+
   }
 
   # Filter repository
@@ -591,16 +605,25 @@ sub package_check_updates {
 
   }
 
-  $updatable_packages_query = sprintf($updatable_packages_query, join(' AND ', @query_filters));
+  # Renamed packages filter
+  my $renamed_filters = '';
+  my $query_filters   = join(' AND ', @query_filters);
+
+  if (@renamed_filters) {
+    $renamed_filters = sprintf(" OR (%s) ", join(' OR ', @renamed_filters));
+  }
+
+  # Build the final query
+  $updatable_packages_query = sprintf($updatable_packages_query, $renamed_filters, $query_filters);
 
   my $sth = $dbh->prepare($updatable_packages_query);
   $sth->execute();
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    next if (($row->{old_priority} > $row->{new_priority}) && ! $slackman_opts->{'no-priority'});
+    next if (($row->{'old_priority'} > $row->{'new_priority'}) && ! $slackman_opts->{'no-priority'});
 
-    $update_pkgs->{$row->{name}} = $row;
+    $update_pkgs->{ $row->{'name'} } = $row;
 
     # Skip dependency check
     next if ($slackman_opts->{'no-deps'});

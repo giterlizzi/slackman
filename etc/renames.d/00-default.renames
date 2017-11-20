@@ -1,0 +1,12 @@
+# Renamed or replaced Slackware Packages
+
+# Syntax:
+#
+# old package name = new package name
+
+
+# Added in Slackware 15.0
+#
+pip = python-pip
+
+
