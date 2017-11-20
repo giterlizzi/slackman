@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,7 +239,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check --local"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -317,7 +317,7 @@ _slackman_list() {
     return 0
   fi
 
-  local subcommands="installed obsoletes removed upgraded packages orphan variables"
+  local subcommands="installed obsoletes removed upgraded packages orphan variables repo"
   __slackman_subcommands "$subcommands" && return
   COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
 
