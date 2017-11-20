@@ -46,9 +46,9 @@ my $logger_conf = $slackman_conf{'logger'};
 my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
     $is_require, $hints, $bitmask, $hinthash) = caller(0);
 
-our $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
-                                                 'level'    => $logger_conf->{'level'},
-                                                 'category' => $subroutine );
+our $logger = Slackware::SlackMan::Logger->new( 'file'     => $logger_conf->{'file'},
+                                                'level'    => $logger_conf->{'level'},
+                                                'category' => $subroutine );
 
 # "die" signal trap
 $SIG{'__DIE__'} = sub {

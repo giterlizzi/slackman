@@ -37,7 +37,7 @@ use constant CRITICAL  => 2;
 use constant ERROR     => 3;
 use constant WARNING   => 4;
 
-sub init {
+sub new {
 
   my $class  = shift;
   my $self   = {};
@@ -60,7 +60,7 @@ sub get_logger {
   my ($category) = @_;
   my $params = $self->{params};
 
-  return Slackware::SlackMan::Logger->init(
+  return Slackware::SlackMan::Logger->new(
     'file'     => $params->{'file'},
     'category' => $category,
     'level'    => $params->{'level'}
@@ -83,7 +83,7 @@ sub log {
   return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
 
   unless(open(LOG, '>>', $file)) {
-    open(LOG, '>&STDERR'); # Fallback to STDERR
+    open(LOG, '>&', \*STDERR); # Fallback to STDERR
   }
 
   LOG->autoflush(1);
