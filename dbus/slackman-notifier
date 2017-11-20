@@ -5,7 +5,7 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
-use lib qw(/usr/share/slackman-libsupport/lib);
+use lib qw(/usr/share/slackman/lib);
 
 use Net::DBus;
 use Net::DBus::Reactor;

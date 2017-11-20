@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use lib qw(/usr/share/slackman-libsupport/lib);
+use lib qw(/usr/share/slackman/lib);
 
 use Getopt::Long qw(:config);
 use Pod::Usage;
