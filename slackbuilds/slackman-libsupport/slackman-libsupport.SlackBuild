@@ -80,8 +80,8 @@ mkdir -p $TMP $PKG $OUTPUT
 cd $TMP
 rm -rf $PRGNAM-$VERSION
 
-SLACKMAN_PERL5LIBS=$PKG/usr/share/$PRGNAM/lib
-SLACKMAN_PERL5PREFIX=$PKG/usr/share/$PRGNAM/foo # Will be removed
+SLACKMAN_PERL5LIBS=$PKG/usr/share/slackman/lib
+SLACKMAN_PERL5PREFIX=$PKG/usr/share/slackman/foo # Will be removed
 
 MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
 
@@ -211,7 +211,7 @@ MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
 
 ) || exit 1
 
-rm -rf $PKG/usr/share/$PRGNAM/foo
+rm -rf $PKG/usr/share/slackman/foo
 
 find $PKG -print0 | xargs -0 file | grep -e "executable" -e "shared object" | grep ELF \
   | cut -f 1 -d : | xargs strip --strip-unneeded 2> /dev/null || true
