@@ -203,6 +203,7 @@ sub uniq {
   return grep { !$seen{$_}++ } @_;
 }
 
+
 sub ldd {
 
   my ($file) = @_;
@@ -213,6 +214,7 @@ sub ldd {
               ( split( /=>|\n/, qx(ldd $file 2>/dev/null) ) );
 
 }
+
 
 sub progress_bar {
 
@@ -234,6 +236,7 @@ sub progress_bar {
     $got_h, $total_h;
 
 }
+
 
 sub datetime_h {
 
@@ -269,6 +272,7 @@ sub datetime_h {
 
 }
 
+
 sub filesize_h {
 
   my ($size, $decimal, $padding) = @_;
@@ -293,6 +297,7 @@ sub filesize_h {
   return $size_h;
 
 }
+
 
 sub datetime_calc {
 
@@ -320,6 +325,7 @@ sub datetime_calc {
 
 }
 
+
 sub file_read {
 
   my ($filename) = @_;
@@ -334,6 +340,7 @@ sub file_read {
 
 }
 
+
 sub file_write {
 
   my ($filename, $content) = @_;
@@ -345,6 +352,7 @@ sub file_write {
   return;
 
 }
+
 
 sub file_append {
 
@@ -360,6 +368,7 @@ sub file_append {
 
 }
 
+
 sub file_handler {
 
   my ($filename, $mode) = @_;
@@ -369,6 +378,7 @@ sub file_handler {
   return $fh;
 
 }
+
 
 sub download_file {
 
@@ -411,6 +421,7 @@ sub download_file {
 
 }
 
+
 sub get_last_modified {
 
   my ($url) = @_;
@@ -444,6 +455,7 @@ sub get_last_modified {
 
 }
 
+
 sub trim {
 
   my $string = shift;
@@ -453,6 +465,7 @@ sub trim {
   return $string;
 
 }
+
 
 sub confirm {
 
@@ -470,6 +483,7 @@ sub confirm {
 
 }
 
+
 sub confirm_choice {
 
   my ($prompt, $regex) = @_; 
@@ -485,6 +499,7 @@ sub confirm_choice {
   return uc($answer);
 
 }
+
 
 sub changelog_date_to_time {
 
@@ -510,6 +525,7 @@ sub changelog_date_to_time {
 
 }
 
+
 sub timestamp_to_time {
 
   my ($timestamp) = @_;
@@ -518,6 +534,7 @@ sub timestamp_to_time {
   return $t->epoch;
 
 }
+
 
 sub w3c_date_to_time {
 
@@ -534,6 +551,7 @@ sub w3c_date_to_time {
   return $t->epoch();
 
 }
+
 
 sub time_to_timestamp {
 
@@ -622,9 +640,11 @@ sub timestamp_options_to_sql {
 
 }
 
+
 sub callback_status {
   STDOUT->printflush(sprintf("%s... ", shift));
 }
+
 
 sub callback_spinner {
 
@@ -637,6 +657,7 @@ sub callback_spinner {
 
 }
 
+
 sub gpg_verify {
 
   my $file = shift;
@@ -647,6 +668,7 @@ sub gpg_verify {
   return ($?) ? 0 : 1;
 
 }
+
 
 sub gpg_import_key {
 
@@ -662,9 +684,11 @@ sub gpg_import_key {
 
 }
 
+
 sub get_arch {
   return (POSIX::uname())[4];
 }
+
 
 my $slackware_release;
 
@@ -680,9 +704,11 @@ sub _get_slackware_release {
 
 }
 
+
 sub get_slackware_release {
   return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
+
 
 sub get_package_info {
 
@@ -730,6 +756,7 @@ sub get_package_info {
 
 }
 
+
 sub md5_check {
 
   my ($file, $checksum) = @_;
@@ -742,11 +769,13 @@ sub md5_check {
 
 }
 
+
 sub check_perl_module {
   my ($module) = @_;
   return 1 if (eval "require $module");
   return 0;
 }
+
 
 sub create_lock {
 
@@ -756,6 +785,7 @@ sub create_lock {
   file_write($lock_file, $pid);
 
 }
+
 
 sub get_lock_pid {
 
@@ -774,6 +804,7 @@ sub get_lock_pid {
 
 }
 
+
 sub delete_lock {
 
   my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
@@ -781,13 +812,16 @@ sub delete_lock {
 
 }
 
+
 sub success_sign {
   return colored("\x{2713}", "green");
 }
 
+
 sub failed_sign {
   return colored("\x{2717}", "red");
 }
+
 
 1;
 __END__

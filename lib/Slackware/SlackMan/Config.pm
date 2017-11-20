@@ -168,7 +168,7 @@ sub read_config {
 
   my ($file) = @_;
 
-  open(CONFIG, "<$file") or die("Can't open config file; $?");
+  open(CONFIG, '<', $file) or die("Can't open config file; $?");
 
   my $config_string = do {
     local $/ = undef;
@@ -215,16 +215,14 @@ sub set_config {
 
   foreach (@lines) {
 
-    #if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
     if ( $_ =~ /^(\[.*\])$/ ) {
-
       $current_section = $1;
 
     } elsif ( $current_section eq $section )  {
 
-      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
+      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/ );
 
-      if ( $key and $key eq $param  ) { 
+      if ( $key and $key eq $param ) {
         $output .= "$param = $new_value\n";
         next;
       }
