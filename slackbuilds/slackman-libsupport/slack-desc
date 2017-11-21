@@ -8,11 +8,11 @@
                    |-----handy-ruler------------------------------------------------------|
 slackman-libsupport: slackman-libsupport (Perl library for SlackMan Package Manager)
 slackman-libsupport:
-slackman-libsupport:  - HTTP::Tiny (included in Perl v5.14.0)
+slackman-libsupport:  - DBD::SQLite
 slackman-libsupport:  - Net::DBus
-slackman-libsupport:  - XML::Twig
-slackman-libsupport:  - IO::Socket:SSL
-slackman-libsupport:  - Net::SSLeay
+slackman-libsupport:    - XML::Twig
+slackman-libsupport: 
+slackman-libsupport: 
 slackman-libsupport: 
 slackman-libsupport: 
 slackman-libsupport: Home-Page: https://lotarproject.github.io/slackman/

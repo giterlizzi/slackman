@@ -74,7 +74,6 @@ use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
 use Time::Seconds;
-use HTTP::Tiny;
 use Carp ();
 use File::Basename;
 use Net::DBus;
@@ -87,46 +86,6 @@ use Slackware::SlackMan::Logger;
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
-
-sub http {
-
-  my %http_options = ( 'agent' => "SlackMan/$VERSION" );
-  my $proxy_conf   = $slackman_conf{'proxy'};
-
-  if ($proxy_conf->{'enable'}) {
-
-    my $proxy_url = undef;
-
-    if ($proxy_conf->{'username'}) {
-
-      $proxy_url = sprintf("%s://%s:%s@%s:%s",
-        $proxy_conf->{'protocol'},
-        $proxy_conf->{'username'},
-        $proxy_conf->{'password'},
-        $proxy_conf->{'hostname'},
-        $proxy_conf->{'port'},
-      );
-
-    } else {
-
-      $proxy_url = sprintf("%s://%s:%s",
-        $proxy_conf->{'protocol'},
-        $proxy_conf->{'hostname'},
-        $proxy_conf->{'port'},
-      );
-
-    }
-
-    $http_options{'http_proxy'}  = $proxy_url;
-    $http_options{'https_proxy'} = $proxy_url;
-
-  }
-
-  my $http = HTTP::Tiny->new( %http_options );
-
-  return $http;
-
-}
 
 
 # SlackMan DBus interface
@@ -380,44 +339,57 @@ sub file_handler {
 }
 
 
+sub curl_cmd {
+
+  my ($curl_extra_flags) = @_;
+
+  my $curl_flags = qq/-H "User-Agent: SlackMan\/$VERSION" -C - -L -k --fail --retry 5 --retry-max-time 0/;
+
+  # Set proxy flags for cURL
+  if ($slackman_conf{'proxy'}->{'enable'}) {
+
+    if ($slackman_conf{'proxy'}->{'username'}) {
+
+      $curl_flags .= sprintf(" -x %s://%s:%s@%s:%s",
+        $slackman_conf{'proxy'}->{'protocol'},
+        $slackman_conf{'proxy'}->{'username'},
+        $slackman_conf{'proxy'}->{'password'},
+        $slackman_conf{'proxy'}->{'hostname'},
+        $slackman_conf{'proxy'}->{'port'},
+      );
+
+    } else {
+      $curl_flags .= sprintf(" -x %s://%s:%s",
+        $slackman_conf{'proxy'}->{'protocol'},
+        $slackman_conf{'proxy'}->{'hostname'},
+        $slackman_conf{'proxy'}->{'port'},
+      );
+    }
+
+  }
+
+  my $curl_cmd = "curl $curl_flags $curl_extra_flags";
+
+  logger->debug("CURL: $curl_cmd");
+
+  return $curl_cmd;
+
+}
+
+
 sub download_file {
 
   my ($url, $file, $progress) = @_;
 
-  my $total_data;
-  my $options = {};
-  my $http    = http();
+  my $extra_curl_flags = '-s';
+     $extra_curl_flags = '-#' if ($progress);
+
+  my $curl_cmd = curl_cmd("$extra_curl_flags -o $file $url");
 
   logger->info("[DOWNLOAD] Downloading $url and save into $file");
 
-  open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
-
-  print "\r" if ($progress);
-
-  $options->{data_callback} = sub {
-
-    my ($data, $response) = @_;
-    my $content_length = $response->{'headers'}->{'content-length'};
-
-    print DOWNLOAD $data; # Save chunk into file
-
-    $total_data .= $data;
-
-    STDOUT->printflush( progress_bar( $url, length($total_data), $content_length, 20, '=' ) ) if ($progress);
-
-  };
-
-  my $response = $http->request( 'GET', $url, $options );
-
-  close (DOWNLOAD);
-
-  if ( $response->{'success'} ) {
-    logger->info("[DOWNLOAD] done");
-    return $response->{status};
-  }
-
-  logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
-  return $response->{status};
+  system( $curl_cmd );
+  return $?;
 
 }
 
@@ -438,20 +410,19 @@ sub get_last_modified {
 
   }
 
-  my $http = http();
+  my $curl_cmd = curl_cmd("-s -I $url");
 
   logger->debug("Get 'Last-Modified' date of $url");
 
-  my $response = $http->request('HEAD', $url);
+  my $headers = qx{ $curl_cmd };
+  my $result  = 0;
 
-  if ( $response->{'success'} ) {
-
-    my $last_modified = $response->{'headers'}{'last-modified'};
-    return w3c_date_to_time($last_modified) if ($last_modified);
-
+  if ($headers =~ m/Last\-Modified\:\s+(.*)/) {
+    my $match = $1;
+    return w3c_date_to_time(trim($match));
   }
 
-  return 0;
+  return $result;
 
 }
 

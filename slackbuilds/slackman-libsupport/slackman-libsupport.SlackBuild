@@ -33,16 +33,10 @@ TAG=${TAG:-_lotar}
 #  - DBD::SQlite
 #  - Net::DBus
 #    - XML::Twig
-#  - HTTP::Tiny (included in Perl v5.13.9)
-#    - Net::SSLeay
-#    - IO::Socket:SSL
 #
 DBDSQLITE=1.55_03
 XMLTWIG=3.52
 NETDBUS=1.1.0
-HTTPTINY=0.070
-IOSOCKETSSL=2.051
-NETSSLEAY=1.81
 
 MAKETEST=no
 
@@ -84,27 +78,6 @@ SLACKMAN_PERL5LIBS=$PKG/usr/share/slackman/lib
 SLACKMAN_PERL5PREFIX=$PKG/usr/share/slackman/foo # Will be removed
 
 MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
-
-( PKGNAME=HTTP-Tiny-$HTTPTINY
-  PKGURL=http://search.cpan.org/CPAN/authors/id/D/DA/DAGOLDEN/$PKGNAME.tar.gz
-
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
-
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  perl Makefile.PL $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
 
 ( PKGNAME=XML-Twig-$XMLTWIG
   PKGURL=http://search.cpan.org/CPAN/authors/id/M/MI/MIROD/$PKGNAME.tar.gz
@@ -158,48 +131,6 @@ MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
   cd $PKGNAME
   chown -R root:root .
   perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
-
-( PKGNAME=Net-SSLeay-$NETSSLEAY
-  PKGURL=http://search.cpan.org/CPAN/authors/id/M/MI/MIKEM/$PKGNAME.tar.gz
-
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
-
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  echo "n" | perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
-
-( PKGNAME=IO-Socket-SSL-$IOSOCKETSSL
-  PKGURL=http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$PKGNAME.tar.gz
-
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
-
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  echo "n" | perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
   make || exit 1
   if [ "$MAKETEST" = "yes" ]; then
     make test

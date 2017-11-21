@@ -291,8 +291,6 @@ sub call_package_reinstall {
 
   exit(0) if ($slackman_opts->{'download-only'});
 
-  _check_root();
-
   if (@packages_for_pkgtool) {
 
     print "\n\n";
@@ -376,8 +374,6 @@ sub call_package_remove {
     exit(0) unless(confirm("Are you sure? [Y/N]"));
   }
 
-  _check_root();
-
   foreach my $package_path (@is_installed) {
 
     package_remove($package_path);
@@ -438,7 +434,11 @@ sub call_package_install {
       $pkg_meta->{'size_compressed'} = ((stat($package))[7] / 1024);
 
       $packages_to_install->{$pkg_meta->{'name'}} = $pkg_meta;
-      $package = $pkg_meta->{'name'};
+
+      if (package_info($pkg_meta->{'name'})) {
+        print sprintf("%s package is already installed!\n", colored($package, 'bold'));
+        exit(1);
+      }
 
     }
 
@@ -560,8 +560,6 @@ sub call_package_install {
     exit(0) if ($slackman_opts->{'download-only'});
 
   }
-
-  _check_root();
 
   if (@packages_for_pkgtool) {
 
@@ -924,8 +922,6 @@ sub call_package_upgrade {
 
   }
 
-  _check_root();
-
   if (@packages_for_pkgtool) {
 
     print "\n\n";
@@ -1253,7 +1249,7 @@ sub _packages_download {
 
     $count_downloads++;
 
-    print sprintf("%s", $pkg->{'package'});
+    print sprintf("[%03d/%03d] %-62s %s\n", $count_downloads, $num_downloads, $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
 
     my ($package_path, $package_errors) = package_download($pkg);
 
@@ -1264,8 +1260,6 @@ sub _packages_download {
     if (-e $package_path) {
       push(@$packages_for_pkgtool, $package_path);
     }
-
-    print "\n";
 
   }
 
@@ -1433,14 +1427,6 @@ sub _check_last_metadata_update {
 
 }
 
-sub _check_root {
-
-  unless ($< == 0) {
-    print sprintf("%s This action require root privilege!\n", colored('ERROR', 'bold red'));
-    exit(1);
-  }
-
-}
 
 sub _check_package_duplicates {
 

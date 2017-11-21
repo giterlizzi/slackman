@@ -693,7 +693,7 @@ sub package_download {
 
       my $download_package_status = download_file($package_url, "$package_path.part", 'progress-bar');
 
-      if ( $download_package_status == 200 ) {
+      if ( $download_package_status eq 0 ) {
 
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
         rename("$package_path.part", $package_path);
@@ -701,7 +701,7 @@ sub package_download {
       } else {
 
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-        push(@package_errors, "Download error ($download_package_status)");
+        push(@package_errors, "Download error (cURL: $download_package_status)");
 
       }
 
