@@ -175,28 +175,6 @@ sub ldd {
 }
 
 
-sub progress_bar {
-
-  my ( $url, $got, $total, $width, $char ) = @_;
-
-  $| = 1;
-
-  $width ||= 25;
-  $char  ||= '=';
-
-  my $got_h      = filesize_h($got, 1);
-  my $total_h    = filesize_h($total, 1);
-  my $num_width  = length $total_h;
-  my $file       = basename($url);
-  my $percentage = (100 * $got/+$total);
-
-  return sprintf "%-80s %3d%% [%-${width}s] %7s / %s\r",
-    $file, $percentage, $char x (($width-1)*$got/$total) . '>',
-    $got_h, $total_h;
-
-}
-
-
 sub datetime_h {
 
   my ($timestamp) = @_;
