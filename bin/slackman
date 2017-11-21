@@ -5,6 +5,11 @@ use warnings;
 
 use 5.010;
 
+unless ($< == 0) {
+  print "Only root user can run SlackMan to install, remove and upgrade Slackware packages!\n";
+  exit(1);
+}
+
 use lib qw(/usr/share/slackman/lib);
 
 require Slackware::SlackMan::Command;
