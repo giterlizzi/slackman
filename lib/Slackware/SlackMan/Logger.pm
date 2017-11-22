@@ -71,16 +71,19 @@ sub get_logger {
 sub log {
 
   my $self = shift;
+
   my ($level, $message) = @_;
 
+  $level = uc($level);
+
   my $file         = $self->{params}->{file};
-  my $logger_level = $self->{params}->{level};
+  my $logger_level = uc($self->{params}->{level});
   my $category     = $self->{params}->{category} || 'main';
   my $time         = Time::Piece->new();
 
   $category =~ s/::/./g;
 
-  return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
+  return unless ( eval($level) <= eval($logger_level) );
 
   unless(open(LOG, '>>', $file)) {
     open(LOG, '>&', \*STDERR); # Fallback to STDERR
