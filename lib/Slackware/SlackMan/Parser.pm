@@ -34,7 +34,6 @@ use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use File::Basename;
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
@@ -645,7 +644,7 @@ sub parse_variables {
   my $release_conf   = $release;
   my $release_suffix = '';
 
-  $release_conf = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
+  $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }

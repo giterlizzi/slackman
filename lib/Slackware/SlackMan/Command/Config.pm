@@ -21,8 +21,8 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Utils  qw(:all);
+use Slackware::SlackMan::Config;
+use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
@@ -75,10 +75,10 @@ sub call_config {
   # Set SlackMan config value
   if ($config_key && $config_value) {
 
-    my $slackman_conf_file = $slackman_conf{'config'}->{'file'};
+    my $slackman_conf_file = $slackman_conf->{'config'}->{'file'};
 
-    my ($section, $parameter) = split(/\./, $config_key);
-    file_write($slackman_conf_file, set_config(file_read($slackman_conf_file), "[$section]", $parameter, $config_value));
+    my $cfg = Slackware::SlackMan::Config->new($slackman_conf_file);
+       $cfg->replaceAndSave($config_key, $config_value);
 
     exit(0);
 
@@ -86,13 +86,13 @@ sub call_config {
 
   # Get or display all SlackMan config values
 
-  foreach my $section (sort keys %slackman_conf) {
+  foreach my $section (sort keys %{$slackman_conf}) {
 
     next if ($section eq 'renames'); # Skip renames !!!
 
-    foreach my $parameter (sort keys %{$slackman_conf{$section}}) {
+    foreach my $parameter (sort keys %{$slackman_conf->{$section}}) {
 
-      my $param_value = $slackman_conf{$section}->{$parameter};
+      my $param_value = $slackman_conf->{$section}->{$parameter};
       my $param_name  = "$section.$parameter";
 
       if ($config_key) {

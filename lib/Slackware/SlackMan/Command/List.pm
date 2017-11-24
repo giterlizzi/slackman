@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Parser  qw(:all);

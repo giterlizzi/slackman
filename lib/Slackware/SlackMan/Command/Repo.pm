@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
@@ -98,7 +97,7 @@ sub call_repo_add {
   my $repo_basename   = basename($repo_url);
   my $repo_name       = basename($repo_basename, '.repo');
   my $repo_content    = '';
-  my $repos_directory = $slackman_conf{'directory'}->{'repos'};
+  my $repos_directory = $slackman_conf->{'directory'}->{'repos'};
 
   if ( -e "$repos_directory/$repo_basename") {
     print colored('WARNING', 'yellow') . ": This repo config file already exists\n";
@@ -288,19 +287,20 @@ sub call_repo_info {
 
   my ($repo_id) = @_;
 
-  unless($repo_id) {
+  unless ($repo_id) {
     print "Usage: slackman repo info REPOSITORY\n";
     exit(255);
   }
 
-  my $repo_data = get_repository($repo_id);
+  update_repo_data($repo_id);
 
+  my $repo_data = get_repository($repo_id);
+use Data::Dumper;
+say Dumper($repo_data);
   unless($repo_data) {
     print "Repository not found!\n";
     exit(255);
   }
-
-  update_repo_data();
 
   my $repo_content = file_read($repo_data->{config_file});
   my $repo_desc    = '';
@@ -319,18 +319,17 @@ sub call_repo_info {
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-15s : %s\n",     "ID",            $repo_data->{id});
-  print sprintf("%-15s : %s\n",     "Name",          $repo_data->{name});
-  print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{config_file});
-
+  print sprintf("%-15s : %s\n",     "ID",            $repo_data->{'id'});
+  print sprintf("%-15s : %s\n",     "Name",          $repo_data->{'name'});
+  print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{'config_file'});
   print sprintf("\n%-15s : %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
-
-  print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{mirror});
-  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
+  print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{'mirror'});
+  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{'enabled'}) ? 'enabled' : 'disabled'));
   print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
-  print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{priority});
+  print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{'priority'});
+  print sprintf("%-15s : %s\n",     "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
   print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
-  print sprintf("%-15s : %s/%s\n",  "Directory",     $repo_data->{cache_directory});
+  print sprintf("%-15s : %s\n",     "Directory",     $repo_data->{'cache_directory'});
 
   print "\nRepository URLs :\n";
 

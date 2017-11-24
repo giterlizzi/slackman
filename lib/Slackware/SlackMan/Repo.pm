@@ -45,64 +45,66 @@ use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 
-my %repository = ();
+# Init repositories hash
+my $repository = {};
 
-load_repositories(); # Init repositories hash
+# Load repositories data
+load_repositories();
 
 sub load_repositories {
 
-  my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf{'directory'}->{'repos'}));
+  my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf->{'directory'}->{'repos'}));
 
   foreach my $file (@files) {
 
     $file =~ /(.*)\.repo/;
 
     my $config_name = basename($1);
-    my %repo_config = read_config($file);
-    my @repos       = keys %repo_config;
+    my $config_data = get_config($file);
+    my @repos       = keys %{$config_data};
 
     foreach my $repo (@repos) {
 
-      my $repo_cfg = $repo_config{$repo};
-      my $repo_id  = "$config_name:$repo";
-      my $mirror   = $repo_cfg->{'mirror'};
-         $mirror   =~ s/\/$//;
+      my $repo_config = $config_data->{$repo};
+      my $repo_id     = "$config_name:$repo";
+      my $mirror      = $repo_config->{'mirror'};
+         $mirror      =~ s/\/$//;
 
-      $repo_cfg->{'exclude'}     = parse_variables($repo_cfg->{'exclude'}) if ($repo_cfg->{'exclude'});
-      $repo_cfg->{'config_file'} = $file;
+      $repo_config->{'exclude'}     = parse_variables($repo_config->{'exclude'}) if ($repo_config->{'exclude'});
+      $repo_config->{'config_file'} = $file;
 
       # Set defaults
-      $repo_cfg->{'priority'} ||= 0;
-      $repo_cfg->{'enabled'}  ||= 0;
-      $repo_cfg->{'exclude'}  ||= undef;
+      $repo_config->{'priority'} ||= 0;
+      $repo_config->{'enabled'}  ||= 0;
+      $repo_config->{'exclude'}  ||= undef;
 
-      $repo_cfg->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_cfg->{'changelog'}));
-      $repo_cfg->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_cfg->{'packages'}));
-      $repo_cfg->{'manifest'}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_cfg->{'manifest'}));
-      $repo_cfg->{'checksums'} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_cfg->{'checksums'}));
-      $repo_cfg->{'gpgkey'}    = "$mirror/GPG-KEY"        unless(defined($repo_cfg->{'gpgkey'}));
-      $repo_cfg->{'filelist'}  = "$mirror/FILELIST.TXT"   unless(defined($repo_cfg->{'filelist'}));
+      $repo_config->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_config->{'changelog'}));
+      $repo_config->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_config->{'packages'}));
+      $repo_config->{'manifest'}  = "$mirror/MANIFEST.bz2"   unless(defined($repo_config->{'manifest'}));
+      $repo_config->{'checksums'} = "$mirror/CHECKSUMS.md5"  unless(defined($repo_config->{'checksums'}));
+      $repo_config->{'gpgkey'}    = "$mirror/GPG-KEY"        unless(defined($repo_config->{'gpgkey'}));
+      $repo_config->{'filelist'}  = "$mirror/FILELIST.TXT"   unless(defined($repo_config->{'filelist'}));
 
       my @keys_to_parse = qw( name mirror packages manifest checksums changelog
                               gpgkey filelist );
 
       foreach (@keys_to_parse) {
-        $repo_cfg->{$_} =~ s/(\{|\})//g;
-        $repo_cfg->{$_} =~ s/\$mirror/$mirror/;
+        $repo_config->{$_} =~ s/(\{|\})//g;
+        $repo_config->{$_} =~ s/\$mirror/$mirror/;
       }
 
       foreach (@keys_to_parse) {
-        $repo_cfg->{$_} = parse_variables($repo_cfg->{$_});
+        $repo_config->{$_} = parse_variables($repo_config->{$_});
       }
 
       my $repo_cache_directory = $repo_id;
          $repo_cache_directory =~ s|\:|/|g;
 
-      $repo_cfg->{'priority'}       += 0;
-      $repo_cfg->{'id'}              = $repo_id;
-      $repo_cfg->{'cache_directory'} = sprintf("%s/%s", $slackman_conf{'directory'}->{'cache'}, $repo_cache_directory);
+      $repo_config->{'priority'}       += 0;
+      $repo_config->{'id'}              = $repo_id;
+      $repo_config->{'cache_directory'} = sprintf("%s/%s", $slackman_conf->{'directory'}->{'cache'}, $repo_cache_directory);
 
-      $repository{"$config_name:$repo"} = $repo_cfg;
+      $repository->{"$config_name:$repo"} = $repo_config;
 
     }
 
@@ -115,29 +117,31 @@ sub set_repository_value {
   my ($repo_id, $key, $value) = @_;
 
   my ($repo_conf, $repo_section) = split(/:/, $repo_id);
-  my $repo_file = sprintf('%s/repos.d/%s.repo', $slackman_conf{'directory'}->{'conf'}, $repo_conf);
+  my $repo_file = sprintf('%s/repos.d/%s.repo', $slackman_conf->{'directory'}->{'conf'}, $repo_conf);
 
   unless (-f $repo_file) {
     warn qq/Repository configuration file ($repo_conf.repo) not found!\n/;
     exit(255);
   }
 
-  unless ($repository{$repo_id}) {
+  unless ($repository->{$repo_id}) {
     warn qq/Repository "$repo_id" not found!\n/;
     exit(255);
   }
 
   logger->debug(qq{$repo_id - Set "$key" = "$value"});
-  file_write($repo_file, set_config(file_read($repo_file), "[$repo_section]", $key, $value));
+
+  my $cfg = Slackware::SlackMan::Config->new($repo_file);
+     $cfg->replaceAndSave("$repo_section.$key", $value);
 
 }
 
 sub get_raw_repository_config {
 
   my ($repo_conf) = @_;
-  my %repo_data = read_config(sprintf('%s/%s.repo', $slackman_conf{'directory'}->{'repos'}, $repo_conf));
+  my $repo_file = sprintf('%s/%s.repo', $slackman_conf->{'directory'}->{'repos'}, $repo_conf);
 
-  return %repo_data
+  return get_config($repo_file);
 
 }
 
@@ -146,9 +150,9 @@ sub get_raw_repository_values {
   my ($repo_id) = @_;
   my ($repo_conf, $repo_section) = split(/:/, $repo_id);
 
-  my %repo_data = get_raw_repository_config($repo_conf);
+  my $repo_data = get_raw_repository_config($repo_conf);
 
-  return $repo_data{$repo_section};
+  return $repo_data->{$repo_section};
 
 }
 
@@ -186,7 +190,7 @@ sub get_enabled_repositories {
   my @repositories = get_repositories();
 
   foreach my $repo (@repositories) {
-    push (@enabled, $repo) if ($repository{$repo}->{'enabled'});
+    push (@enabled, $repo) if ($repository->{$repo}->{'enabled'});
   }
 
   return @enabled;
@@ -199,7 +203,7 @@ sub get_disabled_repositories {
   my @repositories = get_repositories();
 
   foreach my $repo (@repositories) {
-    push (@enabled, $repo) unless ($repository{$repo}->{'enabled'});
+    push (@enabled, $repo) unless ($repository->{$repo}->{'enabled'});
   }
 
   return @enabled;
@@ -208,8 +212,8 @@ sub get_disabled_repositories {
 
 sub get_repository {
 
-  my $repo = shift;
-  return $repository{$repo};
+  my ($repo) = @_;
+  return $repository->{$repo} if (defined($repository->{$repo}));
 
 }
 
@@ -217,7 +221,7 @@ sub get_repositories {
 
   my @repositories = ();
 
-  foreach my $repo (sort keys %repository) {
+  foreach my $repo ( sort keys %{$repository} ) {
     push (@repositories, $repo);
   }
 
@@ -229,8 +233,8 @@ sub download_repository_metadata {
 
   my ($repo_id, $metadata, $callback_status) = @_;
 
-  my $metadata_url  = $repository{$repo_id}->{$metadata};
-  my $metadata_file = sprintf("%s/%s", $repository{$repo_id}->{cache_directory}, basename($metadata_url));
+  my $metadata_url  = $repository->{$repo_id}->{$metadata};
+  my $metadata_file = sprintf("%s/%s", $repository->{$repo_id}->{cache_directory}, basename($metadata_url));
 
   unless($metadata_url) {
     logger->debug(sprintf('[REPO/%s] "%s" metadata disabled', $repo_id, $metadata));
@@ -296,23 +300,23 @@ sub download_repository_metadata {
 
 sub update_repo_data {
 
-  foreach my $repo_id (get_repositories())  {
+  my ($repo_id) = @_;
 
-    my $repo_info     = get_repository($repo_id);
-    my $repo_priority = $repo_info->{'priority'};
-    my $repo_exclude  = $repo_info->{'exclude'};
+  my $repo_info     = get_repository($repo_id);
+  my $repo_priority = $repo_info->{'priority'};
+  my $repo_exclude  = $repo_info->{'exclude'};
 
-    $dbh->do('UPDATE packages SET priority = ? WHERE repository = ?', undef, $repo_priority, $repo_id);
-    $dbh->do('UPDATE packages SET excluded = 0 WHERE repository = ?', undef, $repo_id);
+  $dbh->do('UPDATE packages SET priority = ? WHERE repository = ?', undef, $repo_priority, $repo_id);
+  $dbh->do('UPDATE packages SET excluded = 0 WHERE repository = ?', undef, $repo_id);
 
-    if ($repo_exclude) {
+  if ($repo_exclude) {
 
-      my @exclude = split(/,/, $repo_exclude);
+    foreach my $package ( @{$repo_exclude} ) {
 
-      foreach my $pkg (@exclude) {
-        $pkg =~ s/\*/\%/g;
-        $dbh->do('UPDATE packages SET excluded = 1 WHERE repository = ? AND name LIKE ?', undef, $repo_id, $pkg);
-      }
+      logger->debug(sprintf("[%s] Set excluded flag for %s package", $repo_id, $package));
+
+      $package =~ s/\*/\%/g;
+      $dbh->do('UPDATE packages SET excluded = 1 WHERE repository = ? AND name LIKE ?', undef, $repo_id, $package);
 
     }
 

@@ -80,8 +80,6 @@ use Net::DBus;
 use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Logger;
 
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
@@ -324,23 +322,23 @@ sub curl_cmd {
   my $curl_flags = qq/-H "User-Agent: SlackMan\/$VERSION" -C - -L -k --fail --retry 5 --retry-max-time 0/;
 
   # Set proxy flags for cURL
-  if ($slackman_conf{'proxy'}->{'enable'}) {
+  if ($slackman_conf->{'proxy'}->{'enable'}) {
 
-    if ($slackman_conf{'proxy'}->{'username'}) {
+    if ($slackman_conf->{'proxy'}->{'username'}) {
 
       $curl_flags .= sprintf(" -x %s://%s:%s@%s:%s",
-        $slackman_conf{'proxy'}->{'protocol'},
-        $slackman_conf{'proxy'}->{'username'},
-        $slackman_conf{'proxy'}->{'password'},
-        $slackman_conf{'proxy'}->{'hostname'},
-        $slackman_conf{'proxy'}->{'port'},
+        $slackman_conf->{'proxy'}->{'protocol'},
+        $slackman_conf->{'proxy'}->{'username'},
+        $slackman_conf->{'proxy'}->{'password'},
+        $slackman_conf->{'proxy'}->{'hostname'},
+        $slackman_conf->{'proxy'}->{'port'},
       );
 
     } else {
       $curl_flags .= sprintf(" -x %s://%s:%s",
-        $slackman_conf{'proxy'}->{'protocol'},
-        $slackman_conf{'proxy'}->{'hostname'},
-        $slackman_conf{'proxy'}->{'port'},
+        $slackman_conf->{'proxy'}->{'protocol'},
+        $slackman_conf->{'proxy'}->{'hostname'},
+        $slackman_conf->{'proxy'}->{'port'},
       );
     }
 
@@ -643,7 +641,7 @@ my $slackware_release;
 
 sub _get_slackware_release {
 
-  my $slackware_version_file = $slackman_conf{'directory'}->{'root'} . '/etc/slackware-version';
+  my $slackware_version_file = $slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
   my $slackware_version      = file_read($slackware_version_file);
 
   chomp($slackware_version);
@@ -729,7 +727,7 @@ sub check_perl_module {
 sub create_lock {
 
   my $pid = $$;
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
 
   file_write($lock_file, $pid);
 
@@ -738,7 +736,7 @@ sub create_lock {
 
 sub get_lock_pid {
 
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
 
   open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
@@ -756,7 +754,7 @@ sub get_lock_pid {
 
 sub delete_lock {
 
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
 
 }

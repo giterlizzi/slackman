@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
@@ -83,7 +82,7 @@ sub call_clean_all {
 
 sub call_clean_db {
 
-  my $lib_dir = $slackman_conf{'directory'}->{'lib'};
+  my $lib_dir = $slackman_conf->{'directory'}->{'lib'};
   my $db_file = "$lib_dir/db.sqlite";
 
   logger->debug(qq/Clear database file "$db_file"/);
@@ -96,7 +95,7 @@ sub call_clean_db {
 
 sub call_clean_cache {
 
-  my $cache_dir = $slackman_conf{'directory'}->{'cache'};
+  my $cache_dir = $slackman_conf->{'directory'}->{'cache'};
   logger->debug(qq/Clear packages cache directory "$cache_dir"/);
 
   STDOUT->printflush("\nClean packages download cache... ");

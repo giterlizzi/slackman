@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
@@ -71,7 +70,7 @@ sub call_log_help {
 
 sub call_log_clean {
 
-  my $log_file = $slackman_conf{'logger'}->{'file'};
+  my $log_file = $slackman_conf->{'logger'}->{'file'};
 
   if (confirm('Are you sure? [Y/N]')) {
 
@@ -87,7 +86,7 @@ sub call_log_clean {
 
 sub call_log_tail {
 
-  my $log_file = $slackman_conf{'logger'}->{'file'};
+  my $log_file = $slackman_conf->{'logger'}->{'file'};
 
   system("tail -f $log_file");
   exit(0);

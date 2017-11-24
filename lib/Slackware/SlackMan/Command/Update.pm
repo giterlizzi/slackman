@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
@@ -124,7 +123,7 @@ sub call_update_repo_gpg_key {
 
     STDOUT->printflush(sprintf("  * %-30s", $repo));
 
-    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf{'directory'}->{'cache'}, $repo);
+    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{'directory'}->{'cache'}, $repo);
 
     if (download_repository_metadata($repo, 'gpgkey')) {
       gpg_import_key($gpg_key_path) if (-e $gpg_key_path);

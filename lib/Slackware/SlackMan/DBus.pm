@@ -110,7 +110,7 @@ sub version {
 sub slackware {
 
   my $release = get_slackware_release();
-     $release = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
+     $release = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
 
   return $release;
 

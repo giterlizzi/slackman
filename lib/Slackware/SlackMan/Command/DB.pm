@@ -20,7 +20,7 @@ BEGIN {
 
 }
 
-use Slackware::SlackMan::Config;
+use Slackware::SlackMan;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
@@ -81,7 +81,7 @@ sub call_db_optimize {
 
 sub call_db_info {
 
-  my $db_path = $slackman_conf{'directory'}->{lib} . '/db.sqlite';
+  my $db_path = $slackman_conf->{'directory'}->{'lib'} . '/db.sqlite';
 
   my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
       $atime, $mtime, $ctime, $blksize, $blocks) = stat($db_path);

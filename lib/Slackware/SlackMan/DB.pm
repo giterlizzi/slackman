@@ -40,8 +40,7 @@ BEGIN {
 use DBI;
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Utils   qw(:all);
-use Slackware::SlackMan::Config;
+use Slackware::SlackMan::Utils qw(:all);
 
 use constant SLACKMAN_SCHEMA_VERSION => 3;
 
@@ -150,7 +149,7 @@ use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 # Override built-in DBI module subroutines for loggin
 BEGIN {
 
-  if ( $slackman_conf{'logger'}->{'category'} =~ /sql/ ) {
+  if ( $slackman_conf->{'logger'}->{'category'} =~ /sql/ ) {
 
     no strict;
     no warnings;
@@ -231,7 +230,7 @@ our $dbh = dbh();
 
 sub dbh {
 
-  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf{'directory'}->{'lib'});
+  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf->{'directory'}->{'lib'});
 
   our $dbh = DBI->connect($dsn, '', '', {
     PrintError       => 1,

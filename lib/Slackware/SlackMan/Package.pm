@@ -43,7 +43,6 @@ use File::Path qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
@@ -458,9 +457,9 @@ sub package_check_install {
       next unless ($dependency_row->{'name'});
 
       # Check dependency renamed package or alias
-      if ( defined($slackman_conf{'renames'}->{$pkg_required}) ) {
-        logger->debug(sprintf('Found renamed package (from: %s, to: %s)', $pkg_required, $slackman_conf{'renames'}->{$pkg_required}));
-        $pkg_required = $slackman_conf{'renames'}->{$pkg_required};
+      if ( defined($slackman_conf->{'renames'}->{$pkg_required}) ) {
+        logger->debug(sprintf('Found renamed package (from: %s, to: %s)', $pkg_required, $slackman_conf->{'renames'}->{$pkg_required}));
+        $pkg_required = $slackman_conf->{'renames'}->{$pkg_required};
       }
 
       unless (package_info($pkg_required)) {
@@ -555,10 +554,10 @@ sub package_check_updates {
     push(@query_filters, qq/history.tag = "$option_tag"/);
   }
 
-  foreach ( keys %{$slackman_conf{'renames'}} ) {
+  foreach ( keys %{$slackman_conf->{'renames'}} ) {
 
     my $old_package_name = $_;
-    my $new_package_name = $slackman_conf{'renames'}->{$_};
+    my $new_package_name = $slackman_conf->{'renames'}->{$_};
 
     push(@renamed_filters, qq/(history.name = "$old_package_name" AND packages.name = "$new_package_name")/);
 
@@ -723,7 +722,7 @@ sub package_download {
     my $gpg_verify = 0;
     my $skip_check = 0;
 
-    unless ($slackman_conf{'main'}->{'checkmd5'}) {
+    unless ($slackman_conf->{'main'}->{'checkmd5'}) {
       $md5_check = 1;
       push(@package_errors, $md5_skipped_msg);
     }
@@ -733,7 +732,7 @@ sub package_download {
       push(@package_errors, $md5_skipped_msg);
     }
 
-    unless ($slackman_conf{'main'}->{'checkgpg'}) {
+    unless ($slackman_conf->{'main'}->{'checkgpg'}) {
       $gpg_verify = 1;
       push(@package_errors, $gpg_skipped_msg);
     }
