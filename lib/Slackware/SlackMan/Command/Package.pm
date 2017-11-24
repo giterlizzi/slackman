@@ -451,7 +451,7 @@ sub call_package_install {
 
   STDOUT->printflush('Search packages... ');
 
-  update_repo_data();
+  update_all_repo_data();
 
   unless ($slackman_opts->{'local'}) {
     ($packages_to_install, $dependency_pkgs) = package_check_install(@install_packages);
@@ -803,7 +803,7 @@ sub call_package_upgrade {
 
   STDOUT->printflush('Search upgraded packages... ');
 
-  update_repo_data();
+  update_all_repo_data();
 
   unless ($slackman_opts->{'local'}) {
     ($packages_to_update, $packages_to_install) = package_check_updates(@update_packages);

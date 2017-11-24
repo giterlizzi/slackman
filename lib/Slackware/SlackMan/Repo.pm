@@ -23,6 +23,7 @@ BEGIN {
     enable_repository
     download_repository_metadata
     update_repo_data
+    update_all_repo_data
     load_repositories
     set_repository_value
     get_raw_repository_value
@@ -320,6 +321,14 @@ sub update_repo_data {
 
     }
 
+  }
+
+}
+
+sub update_all_repo_data {
+
+  foreach ( get_enabled_repositories() ) {
+    update_repo_data($_);
   }
 
 }
