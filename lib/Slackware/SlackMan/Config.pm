@@ -145,11 +145,13 @@ sub set {
     if (    defined($self->{'data'}->{$section})
          && defined($self->{'data'}->{$section}->{$subkey}) ) {
       $self->{'data'}->{$section}->{$subkey} = $value;
+      return $value;
     }
 
   } else {
     if ( defined($self->{'data'}->{$key}) ) {
       $self->{'data'}->{$key} = $value;
+      return $value;
     }
   }
 
