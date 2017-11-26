@@ -9,24 +9,27 @@ provided by `/usr/libexec/slackman/slackman-service` daemon.
 
 `org.lotarproject.SlackMan` D-Bus interface methods, signals and properties:
 
-Method                                 | Description
----------------------------------------|----------------------------------------
-`Changelog( string repo_id )`          | Return last ChangeLog entries from all Slackware Changelog repositories
-`SecurityFix(void)`                    | Return last packages whit Security Fix from all Slackware Changelog repositories
-`PackageInfo( string package_name )`   | Return a information of installed package
-`CheckUpgrade(void)`                   | Return all available upgrades of installed packages
+Method                               | Description
+-------------------------------------|------------------------------------------
+`ChangeLog( string repo_id )`        | Return last ChangeLog entries from all Slackware Changelog repositories
+`SecurityFix(void)`                  | Return last packages whit Security Fix from all Slackware Changelog repositories
+`PackageInfo( string package_name )` | Return a information of installed package
+`CheckUpgrade(void)`                 | Return all available upgrades of installed packages
 `Notify ( string action, string summary, string body )` | Send notification
 
-Signals                                | Description
----------------------------------------|----------------------------------------
-`PackageInstalled`                     | This signal is emitted when a package is installed
-`PackageUpgraded`                      | This signal is emitted when a package is upgraded
-`PackageRemoved`                       | This signal is emitted when a package is removed
+Signals            | Description
+-------------------|------------------------------------------------------------
+`PackageInstalled` | This signal is emitted when a package is installed
+`PackageUpgraded`  | This signal is emitted when a package is upgraded
+`PackageRemoved`   | This signal is emitted when a package is removed
+`UpdatedChangeLog` | This signal is emitted when run `slackman update` or `slackman update changelog` command
+`UpdatedPackages`  | This signal is emitted when run `slackman update` or `slackman update packages` command
+`UpdatedManifest`  | This signal is emitted when run `slackman update manifest` command
 
-Properties                             | Description
----------------------------------------|----------------------------------------
-`version`                              | Return SlackMan version
-`slackware`                            | Return Slackware version (eg, **14.2**, **current**)
+Properties  | Description
+------------|-------------------------------------------------------------------
+`version`   | Return SlackMan version
+`slackware` | Return Slackware version ( eg, **14.2**, **current** )
 
 
 ## SlackMan Notifier

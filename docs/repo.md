@@ -123,4 +123,4 @@ This is a sample .repo configuration
 
     # Checksums file URL
     #
-    chechsums=$mirror/CHECHSUMS.md5
+    checksums=$mirror/CHECKSUMS.md5
