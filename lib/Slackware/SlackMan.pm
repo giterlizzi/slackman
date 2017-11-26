@@ -37,6 +37,14 @@ use Slackware::SlackMan::Logger;
 our $slackman_conf = {};
 our $slackman_opts = {};
 
+use Getopt::Long qw(:config pass_through);
+
+GetOptions( $slackman_opts,
+  'config=s',
+  'root=s',
+);
+
+
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
 
@@ -44,14 +52,14 @@ $slackman_opts->{'limit'} ||= 25;
 $ENV{PERL_RL} = 'Stub';
 
 # Set ROOT environment variable for Slackware pkgtools
-$ENV{ROOT} = $slackman_opts->{'root'} if ($slackman_opts->{'root'}); # TODO not work!!!
+$ENV{ROOT} = $slackman_opts->{'root'} if ($slackman_opts->{'root'});
 
 # Set root directory for SlackMan (configuration, database, etc)
 my $root = '';
    $root = $ENV{ROOT} if($ENV{ROOT});
 
 my $config_file = "$root/etc/slackman/slackman.conf";
-   $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'}); # TODO not work!!!
+   $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'});
    $config_file =~ s|^//|/|;
 
 if ($root ne '' && ! -d $root) {

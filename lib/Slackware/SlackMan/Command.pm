@@ -44,7 +44,7 @@ use Slackware::SlackMan::Command::Package;
 use Slackware::SlackMan::Command::Update;
 use Slackware::SlackMan::Command::Repo;
 
-use Getopt::Long qw(:config);
+use Getopt::Long qw(:config no_pass_through);
 
 GetOptions( $slackman_opts,
   'after=s',
