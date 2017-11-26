@@ -4,23 +4,25 @@
 
 SlackMan is written in Perl and require this extra Perl modules installed on your machine:
 
-Module            | Usage
-------------------|-------------------------------------------------------------
-`DBD::SQLite`     | SQLite library to manage SlackMan database
-`Sort::Versions`  | This module is used to compare the package version
-`Net::DBus`       | Notify new packages update and expose methods via D-Bus
-`IO::Socket::SSL` | SSL module for `HTTP::Tiny` module
-`Net::SSLeay`     | SSL module for `HTTP::Tiny` module
-`HTTP::Tiny`      | Used by SlackMan for download a package (included from Perl v5.14)
+Module        | Usage
+--------------|-----------------------------------------------------------------
+`DBD::SQLite` | SQLite library to manage SlackMan database
+`Net::DBus`   | Notify new packages update and expose SlackMan methods via D-Bus
 
-You can download and compile the SlackBuild of this package from [SlackBuilds.org](https://slackbuilds.org)
+### Install required modules using slackman-libsupport package
+
+You can use `slackman-libsupport` SlackBuild for install all required modules.
+
+    curl -L https://raw.githubusercontent.com/LotarProject/slackman/master/slackbuilds/slackman-libsupport/slackman-libsupport.SlackBuild | sh
+    upgradepkg --install-new /tmp/slackman-libsupport-x.y.z-x86_64-1_lotar.tgz
+
+### Install required modules via sbopkg
+
+You can download and compile the SlackBuild of required modules from [SlackBuilds.org](https://slackbuilds.org)
 or via `sbopkg`:
 
     sbopkg -i perl-DBD-SQLite \
-           -i perl-Sort-Versions \
-           -i perl-net-dbus \
-           -i perl-IO-Socket-SSL \
-           -i Net-SSLeay
+           -i perl-net-dbus
 
 ## Create SlackBuild package
 

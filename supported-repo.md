@@ -2,8 +2,8 @@
 
 ## Slackware & Multilib
 
-Slackware **main** and **patches** repository enabled by default with additional
-**extra**, **pasture** and **testing** repository support.
+Slackware **main** and **patches** repository is enabled by default with 
+additional **extra**, **pasture** and **testing** repository support.
 
  - File: slackware.repo
 
@@ -60,7 +60,7 @@ slackers:packages  | This repository support **only** Slackware64-current
 
 Repo ID            | Note
 -------------------|---------------------------------------
-slackers:packages  | 
+slacky:packages    | 
 
 
 ## SlackOnly SlackBuilds
