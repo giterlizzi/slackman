@@ -108,17 +108,12 @@ sub call_repo_add {
 
   if ( $repo_url =~ /^(http(|s)):\/\// ) {
 
-    my $http    = http();
-    my $request = $http->request( 'GET', $repo_url );
+    my $download_exit_code = download_file($repo_url, $repo_tmpfile);
 
-    if ($request->{'status'} == 404) {
-      print colored('ERROR', 'red bold') . ": Repository file not found ($repo_url)\n";
+    if ( $download_exit_code > 0 ) {
+      print colored('ERROR', 'red bold') . ": Repository file download error (cURL: $download_exit_code)\n";
       exit(255);
     }
-
-    $repo_content = $request->{'content'};
-    print $repo_fh $repo_content;
-    close($repo_fh);
 
   }
 
@@ -295,8 +290,7 @@ sub call_repo_info {
   update_repo_data($repo_id);
 
   my $repo_data = get_repository($repo_id);
-use Data::Dumper;
-say Dumper($repo_data);
+
   unless($repo_data) {
     print "Repository not found!\n";
     exit(255);
