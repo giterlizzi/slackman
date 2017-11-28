@@ -102,8 +102,8 @@ $ENV{ANSI_COLORS_DISABLED} = 1 unless (-t STDOUT);
 
 
 my $lock_check  = get_lock_pid();
-my $command     = $ARGV[0] || undef;
-my $sub_command = $ARGV[1] || undef;
+my $command     = $ARGV[0] || '';
+my $sub_command = $ARGV[1] || '';
 my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
