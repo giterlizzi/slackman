@@ -315,9 +315,9 @@ sub update_repo_data {
     foreach my $package ( @{$repo_exclude} ) {
 
       logger->debug(sprintf("[%s] Set excluded flag for %s package", $repo_id, $package));
-
       $package =~ s/\*/\%/g;
       $dbh->do('UPDATE packages SET excluded = 1 WHERE repository = ? AND name LIKE ?', undef, $repo_id, $package);
+      $package =~ s/\%/\*/g;
 
     }
 
