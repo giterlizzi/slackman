@@ -44,7 +44,6 @@ BEGIN {
     get_slackware_release
     gpg_import_key
     gpg_verify
-    http
     ldd
     md5_check
     repo_option_to_sql
