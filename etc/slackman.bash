@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local"
+  local slackman_options="--repo --exclude --no-priority --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local"
 
   __slackman_complete_options "$cur" "$prev" && return
 
