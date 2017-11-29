@@ -21,10 +21,8 @@ WriteMakefile(
         'Test::More' => '0',
     },
     PREREQ_PM => {
-        'DBD::SQLite'     => '0',
-        'Net::DBus'       => '0',
-        'HTTP::Tiny'      => '0', # Core since Perl v5.13.9/5.14.0 or from Slackware 14.0 (Perl v5.16)
-        'IO::Socket::SSL' => '0',
+        'DBD::SQLite' => '0',
+        'Net::DBus'   => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Slackware-Slackman-*' },
