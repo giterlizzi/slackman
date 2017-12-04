@@ -206,9 +206,9 @@ sub call_repo_list {
 
     print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
       $repo_id,
-      $repo_info->{name},
-      ($repo_info->{enabled} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
-      $repo_info->{priority},
+      $repo_info->{'name'},
+      ($repo_info->{'enabled'} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
+      $repo_info->{'priority'},
       $num_pkgs
     );
 
@@ -318,18 +318,18 @@ sub call_repo_info {
   print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{'config_file'});
   print sprintf("\n%-15s : %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
   print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{'mirror'});
-  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{'enabled'}) ? 'enabled' : 'disabled'));
+  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')));
   print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
   print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{'priority'});
   print sprintf("%-15s : %s\n",     "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
   print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
   print sprintf("%-15s : %s\n",     "Directory",     $repo_data->{'cache_directory'});
 
-  print "\nRepository URLs :\n";
+  print "\n\nRepository URLs\n\n";
 
   foreach (@urls) {
     next unless($repo_data->{$_});
-    print sprintf("  * %-15s : %s\n", $_, $repo_data->{$_});
+    print sprintf("  - %-10s : %s\n", $_, $repo_data->{$_});
   }
 
   print "\n";
