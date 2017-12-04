@@ -263,6 +263,11 @@ sub download_repository_metadata {
     time_to_timestamp($metadata_last_modified),
     time_to_timestamp($db_meta_last_modified)));
 
+  if ($metadata_last_modified == 0) {
+    logger->debug(sprintf('[REPO/%s] Problem during downloading of "Last-Modified" for "%s" metadata', $repo_id, $metadata));
+    return (0);
+  }
+
   if ($metadata_last_modified == $db_meta_last_modified) {
     logger->debug(sprintf('[REPO/%s] Skip "%s" metadata download', $repo_id, $metadata));
     return (0);
