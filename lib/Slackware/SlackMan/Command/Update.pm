@@ -162,7 +162,7 @@ sub call_update_repo_changelog {
   print "\n";
 
   # Notify update via D-Bus
-  dbus_slackman->Notify( 'UpdatedChangeLogs', undef, undef );
+  dbus_slackman->Notify( 'UpdatedChangeLog', undef, undef );
 
 }
 
