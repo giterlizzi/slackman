@@ -26,6 +26,8 @@ BEGIN {
     package_download
     package_list_installed
     package_list_obsoletes
+    package_list_orphan
+    package_list_removed
     package_changelogs
     package_check_updates
     package_check_install
@@ -775,6 +777,34 @@ sub package_download {
   }
 
   return ($package_path, \@package_errors);
+
+}
+
+
+sub package_list_orphan {
+
+  my $rows_ref = $dbh->selectall_hashref(qq/SELECT h.* FROM history h WHERE h.status = 'installed' AND NOT EXISTS (SELECT 1 FROM packages p WHERE p.name = h.name) ORDER BY name/, 'name', undef);
+
+  return $rows_ref;
+
+}
+
+
+sub package_list_removed {
+
+  my @query_filters;
+
+  push(@query_filters, "status = 'removed'");
+
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  my $query = "SELECT * FROM history WHERE %s ORDER BY timestamp DESC";
+     $query = sprintf($query, join(' AND ', @query_filters));
+
+  my $rows_ref = $dbh->selectall_hashref($query, 'name');
+  return $rows_ref;
 
 }
 

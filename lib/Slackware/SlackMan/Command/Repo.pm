@@ -302,7 +302,7 @@ sub call_repo_info {
   LINE: foreach my $line ( split(/\n/, $repo_content ) ) {
     last LINE if ( $line =~ /^\[/);
     $line =~ s/^#//;
-    $repo_desc .= sprintf("%-17s %s\n", ' ', trim($line));
+    $repo_desc .= sprintf("%-15s : %s\n", ' ', trim($line));
   }
 
   $repo_desc = trim($repo_desc);
@@ -313,17 +313,17 @@ sub call_repo_info {
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-15s : %s\n",     "ID",            $repo_data->{'id'});
-  print sprintf("%-15s : %s\n",     "Name",          $repo_data->{'name'});
-  print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{'config_file'});
-  print sprintf("\n%-15s : %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
-  print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{'mirror'});
-  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')));
-  print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
-  print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{'priority'});
-  print sprintf("%-15s : %s\n",     "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
-  print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
-  print sprintf("%-15s : %s\n",     "Directory",     $repo_data->{'cache_directory'});
+  print sprintf("%-15s : %s\n",   "ID",            $repo_data->{'id'});
+  print sprintf("%-15s : %s\n",   "Name",          $repo_data->{'name'});
+  print sprintf("%-15s : %s\n",   "Configuration", $repo_data->{'config_file'});
+  print sprintf("\n%-15s %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
+  print sprintf("%-15s : %s\n",   "Mirror",        $repo_data->{'mirror'});
+  print sprintf("%-15s : %s\n",   "Status",        (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')));
+  print sprintf("%-15s : %s\n",   "Last Update",   ($last_update || ''));
+  print sprintf("%-15s : %s\n",   "Priority",      $repo_data->{'priority'});
+  print sprintf("%-15s : %s\n",   "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
+  print sprintf("%-15s : %s\n",   "Packages",      $package_nums);
+  print sprintf("%-15s : %s\n",   "Directory",     $repo_data->{'cache_directory'});
 
   print "\n\nRepository URLs\n\n";
 

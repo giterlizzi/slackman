@@ -118,14 +118,18 @@ sub call_package_info {
 
   my @packages_installed;
 
-  print "Installed package(s)\n";
+  print "\nInstalled package(s)\n";
   print sprintf("%s\n\n", "-"x80);
 
   foreach (keys %$installed_rows) {
 
     my $row = $installed_rows->{$_};
     my $description = $row->{description};
-       $description =~ s/\n/\n    /g;
+    my $pkg_description = '';
+
+    LINE: foreach my $line ( split(/\n/, $description ) ) {
+      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
+    }
 
     push @packages_installed, $row->{name};
 
@@ -138,7 +142,7 @@ sub call_package_info {
     print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
     print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
     print sprintf("%-15s : %s\n", 'Require',       $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
-    print sprintf("%-15s : %s\n", 'Summary',       $description);
+    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
 
     if ($slackman_opts->{'show-files'}) {
 
@@ -148,7 +152,7 @@ sub call_package_info {
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
-        print "    /$_\n";
+        print sprintf("%-5s /%s\n", ' ', $_);
       }
 
     }
@@ -173,7 +177,11 @@ sub call_package_info {
 
     my $row = $available_rows->{$_};
     my $description = $row->{description};
-       $description =~ s/\n/\n    /g;
+    my $pkg_description = '';
+
+    LINE: foreach my $line ( split(/\n/, $description ) ) {
+      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
+    }
 
     print sprintf("%-15s : %s\n", 'Name',          $row->{name});
     print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
@@ -184,7 +192,7 @@ sub call_package_info {
     print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
     print sprintf("%-15s : %s\n", 'Require',       $row->{required}) if ($row->{required});
     print sprintf("%-15s : %s\n", 'Repo',          $row->{repository});
-    print sprintf("%-15s : %s\n", 'Summary',       $description);
+    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
 
     if ($slackman_opts->{'show-files'}) {
 
@@ -195,8 +203,8 @@ sub call_package_info {
 
       my $row = $sth->fetchrow_hashref();
 
-      foreach my $file ( split(/\n/, $row->{'files'}) ) {
-        print sprintf("    %s\n", $file);
+      foreach ( split(/\n/, $row->{'files'}) ) {
+        print sprintf("%-5s /%s\n", ' ', $_);
       }
 
     }

@@ -138,7 +138,7 @@ sub call_list_orphan {
   print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Installed", "Size");
   print sprintf("%s\n", "-"x132);
 
-  my $rows_ref = $dbh->selectall_hashref(qq/SELECT h.* FROM history h WHERE h.status = 'installed' AND NOT EXISTS (SELECT 1 FROM packages p WHERE p.name = h.name) ORDER BY name/, 'name', undef);
+  my $rows_ref = package_list_orphan();
 
   foreach (sort keys %$rows_ref) {
 
