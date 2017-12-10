@@ -21,6 +21,18 @@ CheckUpgrade ( out 'a{sa{ss}}' )
 
 SecurityFix ( out 'a{saa{ss}}' )
 
+=head2 GetRepository
+
+GetPackages ( in 's' I<repo_id>, out 'a{ss}' )
+
+=head2 GetRepositories
+
+GetPackages ( in 's' I<type>, out 'as' )
+
+=head2 GetPackages
+
+GetPackages ( in 's' I<filter>, out 'a{ss}' )
+
 =head2 PackageInfo
 
 PackageInfo ( in 's' I<package_name>, out 'a{ss}' )
