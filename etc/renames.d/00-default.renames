@@ -1,9 +1,9 @@
-# SlackMan renames configuration file - Renamed or replaced Slackware Packages
+# SlackMan renames configuration file - Renamed or replaced Slackware packages
 # For more information see slackman.renames(5)
 
 # Syntax:
 #
-# old package name = new package name
+# old-package-name = new-package-name
 
 
 # python-pip (added in Slackware 15.0)
