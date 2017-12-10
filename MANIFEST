@@ -66,6 +66,7 @@ MYMETA.yml
 pod/Makefile
 pod/slackman-cron.conf.5.pod
 pod/slackman.conf.5.pod
+pod/slackman.renames.5.pod
 pod/slackman.repo.5.pod
 README.md
 RELEASE.md
