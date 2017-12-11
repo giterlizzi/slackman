@@ -13,7 +13,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - Dependency resolution
  - Bash Completion support
  - Flexible repository configuration via [variables][variables.md]
- - [D-Bus interface](dbus.md) (via `org.lotarproject.SlackMan`)
+ - [D-Bus interface](dbus.md) (via `org.lotarproject.SlackMan`) with PolicyKit support
  - Userspace D-Bus client to notify update & changelogs (via `org.freedesktop.Notification`) service
  - ... and more
 

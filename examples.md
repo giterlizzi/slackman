@@ -7,9 +7,9 @@ Update repository packages and upgrade all packages:
 Install, upgrade and remove obsolete packages from specific repository:
 
     # slackman update
-    # slackman install --new-packages --repo ktown
-    # slackman upgrade --repo ktown
-    # slackman remove --obsolete-packages --repo ktown
+    # slackman install --new-packages --repo slackware
+    # slackman upgrade --repo slackware
+    # slackman remove --obsolete-packages --repo slackware
 
 Upgrade package excluding kernels packages
 
