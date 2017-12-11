@@ -5,7 +5,7 @@
 
 # DESCRIPTION
 
-The `slackman-cron.conf` file contain the configurations for [slackman(8)](../8/slackman.md) cronta utility.
+The `slackman-cron.conf` file contain the configurations for [slackman(8)](../8/slackman.md) crontab utility.
 
 # OPTIONS
 

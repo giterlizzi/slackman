@@ -12,6 +12,7 @@ slackman-list - List packages and other info
     slackman list obsoletes
     slackman list orphan
     slackman list variables
+    slackman list repo
     slackman list help
 
 # DESCRIPTION
@@ -22,6 +23,7 @@ slackman-list - List packages and other info
     * available packages
     * orphan packages
     * obsolete packages
+    * available repositories
 
 # COMMANDS
 
@@ -30,6 +32,7 @@ slackman-list - List packages and other info
     slackman list packages       List available packages
     slackman list orphan         List orphan packages installed from unknown repository
     slackman list variables      List variables for ".repo" configurations
+    slackman list repo           List available repositories (alias of "slackman repo list" command)
 
 # OPTIONS
 

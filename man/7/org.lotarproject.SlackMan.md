@@ -22,6 +22,18 @@ CheckUpgrade ( out 'a{sa{ss}}' )
 
 SecurityFix ( out 'a{saa{ss}}' )
 
+## GetRepository
+
+GetPackages ( in 's' _repo\_id_, out 'a{ss}' )
+
+## GetRepositories
+
+GetPackages ( in 's' _type_, out 'as' )
+
+## GetPackages
+
+GetPackages ( in 's' _filter_, out 'a{ss}' )
+
 ## PackageInfo
 
 PackageInfo ( in 's' _package\_name_, out 'a{ss}' )
@@ -77,6 +89,18 @@ This signal is emitted when a package is upgraded.
 ## PackageRemoved
 
 This signal is emitted when a package is removed.
+
+## UpdatedChangeLog
+
+This signal is emitted when run `slackman update` or `slackman update changelog` command.
+
+## UpdatedPackages
+
+This signal is emitted when run `slackman update` or `slackman update packages` command.
+
+## UpdatedManifest
+
+This signal is emitted when run `slackman update manifest` command.
 
 # SEE ALSO
 

@@ -55,6 +55,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
     -n, --no                     Assume no
     --no-gpg-check               Disable GPG verify check
     --no-md5-check               Disable MD5 checksum check
+    --local=PACKAGE-FILE         Install or upgrade from a local package
 
 # EXAMPLES
 

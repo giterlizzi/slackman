@@ -71,6 +71,7 @@ slackman-package - Install, upgrade and display information of Slackware package
     -n, --no                              Assume no
     --no-gpg-check                        Disable GPG verify check
     --no-md5-check                        Disable MD5 checksum check
+    --local=PACKAGE-FILE                  Install or upgrade from a local package
 
 # EXAMPLES
 
@@ -87,6 +88,10 @@ Install, upgrade and remove obsolete packages from specific repository:
 Upgrade package excluding kernels packages
 
     slackman upgrade --exclude kernel-*
+
+Install a new package from local package file:
+
+    slackman install --local /tmp/google-chrome-62.0.3202.75-x86_64-1.txz
 
 Search a package:
 
