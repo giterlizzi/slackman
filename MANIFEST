@@ -1,4 +1,5 @@
 bin/slackman
+CONTRIBUTING.md
 dbus/dbus-pkgtools
 dbus/Makefile
 dbus/org.lotarproject.SlackMan.7.pod
