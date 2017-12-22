@@ -19,7 +19,7 @@ use Slackware::SlackMan;
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
-my $VERSION = "v1.2.1";
+my $VERSION = "v1.3.0";
 my $options = {};
 
 GetOptions( $options,
