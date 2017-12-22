@@ -5,9 +5,144 @@
 SlackMan expose a system D-Bus service interface called  `org.lotarproject.SlackMan`
 provided by `/usr/libexec/slackman/slackman-service` daemon.
 
-## Methods, Signals & Properties
+## D-Bus interface (methods, signals & properties)
 
-`org.lotarproject.SlackMan` D-Bus interface methods, signals and properties.
+This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, signals and properties).
+
+### IDL (Interface Definition Language)
+
+    interface org.lotarproject.SlackMan {
+
+      /** Methods */
+
+      arrayOfString ChangeLog(string repo_id);
+      arrayOfString SecurityFix();
+
+      arrayOfString PackageInfo(string package_name);
+      arrayOfString GetPackages(string type);
+      arrayOfString CheckUpgrade();
+
+      arrayOfString GetRepositories(string filter);
+      arrayOfString GetRepository(string repo_id);
+
+      void Notify (string action, string summary, string body);
+
+      int32 InstallPkg(string package_path);
+      int32 UpgradePkg(string package_path);
+      int32 RemovePkg(string package_name);
+
+      /** Properties */
+
+      readonly attribute string slackware;
+      readonly attribute string version;
+
+      /** Signals */
+
+      void PackageInstalled(string data);
+      void PackageRemoved(string data);
+      void PackageUpgraded(string data);
+
+      void UpdatedChangeLog(string repo_id);
+      void UpdatedPackages(string repo_id);
+      void UpdatedManifest(string repo_id);
+
+    };
+
+
+### D-Bus XML interface
+
+    <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+    "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+    <node name="/org/lotarproject/SlackMan">
+      <interface name="org.freedesktop.DBus.Introspectable">
+        <method name="Introspect">
+          <arg type="s" direction="out"/>
+        </method>
+      </interface>
+      <interface name="org.freedesktop.DBus.Properties">
+        <method name="Get">
+          <arg type="s" direction="in"/>
+          <arg type="s" direction="in"/>
+          <arg type="v" direction="out"/>
+        </method>
+        <method name="GetAll">
+          <arg type="s" direction="in"/>
+          <arg type="a{sv}" direction="out"/>
+        </method>
+        <method name="Set">
+          <arg type="s" direction="in"/>
+          <arg type="s" direction="in"/>
+          <arg type="v" direction="in"/>
+        </method>
+      </interface>
+      <interface name="org.lotarproject.SlackMan">
+        <method name="ChangeLog">
+          <arg name="repo_id" type="s" direction="in"/>
+          <arg type="a{saa{ss}}" direction="out"/>
+        </method>
+        <method name="CheckUpgrade">
+          <arg type="a{sa{ss}}" direction="out"/>
+        </method>
+        <method name="GetPackages">
+          <arg name="filter" type="s" direction="in"/>
+          <arg type="as" direction="out"/>
+        </method>
+        <method name="GetRepositories">
+          <arg name="type" type="s" direction="in"/>
+          <arg type="as" direction="out"/>
+        </method>
+        <method name="GetRepository">
+          <arg name="repo_id" type="s" direction="in"/>
+          <arg type="a{ss}" direction="out"/>
+        </method>
+        <method name="InstallPkg">
+          <arg name="package_path" type="s" direction="in"/>
+          <arg type="q" direction="out"/>
+        </method>
+        <method name="Notify">
+          <arg name="action" type="s" direction="in"/>
+          <arg name="summary" type="s" direction="in"/>
+          <arg name="body" type="s" direction="in"/>
+          <annotation name="org.freedesktop.DBus.Method.NoReply" value="true"/>
+        </method>
+        <method name="PackageInfo">
+          <arg name="package_name" type="s" direction="in"/>
+          <arg type="a{ss}" direction="out"/>
+        </method>
+        <method name="RemovePkg">
+          <arg name="package_name" type="s" direction="in"/>
+          <arg type="q" direction="out"/>
+        </method>
+        <method name="SecurityFix">
+          <arg type="a{saa{ss}}" direction="out"/>
+        </method>
+        <method name="UpgradePkg">
+          <arg name="package_path" type="s" direction="in"/>
+          <arg type="q" direction="out"/>
+        </method>
+        <signal name="PackageInstalled">
+          <arg type="s"/>
+        </signal>
+        <signal name="PackageRemoved">
+          <arg type="s"/>
+        </signal>
+        <signal name="PackageUpgraded">
+          <arg type="s"/>
+        </signal>
+        <signal name="UpdatedChangeLog">
+          <arg type="s"/>
+        </signal>
+        <signal name="UpdatedManifest">
+          <arg type="s"/>
+        </signal>
+        <signal name="UpdatedPackages">
+          <arg type="s"/>
+        </signal>
+        <property name="slackware" type="s" access="read"/>
+        <property name="version" type="s" access="read"/>
+      </interface>
+    </node>
+
 
 ### Methods
 
@@ -189,39 +324,6 @@ Return Slackware version ( eg, _14.2_, _current_ )
     STRING org.lotarproject.SlackMan.slackware
 
 
-### IDL
-
-    interface org.lotarproject.SlackMan {
-
-      sequence< string > ChangeLog(string repo_id);
-      sequence< string > SecurityFix();
-
-      sequence< string > PackageInfo(string package_name);
-      sequence< string > GetPackages(string type);
-      sequence< string > CheckUpgrade();
-
-      sequence< string > GetRepositories(string filter);
-      sequence< string > GetRepository(string repo_id);
-
-      void Notify (string action, string summary, string body);
-
-      int32 InstallPkg(string package_path);
-      int32 UpgradePkg(string package_path);
-      int32 RemovePkg(string package_name);
-
-      readonly attribute string slackware;
-      readonly attribute string version;
-
-      signal PackageInstalled(string data);
-      signal PackageRemoved(string data);
-      signal PackageUpgraded(string data);
-
-      signal UpdatedChangeLog(string repo_id);
-      signal UpdatedPackages(string repo_id);
-      signal UpdatedManifest(string repo_id);
-
-    };
-
 ## SlackMan Notifier
 
 `slackman-notifier(1)` is user-space utility to receive a desktop notification via
@@ -250,6 +352,7 @@ Advisories, ChangeLogs and new packages upgrade.
     | org.freedesktop.Notification | <--- | D-Bus daemon  | <--- |  SlackMan  |
     |  ( D-Bus session service )   |      | (session bus) |      |  Notifier  |
     +------------------------------+      +---------------+      +------------+
+
 
 ### Screenshots
 
