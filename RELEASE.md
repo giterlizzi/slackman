@@ -1,5 +1,38 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.3.0]
+
+This release introduce new options (`--local` for install or upgrade from local package) and new feature (`.renames` configuration file). Now SlackMan use cURL command for download th packages and repository metadata. Added new D-Bus methods and signals and improved `slackman-notifier` client.
+
+## Added
+
+  * Added missing options in Bash completion script
+  * Added new D-Bus methods (see `org.lotarproject.SlackMan(7)`)
+  * Added `.renames` support (see `slackman.renames(5)`)
+  * Added `--local` option for install, upgrade local packages
+  * Added new TAP test
+  * Added support of `slackman-libsupport` package
+
+## Removed
+
+  * Removed check of require modules
+  * Drop support of `HTTP::Tiny` module
+  * Drop support of "experimental" Perl feature
+
+## Changed
+
+  * DB schema optimization for `manifest` table
+  * Use Perl sub for `REGEXP` SQLite function
+  * Fire D-Bus signal after `slackman update` commands
+  * Bootstrap optimizations
+  * Reduced required Perl modules
+  * Optimization for `SlackMan/Config.pm` module
+
+## Fixed
+
+  * Fixed `repos.d/slackware.repo` URL
+
+
 ## [v1.2.1]
 
 This release fix an issue for SlackMan build (#10 thanks to @axpira)
@@ -108,6 +141,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.3.0]: https://github.com/LotarProject/slackman/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/LotarProject/slackman/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/LotarProject/slackman/compare/v1.1.0...v1.1.1
