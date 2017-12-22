@@ -11,139 +11,54 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
-  @ISA     = qw(Exporter);
-
-  @EXPORT = qw{
-    %slackman_conf
-  };
-
-  @EXPORT_OK = qw(
-    read_config
-    set_config
-    load_config
-    stringify_config
-    parse_config
-  );
-
+  $VERSION     = 'v1.3.0';
+  @ISA         = qw(Exporter);
+  @EXPORT_OK   = qw( get_config );
   %EXPORT_TAGS = (
     all => \@EXPORT_OK,
   );
 
 }
 
-use Slackware::SlackMan;
+sub new {
 
-sub load_config {
+  my $class = shift;
 
-  # Set ROOT environment variable for Slackware pkgtools
-  $ENV{ROOT} = $slackman_opts->{'root'} if ($slackman_opts->{'root'});
+  my $self  = {
+    'file'    => shift,
+    'content' => '',
+    'data'    => {},
+  };
 
-  # Set root directory for SlackMan (configuration, database, etc)
-  my $root = '';
-    $root = $ENV{ROOT} if($ENV{ROOT});
+  bless $self, $class;
 
-  my $config_file = "$root/etc/slackman/slackman.conf";
-     $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'});
-     $config_file =~ s|^//|/|;
-
-  if ($root ne '' && ! -d $root) {
-    print "Slackware root directory '$root' not exists!\n";
-    exit(255);
-  }
-
-  unless (-f $config_file) {
-    print "Configuration file '$config_file' not found!\n";
-    exit(255);
-  }
-
-  my %slackman_conf = read_config($config_file);
-
-  # Set default slackman directories
-  $slackman_conf{'directory'}->{'root'}  ||= $root;
-  $slackman_conf{'directory'}->{'conf'}  ||= "$root/etc/slackman";
-  $slackman_conf{'directory'}->{'repos'} ||= "$root/etc/slackman/repos.d";
-  $slackman_conf{'directory'}->{'log'}   ||= "$root/var/log";
-  $slackman_conf{'directory'}->{'lib'}   ||= "$root/var/lib/slackman";
-  $slackman_conf{'directory'}->{'cache'} ||= "$root/var/cache/slackman";
-  $slackman_conf{'directory'}->{'lock'}  ||= "$root/var/lock";
-
-  # Set default logger values
-  $slackman_conf{'logger'}->{'level'}    ||= 'debug';
-  $slackman_conf{'logger'}->{'file'}     ||= $slackman_conf{'directory'}->{'log'} . '/slackman.log';
-  $slackman_conf{'logger'}->{'category'} ||= '';
-
-  # Set default value for color output
-  $slackman_conf{'main'}->{'color'} ||= 'always';
-
-  # Verify terminal color capability using tput(1) utility
-  if ($slackman_conf{'main'}->{'color'} eq 'auto') {
-    qx { tput colors > /dev/null 2>&1 };
-    $ENV{ANSI_COLORS_DISABLED} = 1 if ( $? > 0 );
-  }
-
-  # Set config file location
-  $slackman_conf{'config'}->{'file'} = $config_file;
-
-  return %slackman_conf;
+  $self->_init();
+  return $self;
 
 }
 
-sub parse_config {
 
-  my ($config_string) = @_;
+sub _init {
 
-  my @lines = split(/\n/, $config_string);
+  my ($self) = @_;
 
-  my $section;
-  my %config;
+  if ( -e $self->{'file'} ) {
 
-  foreach my $line (@lines) {
+    my $config_string = _slurp($self->{'file'});
 
-    chomp($line);
+    $self->{'data'}    = $self->parse($config_string);
+    $self->{'content'} = $config_string;
 
-    # skip comments
-    next if ($line =~ /^\s*#/);
-
-    # skip empty lines
-    next if ($line =~ /^\s*$/);
-
-    if ($line =~ /^\[(.*)\]\s*$/) {
-      $section = $1;
-      next;
-    }
-
-    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
-
-      my ($field, $value) = ($1, $2);
-
-      if (not defined $section) {
-
-        $value = 1 if ($value =~ /^(yes|true)$/);
-        $value = 0 if ($value =~ /^(no|false)$/);
-
-        $config{$field} = $value;
-        next;
-
-      }
-
-      $value = 1 if ($value =~ /^(yes|true)$/);
-      $value = 0 if ($value =~ /^(no|false)$/);
-
-      $config{$section}{$field} = $value;
-
-    }
   }
-
-  return %config;
 
 }
 
-sub read_config {
+
+sub _slurp {
 
   my ($file) = @_;
 
-  open(CONFIG, "<$file") or die("Can't open config file; $?");
+  open(CONFIG, '<', $file) or die("Can't open config file: $?");
 
   my $config_string = do {
     local $/ = undef;
@@ -152,24 +67,197 @@ sub read_config {
 
   close(CONFIG);
 
-  my %config = parse_config($config_string);
-
-  return %config;
+  return $config_string;
 
 }
 
-sub stringify_config {
 
-  my (%config) = @_;
+sub _write {
+
+  my ($file, $content) = @_;
+
+  open(CONFIG, '>', $file) or die("Can't open config file: $?");
+  print CONFIG $content;
+  close(CONFIG);
+
+}
+
+
+sub _trim {
+
+  my ($string) = @_;
+  return $string unless($string);
+
+  $string =~ s/^\s+|\s+$//g;
+  return $string;
+
+}
+
+
+sub _parse_line {
+
+  my ($value) = @_;
+
+  return 1 if ($value =~ /^(yes|true)$/);
+  return 0 if ($value =~ /^(no|false)$/);
+
+  if ($value =~ /\,/) {
+    return map { _trim($_) } split(/,/, $value) if ($value =~ /\,/);
+  }
+
+  return $value;
+
+}
+
+
+sub get {
+
+  my ($self, $key) = @_;
+
+  my $value = undef;
+
+  if ($key =~ /\./) {
+
+    my ($section, $subkey) = split(/\./, $key);
+
+    if (    defined($self->{'data'}->{$section})
+         && defined($self->{'data'}->{$section}->{$subkey}) ) {
+      $value = $self->{'data'}->{$section}->{$subkey};
+    }
+
+  } else {
+    $value = $self->{'data'}->{$key} if ( defined($self->{'data'}->{$key}) );
+  }
+
+  return $value;
+
+}
+
+
+sub set {
+
+  my ($self, $key, $value) = @_;
+
+  if ($key =~ /\./) {
+
+    my ($section, $subkey) = split(/\./, $key);
+
+    if (    defined($self->{'data'}->{$section})
+         && defined($self->{'data'}->{$section}->{$subkey}) ) {
+      $self->{'data'}->{$section}->{$subkey} = $value;
+      return $value;
+    }
+
+  } else {
+    if ( defined($self->{'data'}->{$key}) ) {
+      $self->{'data'}->{$key} = $value;
+      return $value;
+    }
+  }
+
+}
+
+
+sub delete {
+
+  my ($self, $key) = @_;
+
+  if ($key =~ /\./) {
+
+    my ($section, $subkey) = split(/\./, $key);
+
+    if (    defined($self->{'data'}->{$section})
+         && defined($self->{'data'}->{$section}->{$subkey}) ) {
+      delete( $self->{'data'}->{$section}->{$subkey} );
+    }
+
+  } else {
+    if ( defined($self->{'data'}->{$key}) ) {
+      delete($self->{'data'}->{$key});
+    }
+  }
+
+
+}
+
+
+sub param {
+
+  my ($self, $key, $value) = @_;
+
+  return $self->get($key) if ($key && ! $value);
+  return $self->set($key, $value);
+
+}
+
+
+sub data {
+
+  my ($self) = @_;
+  return $self->{'data'};
+
+}
+
+
+sub parse {
+
+  my ($self, $config_string) = @_;
+
+  my @lines = split(/\n/, $config_string);
+
+  my $section;
+  my %config_data = ();
+
+  foreach my $line (@lines) {
+
+    chomp($line);
+
+    # skip comments and empty lines
+    next if ($line =~ /^\s*(#|;)/);
+    next if ($line =~ /^\s*$/);
+
+    if ($line =~ /^\[(.*)\]\s*$/) {
+      $section = _trim($1);
+      next;
+    }
+
+    if ($line =~ /^([^=]+?)\s*=\s*(.*?)\s*$/) {
+
+      my ($field, $raw_value) = ($1, $2);
+      my $parsed_value = [ _parse_line($raw_value) ];
+
+      my $value = (( @$parsed_value == 1 ) ? $parsed_value->[0] : $parsed_value);
+
+      if (not defined $section) {
+        $config_data{$field} = $value;
+        next;
+      }
+
+      $config_data{$section}{$field} = $value;
+
+    }
+
+  }
+
+  $self->{'data'} = \%config_data;
+
+  return \%config_data;
+
+}
+
+
+sub stringify {
+
+  my ($self) = @_;
 
   my $ini_string = '';
 
-  foreach my $section (keys %config) {
+  foreach my $section ( keys %{ $self->{'data'} } ) {
 
     $ini_string .= sprintf("\n[%s]\n", $section);
 
-    foreach my $key (keys %{ $config{$section} }) {
-      $ini_string .= sprintf("%s = %s\n", $key, $config{$section}{$key});
+    foreach my $key (keys %{ $self->{'data'}->{$section} }) {
+      $ini_string .= sprintf( "%s = %s\n", $key, $self->{'data'}->{$section}->{$key} );
     }
 
   }
@@ -180,33 +268,51 @@ sub stringify_config {
 
 }
 
-sub set_config {
 
-  my ( $input, $section, $param, $new_value ) = @_;
+sub save {
 
+  my ($self, $file) = @_;
+
+  $file = $self->{'file'} unless ($file);
+
+  my $content = $self->stringify();
+
+  _write($file, $content);
+
+}
+
+
+sub replace {
+
+  my ($self, $param, $new_value) = @_;
+
+  my $config_string   = _slurp($self->{'file'});
   my $current_section = '';
-  my @lines  = split(/\n/, $input);
-  my $output = '';
+  my @lines   = split(/\n/, $config_string);
+  my $output  = '';
+  my $section = '';
 
-  foreach (@lines) {
+  if ($param =~ /\./) {
+    ($section, $param) = split(/\./, $param);
+  }
 
-    #if ( $_ =~ m/^\s*([^=]*?)\s*$/ ) {
-    if ( $_ =~ /^(\[.*\])$/ ) {
+  foreach my $line ( @lines ) {
 
-      $current_section = $1;
+    if ( $line =~ /^\[(.*)\]\s*$/ ) {
+      $current_section = _trim($1);
 
     } elsif ( $current_section eq $section )  {
 
-      my ( $key, $value ) = ( $_ =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/);
+      my ( $key, $value ) = ( $line =~ m/^\s*([^=]*[^\s=])\s*=\s*(.*?\S)\s*$/ );
 
-      if ( $key and $key eq $param  ) { 
+      if ( $key && $key eq $param ) {
         $output .= "$param = $new_value\n";
         next;
       }
 
     }
 
-    $output .= "$_\n";
+    $output .= "$line\n";
 
   }
 
@@ -214,6 +320,28 @@ sub set_config {
 
 }
 
+
+sub replaceAndSave {
+
+  my ($self, $param, $new_value, $file) = @_;
+
+  my $output = $self->replace($param, $new_value);
+
+  $file = $self->{'file'} unless($file);
+
+  _write($file, $output);
+
+}
+
+
+sub get_config {
+
+  my ($file) = @_;
+
+  my $cfg = Slackware::SlackMan::Config->new($file);
+  return $cfg->{'data'};
+
+}
 
 1;
 __END__
@@ -224,9 +352,45 @@ Slackware::SlackMan::Config - SlackMan Config module
 
 =head1 SYNOPSIS
 
-  use Slackware::SlackMan::Config qw(:all);
+  use Slackware::SlackMan::Config;
 
-  my $config = read_config('foo.conf');
+  my $cfg = Slackware::SlackMan::Config->new('/etc/slackman/slackman.conf');
+
+  # get value
+  $cfg->param('slackware.version');
+
+  $cfg->get('slackware.version');
+
+  # set value
+  $cfg->param('slackware.version', 'current');
+
+  $cfg->set('slackware.version', 'current');
+
+  # Stringify config
+  my $config_string = $cfg->stringify();
+
+  # Save a config (create a clean config file -- loose the comments)
+  $cfg->save();
+
+  # Save a backup
+  $cfg->save('/tmp/slackman.conf.bak');
+
+  # Replace config value and return a string
+  my $config_string = $cfg->replace('slackware.version', 'current');
+
+  # Replace config value and save (preserve the comments)
+  $cfg->replaceAndSave('slackware.version', 'current');
+
+  # Return config hash
+  my $config = $cfg->data();
+
+  # Parse a config string and return the hash
+  my $config = $cfg->parse(<<CFG
+  [main]
+  # This is a comment
+  foo = bar
+  CFG
+  );
 
 =head1 DESCRIPTION
 
@@ -238,17 +402,31 @@ No subs are exported by default.
 
 =head1 SUBROUTINES
 
-=head2 read_config
+=head2 get_config ( $config_file )
 
-=head2 set_config
+=head1 METHODS
 
-=head2 load_config
+=head2 Slackware::SlackMan::Config->new ( [ $config_file ] )
+
+=head2 Slackware::SlackMan::Config->parse ( $config_string )
+
+=head2 Slackware::SlackMan::Config->param ( $param_name [, $param_value ] )
+
+=head2 Slackware::SlackMan::Config->get ( $param_name )
+
+=head2 Slackware::SlackMan::Config->set ( $param_name , $param_value )
+
+=head2 Slackware::SlackMan::Config->save ( [ $file ] )
+
+=head2 Slackware::SlackMan::Config->replace ( )
+
+=head2 Slackware::SlackMan::Config->replaceAndSave ( [ $file ] )
+
+=head2 Slackware::SlackMan::Config->stringify ( )
+
+=head2 Slackware::SlackMan::Config->data ( )
 
 =head1 VARIABLES
-
-=head2 $slackman_conf
-
-  my $cache_directory = $slackman_conf->{'directory'}->{'cache'};
 
 =head1 AUTHOR
 
@@ -288,4 +466,3 @@ This module is free software, you may distribute it under the same terms
 as Perl.
 
 =cut
-

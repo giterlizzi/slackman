@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
+  $VERSION = 'v1.3.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -26,6 +26,8 @@ BEGIN {
     package_download
     package_list_installed
     package_list_obsoletes
+    package_list_orphan
+    package_list_removed
     package_changelogs
     package_check_updates
     package_check_install
@@ -40,11 +42,9 @@ BEGIN {
 
 use File::Basename;
 use File::Path qw(make_path remove_tree);
-use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
@@ -236,7 +236,7 @@ sub package_install {
   my $package = shift;
 
   installpkg($package);
-  _update_history($package);
+  _update_history($package, 'install');
 
 }
 
@@ -253,7 +253,7 @@ sub package_upgrade {
      $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
   upgradepkg($package_cmd, 'reinstall', 'install-new');
-  _update_history($package);
+  _update_history($package, 'upgrade');
 
 }
 
@@ -263,7 +263,7 @@ sub package_remove {
   my $package = shift;
 
   removepkg($package);
-  _update_history($package);
+  _update_history($package, 'remove');
 
 }
 
@@ -458,6 +458,12 @@ sub package_check_install {
 
       next unless ($dependency_row->{'name'});
 
+      # Check dependency renamed package or alias
+      if ( defined($slackman_conf->{'renames'}->{$pkg_required}) ) {
+        logger->debug(sprintf('Found renamed package (from: %s, to: %s)', $pkg_required, $slackman_conf->{'renames'}->{$pkg_required}));
+        $pkg_required = $slackman_conf->{'renames'}->{$pkg_required};
+      }
+
       unless (package_info($pkg_required)) {
 
         $dependency_pkgs->{$pkg_required} = $dependency_row;
@@ -478,6 +484,8 @@ sub package_check_updates {
 
   my (@update_packages) = @_;
 
+  # TODO Add check for renamed package
+
   my $updatable_packages_query = qq/
     SELECT packages.name,
            packages.arch,
@@ -485,6 +493,8 @@ sub package_check_updates {
            packages.package,
            packages.package AS new_package,
            history.package  AS old_package,
+           packages.name    AS new_name,
+           history.name     AS old_name,
            packages.version AS new_version,
            history.version  AS old_version,
            history.build    AS old_build,
@@ -500,7 +510,7 @@ sub package_check_updates {
            packages.location,
            packages.checksum
       FROM packages, history
-     WHERE history.name   = packages.name
+     WHERE ( history.name = packages.name %s )
        AND history.status = "installed"
        AND old_version_build != new_version_build
        AND version_compare(old_version_build, new_version_build) < 0
@@ -526,13 +536,14 @@ sub package_check_updates {
                        WHERE history.status = "installed"
                          AND history.name = packages.name)/;
 
-  my $arch           = get_arch();
-  my @query_filters  = ();
-  my $update_pkgs    = {};  # Updatable packages
-  my $install_pkgs   = {};  # Required packages to install
-  my $option_repo    = $slackman_opts->{'repo'};
-  my $option_exclude = $slackman_opts->{'exclude'};
-  my $option_tag     = $slackman_opts->{'tag'};
+  my $arch            = get_arch();
+  my @query_filters   = ();
+  my @renamed_filters = ();
+  my $update_pkgs     = {};  # Updatable packages
+  my $install_pkgs    = {};  # Required packages to install
+  my $option_repo     = $slackman_opts->{'repo'};
+  my $option_exclude  = $slackman_opts->{'exclude'};
+  my $option_tag      = $slackman_opts->{'tag'};
 
   # Exclude package
   if ($option_exclude) {
@@ -543,6 +554,15 @@ sub package_check_updates {
   # Filter installed package with tag
   if ($option_tag) {
     push(@query_filters, qq/history.tag = "$option_tag"/);
+  }
+
+  foreach ( keys %{$slackman_conf->{'renames'}} ) {
+
+    my $old_package_name = $_;
+    my $new_package_name = $slackman_conf->{'renames'}->{$_};
+
+    push(@renamed_filters, qq/(history.name = "$old_package_name" AND packages.name = "$new_package_name")/);
+
   }
 
   # Filter repository
@@ -586,16 +606,25 @@ sub package_check_updates {
 
   }
 
-  $updatable_packages_query = sprintf($updatable_packages_query, join(' AND ', @query_filters));
+  # Renamed packages filter
+  my $renamed_filters = '';
+  my $query_filters   = join(' AND ', @query_filters);
+
+  if (@renamed_filters) {
+    $renamed_filters = sprintf(" OR (%s) ", join(' OR ', @renamed_filters));
+  }
+
+  # Build the final query
+  $updatable_packages_query = sprintf($updatable_packages_query, $renamed_filters, $query_filters);
 
   my $sth = $dbh->prepare($updatable_packages_query);
   $sth->execute();
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    next if (($row->{old_priority} > $row->{new_priority}) && ! $slackman_opts->{'no-priority'});
+    next if (($row->{'old_priority'} > $row->{'new_priority'}) && ! $slackman_opts->{'no-priority'});
 
-    $update_pkgs->{$row->{name}} = $row;
+    $update_pkgs->{ $row->{'name'} } = $row;
 
     # Skip dependency check
     next if ($slackman_opts->{'no-deps'});
@@ -665,7 +694,7 @@ sub package_download {
 
       my $download_package_status = download_file($package_url, "$package_path.part", 'progress-bar');
 
-      if ( $download_package_status == 200 ) {
+      if ( $download_package_status eq 0 ) {
 
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
         rename("$package_path.part", $package_path);
@@ -673,7 +702,7 @@ sub package_download {
       } else {
 
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-        push(@package_errors, "Download error ($download_package_status)");
+        push(@package_errors, "Download error (cURL: $download_package_status)");
 
       }
 
@@ -695,7 +724,7 @@ sub package_download {
     my $gpg_verify = 0;
     my $skip_check = 0;
 
-    unless ($slackman_conf{'main'}->{'checkmd5'}) {
+    unless ($slackman_conf->{'main'}->{'checkmd5'}) {
       $md5_check = 1;
       push(@package_errors, $md5_skipped_msg);
     }
@@ -705,7 +734,7 @@ sub package_download {
       push(@package_errors, $md5_skipped_msg);
     }
 
-    unless ($slackman_conf{'main'}->{'checkgpg'}) {
+    unless ($slackman_conf->{'main'}->{'checkgpg'}) {
       $gpg_verify = 1;
       push(@package_errors, $gpg_skipped_msg);
     }
@@ -748,6 +777,34 @@ sub package_download {
   }
 
   return ($package_path, \@package_errors);
+
+}
+
+
+sub package_list_orphan {
+
+  my $rows_ref = $dbh->selectall_hashref(qq/SELECT h.* FROM history h WHERE h.status = 'installed' AND NOT EXISTS (SELECT 1 FROM packages p WHERE p.name = h.name) ORDER BY name/, 'name', undef);
+
+  return $rows_ref;
+
+}
+
+
+sub package_list_removed {
+
+  my @query_filters;
+
+  push(@query_filters, "status = 'removed'");
+
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  my $query = "SELECT * FROM history WHERE %s ORDER BY timestamp DESC";
+     $query = sprintf($query, join(' AND ', @query_filters));
+
+  my $rows_ref = $dbh->selectall_hashref($query, 'name');
+  return $rows_ref;
 
 }
 
@@ -816,27 +873,10 @@ sub package_search_files {
 
   my ($file) = @_;
 
-  $file =~ s/\*/%/g;
+  $file = "/$file" unless ($file =~ /^\//);
 
-  my $dir = '';
-
-  my $query = qq{ SELECT *, directory || '/' || file AS fullpath FROM manifest WHERE file LIKE ? };
-
-  if ($file =~ /\//) {
-
-    $dir    = dirname($file);
-    $file   = basename($file);
-    $query .= ' AND directory LIKE ?';
-
-  }
-
-  my $sth = $dbh->prepare($query);
-
-  if ($dir) {
-    $sth->execute($file, $dir);
-  } else {
-    $sth->execute($file);
-  }
+  my $sth = $dbh->prepare('SELECT * FROM manifest WHERE files REGEXP(?)');
+  $sth->execute(qr/$file/);
 
   return $sth->fetchall_arrayref({});
 
@@ -845,18 +885,18 @@ sub package_search_files {
 
 sub _update_history {
 
-  my ($package) = @_;
+  my ($package, $action) = @_;
 
-  if ( $package =~ /\.(txz|tgz|tbz|tlz)/ ) {
-
-    my $pkg_basename = basename($package);
-    my $pkg_meta     = get_package_info($pkg_basename);
-
-    $package = $pkg_meta->{'name'};
-
+  if ( $action eq 'remove' ) {
+    parse_package_history($package);
+    return 0;
   }
 
-  parse_package_history($package);
+  my $pkg_basename = basename($package);
+  my $pkg_meta     = get_package_info($pkg_basename);
+  my $pkg_name     = $pkg_meta->{'name'};
+
+  parse_package_history($pkg_name);
 
 }
 

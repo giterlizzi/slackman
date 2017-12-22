@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Parser  qw(:all);
@@ -30,7 +29,7 @@ use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+
 
 use constant COMMANDS_DISPATCHER => {
 
@@ -59,7 +58,7 @@ use constant COMMANDS_HELP => {
 sub call_list_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -69,7 +68,7 @@ sub call_list_man {
 sub call_list_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -139,7 +138,7 @@ sub call_list_orphan {
   print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Installed", "Size");
   print sprintf("%s\n", "-"x132);
 
-  my $rows_ref = $dbh->selectall_hashref(qq/SELECT h.* FROM history h WHERE h.status = 'installed' AND NOT EXISTS (SELECT 1 FROM packages p WHERE p.name = h.name) ORDER BY name/, 'name', undef);
+  my $rows_ref = package_list_orphan();
 
   foreach (sort keys %$rows_ref) {
 
@@ -177,7 +176,7 @@ sub call_list_installed {
     print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
       $row->{'name'},
       $row->{'arch'},
-      ( $row->{version} . '-' . $row->{build} ),
+      ( $row->{'version'} . '-' . $row->{'build'} ),
       $row->{'tag'},
       filesize_h(($row->{'size_compressed'} * 1024), 1, 1),
       $row->{'timestamp'});
@@ -339,6 +338,7 @@ slackman-list - List packages and other info
   slackman list obsoletes
   slackman list orphan
   slackman list variables
+  slackman list repo
   slackman list help
 
 =head1 DESCRIPTION
@@ -349,6 +349,7 @@ B<slackman list> display information of:
     * available packages
     * orphan packages
     * obsolete packages
+    * available repositories
 
 =head1 COMMANDS
 
@@ -357,6 +358,7 @@ B<slackman list> display information of:
   slackman list packages       List available packages
   slackman list orphan         List orphan packages installed from unknown repository
   slackman list variables      List variables for ".repo" configurations
+  slackman list repo           List available repositories (alias of "slackman repo list" command)
 
 =head1 OPTIONS
 

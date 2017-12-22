@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+use lib qw(/usr/share/slackman-libsupport/lib);
+
 use Net::DBus;
 
 my $action  = shift;
@@ -31,7 +33,7 @@ if ($action ne 'remove') {
 
 my $bus = Net::DBus->system;
 
-# Set D-Bus timeout to 5min
+# Set D-Bus timeout to 5min for big packages (eg. libreoffice, kernel-source, etc.)
 $bus->timeout(5 * 60 * 1000);
 
 # Connect to SlackMan D-Bus interface

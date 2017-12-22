@@ -21,6 +21,18 @@ CheckUpgrade ( out 'a{sa{ss}}' )
 
 SecurityFix ( out 'a{saa{ss}}' )
 
+=head2 GetRepository
+
+GetPackages ( in 's' I<repo_id>, out 'a{ss}' )
+
+=head2 GetRepositories
+
+GetPackages ( in 's' I<type>, out 'as' )
+
+=head2 GetPackages
+
+GetPackages ( in 's' I<filter>, out 'a{ss}' )
+
 =head2 PackageInfo
 
 PackageInfo ( in 's' I<package_name>, out 'a{ss}' )
@@ -77,9 +89,21 @@ This signal is emitted when a package is upgraded.
 
 This signal is emitted when a package is removed.
 
+=head2 UpdatedChangeLog
+
+This signal is emitted when run C<slackman update> or C<slackman update changelog> command.
+
+=head2 UpdatedPackages
+
+This signal is emitted when run C<slackman update> or C<slackman update packages> command.
+
+=head2 UpdatedManifest
+
+This signal is emitted when run C<slackman update manifest> command.
+
 =head1 SEE ALSO
 
-L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-notifier(1)>
+L<dbus-send(1)>, L<dbus-monitor(1)>, L<slackman(8)>, L<slackman-service(1)>, L<slackman-notifier(1)>
 
 =head1 BUGS
 

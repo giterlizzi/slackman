@@ -1,0 +1,161 @@
+#!/bin/sh
+
+# Slackware build script for slackman-libsupport
+
+# Copyright 2017 Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+PRGNAM=slackman-libsupport
+VERSION=${VERSION:-1.2.1}
+BUILD=${BUILD:-1}
+TAG=${TAG:-_lotar}
+
+# SlackMan dependencies:
+#
+#  - DBD::SQlite
+#  - Net::DBus
+#    - XML::Twig
+#
+DBDSQLITE=1.55_03
+XMLTWIG=3.52
+NETDBUS=1.1.0
+
+MAKETEST=no
+
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i586 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$( uname -m ) ;;
+  esac
+fi
+
+CWD=$(pwd)
+TMP=${TMP:-/tmp/lotar}
+PKG=$TMP/package-$PRGNAM
+OUTPUT=${OUTPUT:-/tmp}
+
+if [ "$ARCH" = "i586" ]; then
+  SLKCFLAGS="-O2 -march=i586 -mtune=i686"
+  LIBDIRSUFFIX=""
+elif [ "$ARCH" = "i686" ]; then
+  SLKCFLAGS="-O2 -march=i686 -mtune=i686"
+  LIBDIRSUFFIX=""
+elif [ "$ARCH" = "x86_64" ]; then
+  SLKCFLAGS="-O2 -fPIC"
+  LIBDIRSUFFIX="64"
+else
+  SLKCFLAGS="-O2"
+  LIBDIRSUFFIX=""
+fi
+
+set -e
+
+rm -rf $PKG
+mkdir -p $TMP $PKG $OUTPUT
+cd $TMP
+rm -rf $PRGNAM-$VERSION
+
+SLACKMAN_PERL5LIBS=$PKG/usr/share/slackman/lib
+SLACKMAN_PERL5PREFIX=$PKG/usr/share/slackman/foo # Will be removed
+
+MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
+
+( PKGNAME=XML-Twig-$XMLTWIG
+  PKGURL=http://search.cpan.org/CPAN/authors/id/M/MI/MIROD/$PKGNAME.tar.gz
+
+  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
+
+  tar xzvf $CWD/$PKGNAME.tar.gz
+
+  cd $PKGNAME
+  chown -R root:root .
+  perl Makefile.PL -y $MAKEFILE_ARGS
+  make || exit 1
+  if [ "$MAKETEST" = "yes" ]; then
+    make test
+  fi
+  make install
+  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
+
+) || exit 1
+
+( PKGNAME=Net-DBus-$NETDBUS
+  PKGURL=http://search.cpan.org/CPAN/authors/id/D/DA/DANBERR/$PKGNAME.tar.gz
+
+  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
+
+  tar xzvf $CWD/$PKGNAME.tar.gz
+
+  cd $PKGNAME
+  chown -R root:root .
+  perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
+  make || exit 1
+  if [ "$MAKETEST" = "yes" ]; then
+    make test
+  fi
+  make install
+  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
+
+) || exit 1
+
+( PKGNAME=DBD-SQLite-$DBDSQLITE
+  PKGURL=http://search.cpan.org/CPAN/authors/id/I/IS/ISHIGAKI/$PKGNAME.tar.gz
+
+  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
+
+  tar xzvf $CWD/$PKGNAME.tar.gz
+
+  cd $PKGNAME
+  chown -R root:root .
+  perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
+  make || exit 1
+  if [ "$MAKETEST" = "yes" ]; then
+    make test
+  fi
+  make install
+  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
+  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
+
+) || exit 1
+
+rm -rf $PKG/usr/share/slackman/foo
+
+find $PKG -print0 | xargs -0 file | grep -e "executable" -e "shared object" | grep ELF \
+  | cut -f 1 -d : | xargs strip --strip-unneeded 2> /dev/null || true
+
+find $PKG -name "*.pod" -o -name ".packlist" -o -name "*.bs" | xargs rm -f || true
+
+find $PKG -depth -type d -empty -delete || true
+
+mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
+cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild
+
+mkdir -p $PKG/install
+cat $CWD/slack-desc > $PKG/install/slack-desc
+
+cd $PKG
+/sbin/makepkg -l y -c n $OUTPUT/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.${PKGTYPE:-tgz}

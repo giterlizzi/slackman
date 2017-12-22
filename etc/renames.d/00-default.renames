@@ -1,0 +1,23 @@
+# SlackMan renames configuration file - Renamed or replaced Slackware packages
+# For more information see slackman.renames(5)
+
+# Syntax:
+#
+# old-package-name = new-package-name
+
+
+# python-pip (added in Slackware 15.0)
+# 
+# This configuration is useful for upgrading pip package installed via SBo
+# repository
+
+#pip = python-pip
+
+
+# texlive (replace tetex in Slackware 15.0)
+#
+# This configuration help the user for replace tetex package with texlive
+# package
+
+#tetex = texlive
+

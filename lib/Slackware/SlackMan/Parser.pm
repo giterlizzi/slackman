@@ -5,16 +5,13 @@ use warnings;
 
 use 5.010;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
-use feature "switch";
-
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
 
 BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
+  $VERSION = 'v1.3.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -37,7 +34,6 @@ use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error);
 use File::Basename;
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB      qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 use Slackware::SlackMan::Package qw(:all);
@@ -53,7 +49,7 @@ sub parse_changelog {
 
   return(0) unless(download_repository_metadata($repository, 'changelog', \&$callback_status));
 
-  my $changelog_file = sprintf("%s/%s/ChangeLog.txt", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $changelog_file = sprintf("%s/ChangeLog.txt", $repo->{'cache_directory'});
   return(0) unless (-e $changelog_file);
 
   my $changelog_contents = file_read($changelog_file);
@@ -249,7 +245,7 @@ sub parse_checksums {
 
   return(0) unless(download_repository_metadata($repo->{'id'}, 'checksums', \&$callback_status));
 
-  my $checksums_file = sprintf("%s/%s/CHECKSUMS.md5", $slackman_conf{'directory'}->{'cache'}, $repo->{'id'});
+  my $checksums_file = sprintf("%s/CHECKSUMS.md5", $repo->{'cache_directory'});
   return(0) unless (-e $checksums_file);
 
   my $checksums_contents = file_read($checksums_file);
@@ -277,7 +273,7 @@ sub parse_packages {
   my $repository = $repo->{'id'};
   my $mirror     = $repo->{'mirror'};
 
-  my $packages_file = sprintf("%s/%s/PACKAGES.TXT", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $packages_file = sprintf("%s/PACKAGES.TXT", $repo->{'cache_directory'});
 
   return(0) unless (-e $packages_file);
 
@@ -351,6 +347,7 @@ sub parse_packages {
 
   # Delete repository manifest data
   $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
+  db_meta_delete("manifest-last-update.$repository");
 
   db_compact();
 
@@ -366,7 +363,7 @@ sub parse_manifest {
 
   return(0) unless(download_repository_metadata($repository, 'manifest', \&$callback_status));
 
-  my $manifest_file = sprintf("%s/%s/MANIFEST.bz2", $slackman_conf{'directory'}->{'cache'}, $repository);
+  my $manifest_file = sprintf("%s/MANIFEST.bz2", $repo->{'cache_directory'});
   return(0) unless(-e $manifest_file);
 
   my $manifest_input = file_read($manifest_file);
@@ -383,7 +380,7 @@ sub parse_manifest {
   $dbh->do('DELETE FROM manifest WHERE repository = ?', undef, $repository);
 
   my @columns = ('repository', 'name', 'package', 'version',
-                 'arch', 'build', 'tag', 'directory', 'file');
+                 'arch', 'build', 'tag', 'files');
   my @values  = ();
 
   my $i = 0;
@@ -403,6 +400,7 @@ sub parse_manifest {
     my $arch               = $pkg_info->{'arch'};
     my $build              = $pkg_info->{'build'};
     my $tag                = $pkg_info->{'tag'};
+    my @files              = ();
 
     foreach my $line (@lines) {
 
@@ -419,22 +417,13 @@ sub parse_manifest {
       my ($directory, $file);
 
       $path = "/$path";
-
-      if ($permission =~ /^d/) {
-        $directory = $path;
-        $file      = undef;
-      }
-
-      if ($permission =~ /^-/) {
-        $file      = basename($path);
-        $directory = dirname($path);
-      }
-
-      my @row = ( $repository, $name, $package, $version, $arch, $build, $tag,
-                  $directory, $file );
-      push(@values, \@row);
+      push(@files, $path);
 
     }
+
+    my @row = ( $repository, $name, $package, $version, $arch, $build, $tag,
+                join("\n", @files) );
+    push(@values, \@row);
 
   }
 
@@ -655,7 +644,7 @@ sub parse_variables {
   my $release_conf   = $release;
   my $release_suffix = '';
 
-  $release_conf = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
+  $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }

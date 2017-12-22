@@ -32,6 +32,8 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/slackman
 	$(POD2MAN) --section 1 --perm_rw=$(PERM_RW) -u \
 	  slackman-notifier $(DESTINSTALLMAN1DIR)/slackman-notifier.1
+	$(POD2MAN) --section 1 --perm_rw=$(PERM_RW) -u \
+	  slackman-service $(DESTINSTALLMAN1DIR)/slackman-service.1
 	$(POD2MAN) --section 7 --perm_rw=$(PERM_RW) -u \
 	  org.lotarproject.SlackMan.7.pod $(DESTINSTALLMAN7DIR)/org.lotarproject.SlackMan.7
 	install -m 644 org.lotarproject.SlackMan.service $(DESTDIR)/usr/share/dbus-1/system-services

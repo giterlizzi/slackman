@@ -1,0 +1,60 @@
+=head1 NAME
+
+B<slackman.renames> - Renamed or replaced Slackware pPackages configuration for L<slackman(8)> Package Manager 
+
+=head1 DESCRIPTION
+
+The F<slackman.renames> file contain the configurations for renamed or replaced Slackware packages.
+
+=head1 SYNTAX
+
+=over
+
+old-package-name = new-package-name
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+# Python pip
+
+pip = python-pip
+
+# Tetex was replaced with texlive in Slackware 15.0
+
+tetex = texlive
+
+=back
+
+=head1 FILES
+
+=over
+
+=item /etc/slackman/renames.d/*
+
+=back
+
+=head1 SEE ALSO
+
+L<slackman(8)>, L<slackman.conf(5)>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to 
+L<https://github.com/LotarProject/slackman/issues> page.
+
+=head1 AUTHOR
+
+Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2016-2017 Giuseppe Di Terlizzi.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>

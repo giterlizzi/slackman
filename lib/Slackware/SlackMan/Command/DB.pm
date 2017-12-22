@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -20,13 +20,13 @@ BEGIN {
 
 }
 
-use Slackware::SlackMan::Config;
+use Slackware::SlackMan;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+
 
 use constant COMMANDS_DISPATCHER => {
   'help.db'     => \&call_db_help,
@@ -47,7 +47,7 @@ use constant COMMANDS_HELP => {
 sub call_db_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -57,7 +57,7 @@ sub call_db_man {
 sub call_db_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -81,7 +81,7 @@ sub call_db_optimize {
 
 sub call_db_info {
 
-  my $db_path = $slackman_conf{'directory'}->{lib} . '/db.sqlite';
+  my $db_path = $slackman_conf->{'directory'}->{'lib'} . '/db.sqlite';
 
   my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
       $atime, $mtime, $ctime, $blksize, $blocks) = stat($db_path);

@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+use lib qw(/usr/share/slackman/lib);
+
 WriteMakefile(
     NAME             => 'Slackware::SlackMan',
     AUTHOR           => q{Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>},
@@ -19,11 +21,8 @@ WriteMakefile(
         'Test::More' => '0',
     },
     PREREQ_PM => {
-        'DBD::SQLite'     => '0',
-        'Sort::Versions'  => '0',
-        'Net::DBus'       => '0',
-        'HTTP::Tiny'      => '0',
-        'IO::Socket::SSL' => '0',
+        'DBD::SQLite' => '0',
+        'Net::DBus'   => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Slackware-Slackman-*' },

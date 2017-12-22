@@ -3,7 +3,6 @@ package Slackware::SlackMan::Command;
 use strict;
 use warnings;
 
-no if ($] >= 5.018), 'warnings' => 'experimental';
 use 5.010;
 
 our ($VERSION, @ISA, @EXPORT_OK, %EXPORT_TAGS);
@@ -12,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -27,17 +26,25 @@ BEGIN {
 use File::Basename;
 use IO::File;
 use IO::Handle;
-use Sort::Versions;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
-use Module::Load;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
 use Slackware::SlackMan::Repo  qw(:all);
 
-use Getopt::Long qw(:config);
+# SlacMan Command Modules
+use Slackware::SlackMan::Command::Clean;
+use Slackware::SlackMan::Command::Config;
+use Slackware::SlackMan::Command::DB;
+use Slackware::SlackMan::Command::List;
+use Slackware::SlackMan::Command::Log;
+use Slackware::SlackMan::Command::Package;
+use Slackware::SlackMan::Command::Update;
+use Slackware::SlackMan::Command::Repo;
+
+use Getopt::Long qw(:config no_pass_through);
 
 GetOptions( $slackman_opts,
   'after=s',
@@ -54,6 +61,7 @@ GetOptions( $slackman_opts,
   'force|f',
   'help|h',
   'limit=i',
+  'local',
   'man',
   'new-packages',
   'no-deps',
@@ -92,16 +100,17 @@ $ENV{ANSI_COLORS_DISABLED} = 1 if ($slackman_opts->{'color'} eq 'never');
 # Disable color if slackman STDOUT are in "pipe" (eg. slackman changelog --details | more)
 $ENV{ANSI_COLORS_DISABLED} = 1 unless (-t STDOUT);
 
-my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
 my $lock_check  = get_lock_pid();
-my $command     = $ARGV[0] || undef;
-my $sub_command = $ARGV[1] || undef;
+my $command     = $ARGV[0] || '';
+my $sub_command = $ARGV[1] || '';
 my @arguments   = @ARGV[ 1 .. $#ARGV ];
 
 $Text::Wrap::columns = 132;
 
-exit show_version() if $slackman_opts->{'version'};
+exit show_man()         if ($slackman_opts->{'man'} && ! $command);
+exit show_version()     if ($slackman_opts->{'version'});
+exit show_help()    unless ($command);
 
 # Force exit on CTRL-C and print/log a warning
 $SIG{INT} = sub {
@@ -111,17 +120,15 @@ $SIG{INT} = sub {
 
 sub run {
 
-  show_help() unless ($command);
-
   my @lock_commands = qw(update install upgrade remove reinstall clean);
-  my @skip_lock     = qw(update.history update.installed log.tail);
+  my @skip_lock     = qw(log.tail);
 
   my $cmd  = join( " ", $0, @ARGV );
   my $opts = join( ', ', map { $_ . '=' . $slackman_opts->{$_} } keys %$slackman_opts);
 
   logger->debug(sprintf('Call "%s" command (cmd: "%s", opts: "%s", pid: %s)', $command, $cmd, $opts, $$)) if ($command);
 
-  # Check running slackman instance and block certain commands
+  # Check running slackman instance and block commands in blacklist
   #
   # NOTE: only informational commands are available
   #
@@ -151,16 +158,11 @@ sub run {
     my $repo  = $slackman_opts->{'repo'};
        $repo .= ':' unless ($repo =~ /:/);
 
-    unless (/^$repo/ ~~ @repos) {
-      print "Unknown repository!\n\n";
+    unless ( grep(/^$repo/, @repos) ) {
+      print sprintf("%s Unknown repository!\n\n", colored('WARNING', 'yellow bold'));
       exit(1);
     }
 
-  }
-
-  # Load Commands Modules
-  foreach (@command_modules) {
-    load "Slackware::SlackMan::Command::$_";
   }
 
   # Commands dispatch table
@@ -171,6 +173,8 @@ sub run {
 
   my $commands_man  = {};
   my $commands_help = {};
+
+  my @command_modules = qw(Clean Config DB List Log Package Update Repo);
 
   foreach (@command_modules) {
 
@@ -232,6 +236,16 @@ sub run {
 sub show_version {
   print sprintf("SlackMan - Slackware Package Manager %s\n\n", $VERSION);
   exit(0);
+}
+
+
+sub show_man {
+
+ pod2usage(
+    -exitval => 0,
+    -verbose => 2
+  );
+
 }
 
 

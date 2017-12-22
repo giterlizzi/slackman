@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,14 +21,12 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::DB    qw(:all);
 use Slackware::SlackMan::Utils qw(:all);
 
 use File::Path      qw(make_path remove_tree);
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -55,7 +53,7 @@ use constant COMMANDS_HELP => {
 sub call_clean_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -65,7 +63,7 @@ sub call_clean_man {
 sub call_clean_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -84,7 +82,7 @@ sub call_clean_all {
 
 sub call_clean_db {
 
-  my $lib_dir = $slackman_conf{'directory'}->{'lib'};
+  my $lib_dir = $slackman_conf->{'directory'}->{'lib'};
   my $db_file = "$lib_dir/db.sqlite";
 
   logger->debug(qq/Clear database file "$db_file"/);
@@ -97,7 +95,7 @@ sub call_clean_db {
 
 sub call_clean_cache {
 
-  my $cache_dir = $slackman_conf{'directory'}->{'cache'};
+  my $cache_dir = $slackman_conf->{'directory'}->{'cache'};
   logger->debug(qq/Clear packages cache directory "$cache_dir"/);
 
   STDOUT->printflush("\nClean packages download cache... ");

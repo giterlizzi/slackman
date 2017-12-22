@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
@@ -30,7 +29,6 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -57,7 +55,7 @@ use constant COMMANDS_HELP => {
 sub call_update_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -67,7 +65,7 @@ sub call_update_man {
 sub call_update_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -102,6 +100,9 @@ sub call_update_repo_packages {
   # Set last-metadata-update
   db_meta_set('last-metadata-update', time());
 
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedPackages', undef, undef );
+
 }
 
 sub call_update_repo_gpg_key {
@@ -122,7 +123,7 @@ sub call_update_repo_gpg_key {
 
     STDOUT->printflush(sprintf("  * %-30s", $repo));
 
-    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf{'directory'}->{'cache'}, $repo);
+    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{'directory'}->{'cache'}, $repo);
 
     if (download_repository_metadata($repo, 'gpgkey')) {
       gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
@@ -160,6 +161,9 @@ sub call_update_repo_changelog {
 
   print "\n";
 
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedChangeLog', undef, undef );
+
 }
 
 sub call_update_repo_manifest {
@@ -184,6 +188,9 @@ sub call_update_repo_manifest {
   }
 
   print "\n";
+
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedManifest', undef, undef );
 
 }
 

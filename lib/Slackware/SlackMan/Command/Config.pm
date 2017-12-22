@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,12 +21,12 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Utils  qw(:all);
+use Slackware::SlackMan::Config;
+use Slackware::SlackMan::Utils   qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+
 
 use constant COMMANDS_DISPATCHER => {
 
@@ -45,12 +45,11 @@ use constant COMMANDS_HELP => {
   'config' => \&call_config_help
 };
 
-my $log_file = $slackman_conf{'logger'}->{'file'};
 
 sub call_config_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -60,13 +59,14 @@ sub call_config_man {
 sub call_config_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
   );
 
 }
+
 
 sub call_config {
 
@@ -75,10 +75,10 @@ sub call_config {
   # Set SlackMan config value
   if ($config_key && $config_value) {
 
-    my $slackman_conf_file = $slackman_conf{'config'}->{'file'};
+    my $slackman_conf_file = $slackman_conf->{'config'}->{'file'};
 
-    my ($section, $parameter) = split(/\./, $config_key);
-    file_write($slackman_conf_file, set_config(file_read($slackman_conf_file), "[$section]", $parameter, $config_value));
+    my $cfg = Slackware::SlackMan::Config->new($slackman_conf_file);
+       $cfg->replaceAndSave($config_key, $config_value);
 
     exit(0);
 
@@ -86,10 +86,13 @@ sub call_config {
 
   # Get or display all SlackMan config values
 
-  foreach my $section (sort keys %slackman_conf) {
-    foreach my $parameter (sort keys %{$slackman_conf{$section}}) {
+  foreach my $section (sort keys %{$slackman_conf}) {
 
-      my $param_value = $slackman_conf{$section}->{$parameter};
+    next if ($section eq 'renames'); # Skip renames !!!
+
+    foreach my $parameter (sort keys %{$slackman_conf->{$section}}) {
+
+      my $param_value = $slackman_conf->{$section}->{$parameter};
       my $param_name  = "$section.$parameter";
 
       if ($config_key) {

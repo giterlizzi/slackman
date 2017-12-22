@@ -4,7 +4,7 @@ B<slackman-cron.conf> - Configuration file for L<slackman(8)> Package Manager cr
 
 =head1 DESCRIPTION
 
-The F<slackman-cron.conf> file contain the configurations for L<slackman(8)> cronta utility.
+The F<slackman-cron.conf> file contain the configurations for L<slackman(8)> crontab utility.
 
 =head1 OPTIONS
 

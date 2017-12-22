@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
+  $VERSION = 'v1.3.0';
   @ISA     = qw(Exporter);
 
   @EXPORT = qw{
@@ -36,7 +36,8 @@ use Slackware::SlackMan::Package qw(:all);
 
 use Carp ();
 use File::Basename;
-use Data::Dumper;
+use Term::ANSIColor qw(color colored :constants);
+
 
 sub installpkg {
   _pkgtool_action('install', @_);
@@ -76,11 +77,24 @@ sub _pkg_exists {
 
 }
 
+sub _check_root {
+
+  my ($action) = @_;
+
+  unless ($< == 0) {
+    print sprintf("%s %s package action require root privilege!\n", ucfirst($action), colored('ERROR', 'bold red'));
+    exit(1);
+  }
+
+}
+
 sub _pkgtool_action {
 
   my $action   = shift;
   my $package  = shift;
   my @params   = _to_params(@_);
+
+  _check_root($action);
 
   _pkg_exists($package) unless ($action eq 'remove');
 

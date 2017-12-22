@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.2.1';
+  $VERSION   = 'v1.3.0';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{};
 
@@ -45,37 +45,48 @@ sub new {
 
 dbus_no_strict_exports();
 
+# Signals
+
+# Signal with Installed/Removed/Upgraded packages
 dbus_signal('PackageInstalled', [ 'string' ]);
 dbus_signal('PackageRemoved',   [ 'string' ]);
 dbus_signal('PackageUpgraded',  [ 'string' ]);
 
-dbus_property('version', 'string', 'read');
+# Signal for "slackman update" command
+dbus_signal('UpdatedChangeLog', [ 'string' ]);
+dbus_signal('UpdatedPackages',  [ 'string' ]);
+dbus_signal('UpdatedManifest',  [ 'string' ]);
+
+
+# Properties
+
+# Slackware and SlackMan version properties
+dbus_property('version',   'string', 'read');
 dbus_property('slackware', 'string', 'read');
 
-dbus_method('ChangeLog',    [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
-dbus_method('SecurityFix',  [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
-dbus_method('CheckUpgrade', [], [[ 'dict', 'string', [ 'dict', 'string', 'string' ] ]]);
+
+# Methods
+
+# ChangeLog methods
+dbus_method('ChangeLog',   [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
+dbus_method('SecurityFix', [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
+
+# Package methods
 dbus_method('PackageInfo',  [ 'string' ], [[ 'dict', 'string', 'string' ]], { 'param_names' => [ 'package_name' ] });
+dbus_method('GetPackages',  [ 'string' ], [[ 'array', 'string' ]], { 'param_names' => [ 'filter' ] });
+dbus_method('CheckUpgrade', [], [[ 'dict', 'string', [ 'dict', 'string', 'string' ] ]]);
+
+# Repo methods
+dbus_method('GetRepositories', [ 'string' ], [[ 'array', 'string' ]], { 'param_names' => [ 'type' ] });
+dbus_method('GetRepository',   [ 'string' ], [[ 'dict', 'string', 'string' ]], { 'param_names' => [ 'repo_id' ] });
 
 # PkgTools D-Bus methods
-dbus_method('InstallPkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
-dbus_method('RemovePkg',    [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_name' ] });
-dbus_method('UpgradePkg',   [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
+dbus_method('InstallPkg', [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
+dbus_method('RemovePkg',  [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_name' ] });
+dbus_method('UpgradePkg', [ 'string', 'caller' ], [ 'uint16' ], { 'param_names' => [ 'package_path' ] });
 
+# SlackMan notification
 dbus_method('Notify', [ 'string', 'string', 'string' ], [], { no_return => 1, param_names => [ 'action', 'summary', 'body' ] });
-
-
-sub Notify {
-
-  my ($self, $action, $summary, $body) = @_;
-
-  logger->debug("Call org.lotarproject.SlackMan.Notify method (args: action=$action,summary=$summary,body=$body)");
-
-  $self->emit_signal('PackageInstalled', $body) if ($action eq 'PackageInstalled');
-  $self->emit_signal('PackageRemoved',   $body) if ($action eq 'PackageRemoved');
-  $self->emit_signal('PackageUpgraded',  $body) if ($action eq 'PackageUpgraded');
-
-}
 
 
 sub version {
@@ -86,17 +97,78 @@ sub version {
 sub slackware {
 
   my $release = get_slackware_release();
-     $release = $slackman_conf{'slackware'}->{'version'} if (defined $slackman_conf{'slackware'});
+     $release = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
 
   return $release;
 
 }
 
 
+sub Notify {
+
+  my ($self, $action, $summary, $body) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.Notify method (args: action=$action,summary=$summary,body=$body)");
+
+  my $action_to_signal = {
+
+    'PackageInstalled'  => 'PackageInstalled',
+    'PackageRemoved'    => 'PackageRemoved',
+    'PackageUpgraded'   => 'PackageUpgraded',
+
+    'UpdatedChangeLog'  => 'UpdatedChangeLog',
+    'UpdatedPackages'   => 'UpdatedPackages',
+    'UpdatedManifest'   => 'UpdatedManifest',
+
+  };
+
+  if (defined($action_to_signal->{$action})) {
+    logger->debug(sprintf("Emit signal org.lotarproject.Slackman.%s for %s action", $action_to_signal->{$action}, $action));
+    $self->emit_signal($action_to_signal->{$action}, $body);
+  } else {
+    logger->error("Unknown action: $action");
+  }
+
+}
+
+
+sub GetRepositories {
+
+  my ($self, $type) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.GetRepositories method (args: type=$type)");
+
+  my @repositories = ();
+
+       if ($type eq 'enabled') {
+    @repositories = get_enabled_repositories();
+  } elsif ($type eq 'disabled') {
+    @repositories = get_disabled_repositories();
+  } else {
+    @repositories = get_repositories();
+  }
+
+  return \@repositories;
+
+}
+
+
+sub GetRepository {
+
+  my ($self, $repo_id) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.GetRepository method (args: repo_id=$repo_id)");
+
+  my $repository = get_repository($repo_id);
+
+  return $repository || {};
+
+}
+
+
 sub ChangeLog {
 
-  my $self = shift;
-  my ($repo_id) = @_;
+  my ($self, $repo_id) = @_;
 
   logger->debug("Call org.lotarproject.SlackMan.ChangeLog method (args: repo_id=$repo_id)");
 
@@ -122,7 +194,7 @@ sub ChangeLog {
 
 sub SecurityFix {
 
-  my $self = shift;
+  my ($self) = @_;
 
   logger->debug('Call org.lotarproject.SlackMan.SecurityFix method');
 
@@ -150,7 +222,7 @@ sub SecurityFix {
 
 sub CheckUpgrade {
 
-  my $self = shift;
+  my ($self) = @_;
 
   logger->debug('Call org.lotarproject.SlackMan.CheckUpgrade method');
 
@@ -166,8 +238,7 @@ sub CheckUpgrade {
 
 sub PackageInfo {
 
-  my $self = shift;
-  my ($package) = @_;
+  my ($self, $package) = @_;
 
   logger->debug("Call org.lotarproject.SlackMan.PackageInfo method (args: package_name=$package)");
 
@@ -176,10 +247,38 @@ sub PackageInfo {
 }
 
 
+sub GetPackages {
+
+  my ($self, $filter) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.GetPackages method (args: filter=$filter)");
+
+  my @results = ();
+
+  if ($filter eq 'installed') {
+    @results = sort keys %{ package_list_installed() };
+  }
+
+  if ($filter eq 'removed') {
+    @results = sort keys %{ package_list_removed() };
+  }
+
+  if ($filter eq 'obsoletes') {
+    @results = sort keys %{ package_list_obsoletes() };
+  }
+
+  if ($filter eq 'orphan') {
+    @results = sort keys %{ package_list_orphan() };
+  }
+
+  return \@results;
+
+}
+
+
 sub InstallPkg {
 
-  my $self = shift;
-  my ($package, $caller) = @_;
+  my ($self, $package, $caller) = @_;
 
   logger->debug("Call org.lotarproject.SlackMan.InstallPkg method (args: package_path=$package)");
 
@@ -198,8 +297,7 @@ sub InstallPkg {
 
 sub RemovePkg {
 
-  my $self = shift;
-  my ($package, $caller) = @_;
+  my ($self, $package, $caller) = @_;
 
   logger->debug("Call org.lotarproject.SlackMan.RemovePkg method (args: package_name=$package)");
 
@@ -217,8 +315,7 @@ sub RemovePkg {
 
 sub UpgradePkg {
 
-  my $self = shift;
-  my ($package, $caller) = @_;
+  my ($self, $package, $caller) = @_;
 
   logger->debug("Call org.lotarproject.SlackMan.UpgradePkg method (args: package_path=$package) from $caller caller");
 

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -35,7 +35,6 @@ use Term::ANSIColor qw(color colored :constants);
 use Term::ReadLine;
 use Text::Wrap;
 use Pod::Usage;
-use Pod::Find qw(pod_where);
 
 
 use constant COMMANDS_DISPATCHER => {
@@ -81,7 +80,7 @@ use constant COMMANDS_HELP => {
 sub call_package_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -91,7 +90,7 @@ sub call_package_man {
 sub call_package_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -119,14 +118,18 @@ sub call_package_info {
 
   my @packages_installed;
 
-  print "Installed package(s)\n";
+  print "\nInstalled package(s)\n";
   print sprintf("%s\n\n", "-"x80);
 
   foreach (keys %$installed_rows) {
 
     my $row = $installed_rows->{$_};
     my $description = $row->{description};
-       $description =~ s/\n/\n    /g;
+    my $pkg_description = '';
+
+    LINE: foreach my $line ( split(/\n/, $description ) ) {
+      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
+    }
 
     push @packages_installed, $row->{name};
 
@@ -139,7 +142,7 @@ sub call_package_info {
     print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
     print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
     print sprintf("%-15s : %s\n", 'Require',       $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
-    print sprintf("%-15s : %s\n", 'Summary',       $description);
+    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
 
     if ($slackman_opts->{'show-files'}) {
 
@@ -149,7 +152,7 @@ sub call_package_info {
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
-        print "    /$_\n";
+        print sprintf("%-5s /%s\n", ' ', $_);
       }
 
     }
@@ -174,7 +177,11 @@ sub call_package_info {
 
     my $row = $available_rows->{$_};
     my $description = $row->{description};
-       $description =~ s/\n/\n    /g;
+    my $pkg_description = '';
+
+    LINE: foreach my $line ( split(/\n/, $description ) ) {
+      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
+    }
 
     print sprintf("%-15s : %s\n", 'Name',          $row->{name});
     print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
@@ -185,17 +192,19 @@ sub call_package_info {
     print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
     print sprintf("%-15s : %s\n", 'Require',       $row->{required}) if ($row->{required});
     print sprintf("%-15s : %s\n", 'Repo',          $row->{repository});
-    print sprintf("%-15s : %s\n", 'Summary',       $description);
+    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
 
     if ($slackman_opts->{'show-files'}) {
 
       print sprintf("\n%-15s :\n\n", 'File lists');
 
-      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY directory, file');
+      my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY files');
       $sth->execute($row->{'package'});
 
-      while(my $row = $sth->fetchrow_hashref()) {
-        print sprintf("    %s%s\n", $row->{'directory'}, ($row->{'file'} || ''));
+      my $row = $sth->fetchrow_hashref();
+
+      foreach ( split(/\n/, $row->{'files'}) ) {
+        print sprintf("%-5s /%s\n", ' ', $_);
       }
 
     }
@@ -264,10 +273,13 @@ sub call_package_reinstall {
   }
 
   my @filters = ();
+  my @filter_packages = ();
 
   foreach (@is_installed) {
-    push(@filters, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
+    push(@filter_packages, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
   }
+
+  push(@filters, sprintf('( %s )', join(' OR ', @filter_packages)));
 
   # Filter repository
   push(@filters, repo_option_to_sql());
@@ -286,8 +298,6 @@ sub call_package_reinstall {
   _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
 
   exit(0) if ($slackman_opts->{'download-only'});
-
-  _check_root();
 
   if (@packages_for_pkgtool) {
 
@@ -372,8 +382,6 @@ sub call_package_remove {
     exit(0) unless(confirm("Are you sure? [Y/N]"));
   }
 
-  _check_root();
-
   foreach my $package_path (@is_installed) {
 
     package_remove($package_path);
@@ -413,18 +421,49 @@ sub call_package_install {
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
 
-  foreach (@install_packages) {
-    if (package_info($_)) {
-      print sprintf("%s package is already installed!\n", colored($_, 'bold'));
+  foreach my $package (@install_packages) {
+
+    # Detect local install package and create on-the-fly a fake repository metadata for local package
+    if ($slackman_opts->{'local'}) {
+
+      unless ( -e $package ) {
+        print sprintf("%s package not found!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+      unless ( $package =~ /\.(txz|tgz|tbz|tlz)$/) {
+        print sprintf("%s is not Slackware package!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+      my $pkg_meta = get_package_info(basename($package));
+
+      $pkg_meta->{'repository'}      = '(local)';
+      $pkg_meta->{'size_compressed'} = ((stat($package))[7] / 1024);
+
+      $packages_to_install->{$pkg_meta->{'name'}} = $pkg_meta;
+
+      if (package_info($pkg_meta->{'name'})) {
+        print sprintf("%s package is already installed!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+    }
+
+    if (package_info($package)) {
+      print sprintf("%s package is already installed!\n", colored($package, 'bold'));
       exit(1);
     }
+
   }
 
   STDOUT->printflush('Search packages... ');
 
-  update_repo_data();
+  update_all_repo_data();
 
-  ($packages_to_install, $dependency_pkgs) = package_check_install(@install_packages);
+  unless ($slackman_opts->{'local'}) {
+    ($packages_to_install, $dependency_pkgs) = package_check_install(@install_packages);
+  }
 
   STDOUT->printflush(colored("done\n\n", 'green'));
 
@@ -478,7 +517,7 @@ sub call_package_install {
 
       print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
-        $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
+        $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
       );
 
       push(@packages_to_downloads, $pkg);
@@ -504,18 +543,31 @@ sub call_package_install {
   exit(0) unless (@packages_to_downloads);
 
   unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-    exit(0) unless(confirm("Install selected packages? [Y/N]"));
+
+    my $choice = confirm_choice("Install selected packages? [Y/N/d]", qr/(Y|N|D)/i);
+
+    exit(0) unless ($choice);
+    exit(0)     if ($choice eq 'N');
+
+    $slackman_opts->{'download-only'} = 1 if ($choice eq 'D');
+
   }
 
-  print "\n\n";
-  print "Download package(s)\n";
-  print sprintf("%s\n\n", "-"x80);
 
-  _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
+  if ($slackman_opts->{'local'}) {
+    @packages_for_pkgtool = @install_packages;
 
-  exit(0) if ($slackman_opts->{'download-only'});
+  } else {
 
-  _check_root();
+    print "\n\n";
+    print "Download package(s)\n";
+    print sprintf("%s\n\n", "-"x80);
+
+    _packages_download(\@packages_to_downloads, \@packages_for_pkgtool, $packages_errors);
+
+    exit(0) if ($slackman_opts->{'download-only'});
+
+  }
 
   if (@packages_for_pkgtool) {
 
@@ -696,7 +748,7 @@ sub call_package_history {
 
 sub call_package_upgrade {
 
-  my (@update_package) = @_;
+  my (@update_packages) = @_;
 
   _check_last_metadata_update();
   _check_package_duplicates();
@@ -711,11 +763,59 @@ sub call_package_upgrade {
   my $total_compressed_size   = 0;
   my $total_uncompressed_size = 0;
 
+  foreach my $package (@update_packages) {
+
+    # Detect local install package and create on-the-fly a fake repository metadata for local package
+    if ($slackman_opts->{'local'}) {
+
+      unless ( -e $package ) {
+        print sprintf("%s package not found!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+      unless ( $package =~ /\.(txz|tgz|tbz|tlz)$/) {
+        print sprintf("%s is not Slackware package!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+      my $pkg_meta = get_package_info(basename($package));
+      my $old_meta = package_info($pkg_meta->{'name'});
+
+      $pkg_meta->{'repository'}        = '(local)';
+      $pkg_meta->{'size_compressed'}   = ((stat($package))[7] / 1024);
+      $pkg_meta->{'new_version_build'} = sprintf('%s-%s', $pkg_meta->{'version'}, $pkg_meta->{'build'});
+      $pkg_meta->{'old_version_build'} = sprintf('%s-%s', $old_meta->{'version'}, $old_meta->{'build'});
+
+      $pkg_meta->{'old_name'} = $pkg_meta->{'name'};
+      $pkg_meta->{'new_name'} = $pkg_meta->{'name'};
+
+      next if ( versioncmp($pkg_meta->{'old_version_build'}, $pkg_meta->{'new_version_build'}) >= 0);
+
+      $packages_to_update->{$pkg_meta->{'name'}} = $pkg_meta;
+
+      unless( package_info($pkg_meta->{'name'}) ) {
+        print sprintf("%s package not installed!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+    } else {
+
+      if ( $package !~ /\*/ && ! package_info($package) ) {
+        print sprintf("%s package not installed!\n", colored($package, 'bold'));
+        exit(1);
+      }
+
+    }
+
+  }
+
   STDOUT->printflush('Search upgraded packages... ');
 
-  update_repo_data();
+  update_all_repo_data();
 
-  ($packages_to_update, $packages_to_install) = package_check_updates(@update_package);
+  unless ($slackman_opts->{'local'}) {
+    ($packages_to_update, $packages_to_install) = package_check_updates(@update_packages);
+  }
 
   STDOUT->printflush(colored("done\n\n", 'green'));
 
@@ -733,14 +833,22 @@ sub call_package_upgrade {
 
       my $pkg = $packages_to_update->{$_};
 
-      $total_uncompressed_size += $pkg->{size_uncompressed};
-      $total_compressed_size   += $pkg->{size_compressed};
+      my $pkg_name       = $pkg->{'name'};
+      my $pkg_arch       = $pkg->{'arch'};
+      my $pkg_version    = sprintf("%s -> %s", $pkg->{'old_version_build'},$pkg->{'new_version_build'});
+      my $pkg_repository = $pkg->{'repository'};
+      my $pkg_size       = filesize_h(($pkg->{'size_compressed'} * 1024), 1, 1);
+
+      # Detect renamed package name
+      if ($pkg->{'new_name'} ne $pkg->{'old_name'}) {
+        $pkg_name = sprintf("%s -> %s", $pkg->{'old_name'}, $pkg->{'new_name'});
+      }
+
+      $total_uncompressed_size += $pkg->{'size_uncompressed'};
+      $total_compressed_size   += $pkg->{'size_compressed'};
 
       print sprintf("%-30s %-8s %-40s %-40s %s\n",
-        $pkg->{name}, $pkg->{arch},
-        sprintf('%s %s %s', $pkg->{old_version_build}, '->', $pkg->{new_version_build}),
-        $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
-      );
+        $pkg_name, $pkg_arch, $pkg_version, $pkg_repository, $pkg_size);
 
       push(@packages_to_downloads, $pkg);
 
@@ -795,11 +903,22 @@ sub call_package_upgrade {
 
   exit(0) if ($slackman_opts->{'no'} || $slackman_opts->{'summary'});
 
-  if (@packages_to_downloads) {
 
-    unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
-      exit(0) unless(confirm("Perform upgrade of selected packages? [Y/N]"));
-    }
+  unless ($slackman_opts->{'yes'} || $slackman_opts->{'download-only'}) {
+
+    my $choice = confirm_choice("Perform upgrade of selected packages? [Y/N/d]", qr/(Y|N|D)/i);
+
+    exit(0) unless ($choice);
+    exit(0)     if ($choice eq 'N');
+
+    $slackman_opts->{'download-only'} = 1 if ($choice eq 'D');
+
+  }
+
+  if ($slackman_opts->{'local'}) {
+    @packages_for_pkgtool = @update_packages;
+
+  } else {
 
     print "\n\n";
     print "Download package(s)\n";
@@ -809,40 +928,38 @@ sub call_package_upgrade {
 
     exit(0) if ($slackman_opts->{'download-only'});
 
-    _check_root();
+  }
 
-    if (@packages_for_pkgtool) {
+  if (@packages_for_pkgtool) {
 
-      print "\n\n";
-      print "Upgrade package(s)\n";
-      print sprintf("%s\n\n", "-"x80);
+    print "\n\n";
+    print "Upgrade package(s)\n";
+    print sprintf("%s\n\n", "-"x80);
 
-      foreach my $package_path (@packages_for_pkgtool) {
+    foreach my $package_path (@packages_for_pkgtool) {
 
-        $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
+      $kernel_upgrade = 1 if ($package_path =~ /kernel-(modules|generic|huge)/);
 
-        package_upgrade($package_path);
-
-      }
+      package_upgrade($package_path);
 
     }
 
-    # Display packages error list
-    _packages_errors($packages_errors);
-
-    # Display packages upgraded
-    _packages_upgraded(\@packages_for_pkgtool);
-
-    # Display Kernel Update message
-    _kernel_update_message() if ($kernel_upgrade);
-
-    # Send the list of upgraded packages via D-Bus
-    dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
-
-    # Search new configuration files (same as 'slackman new-config' command)
-    call_package_new_config() if (@packages_for_pkgtool);
-
   }
+
+  # Display packages error list
+  _packages_errors($packages_errors);
+
+  # Display packages upgraded
+  _packages_upgraded(\@packages_for_pkgtool);
+
+  # Display Kernel Update message
+  _kernel_update_message() if ($kernel_upgrade);
+
+  # Send the list of upgraded packages via D-Bus
+  dbus_slackman->Notify( 'PackageUpgraded', undef, join(',', @packages_for_pkgtool) ) if (@packages_for_pkgtool);
+
+  # Search new configuration files (same as 'slackman new-config' command)
+  call_package_new_config() if (@packages_for_pkgtool);
 
   exit(0);
 
@@ -862,10 +979,15 @@ sub call_package_file_search {
 
   my $rows = package_search_files($file);
 
-  foreach my $row (@$rows) {
+  foreach my $row ( @{$rows} ) {
 
-    print sprintf("%s/@{[ BOLD ]}%s@{[ RESET ]}: %s (%s)\n",
-      $row->{'directory'}, $row->{'file'}, $row->{'package'}, $row->{'repository'});
+    my @files = split(/\n/, $row->{'files'});
+
+    foreach my $path (@files) {
+      if ( $path =~ /$file$/ ) {
+        print sprintf("%-50s: %s (%s)\n", $path, $row->{'package'}, $row->{'repository'});
+      }
+    }
 
   }
 
@@ -969,7 +1091,7 @@ sub call_package_new_config {
       $package = "(" . $manifest->[0]->{'package'} . ")";
     }
 
-    print "  * $new_config_file\t\t$package\n";
+    print sprintf("  * %-50s %s\n", $new_config_file, $package);
 
   }
 
@@ -1135,7 +1257,7 @@ sub _packages_download {
 
     $count_downloads++;
 
-    print sprintf("%s", $pkg->{'package'});
+    print sprintf("[%03d/%03d] %-62s %s\n", $count_downloads, $num_downloads, $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
 
     my ($package_path, $package_errors) = package_download($pkg);
 
@@ -1146,8 +1268,6 @@ sub _packages_download {
     if (-e $package_path) {
       push(@$packages_for_pkgtool, $package_path);
     }
-
-    print "\n";
 
   }
 
@@ -1315,14 +1435,6 @@ sub _check_last_metadata_update {
 
 }
 
-sub _check_root {
-
-  unless ($< == 0) {
-    print sprintf("%s This action require root privilege!\n", colored('ERROR', 'bold red'));
-    exit(1);
-  }
-
-}
 
 sub _check_package_duplicates {
 
@@ -1443,6 +1555,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   -n, --no                              Assume no
   --no-gpg-check                        Disable GPG verify check
   --no-md5-check                        Disable MD5 checksum check
+  --local=PACKAGE-FILE                  Install or upgrade from a local package
 
 =head1 EXAMPLES
 
@@ -1459,6 +1572,10 @@ Install, upgrade and remove obsolete packages from specific repository:
 Upgrade package excluding kernels packages
 
   slackman upgrade --exclude kernel-*
+
+Install a new package from local package file:
+
+  slackman install --local /tmp/google-chrome-62.0.3202.75-x86_64-1.txz
 
 Search a package:
 

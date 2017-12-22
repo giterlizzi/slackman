@@ -13,11 +13,11 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION   = 'v1.2.1';
+  $VERSION   = 'v1.3.0';
   @EXPORT_OK = ();
   @EXPORT    = qw(
     $slackman_opts
-    %slackman_conf
+    $slackman_conf
     logger
   );
 
@@ -29,26 +29,110 @@ BEGIN {
 
 use Carp 'confess';
 
+# Load base modules
 use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Logger;
 
-# FIX "Can't locate Term/ReadLine/Perl.pm [...]" message
-$ENV{PERL_RL} = 'Stub';
-
-our %slackman_conf = load_config();
+# Initialize the global variables
+our $slackman_conf = {};
 our $slackman_opts = {};
+
+use Getopt::Long qw(:config pass_through);
+
+GetOptions( $slackman_opts,
+  'config=s',
+  'root=s',
+);
+
 
 # Set default options
 $slackman_opts->{'limit'} ||= 25;
 
-my $logger_conf = $slackman_conf{'logger'};
+# FIX "Can't locate Term/ReadLine/Perl.pm [...]" message
+$ENV{PERL_RL} = 'Stub';
 
-my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext,
-    $is_require, $hints, $bitmask, $hinthash) = caller(0);
+# Set ROOT environment variable for Slackware pkgtools
+$ENV{ROOT} = $slackman_opts->{'root'} if ($slackman_opts->{'root'});
 
-our $logger = Slackware::SlackMan::Logger->init( 'file'     => $logger_conf->{'file'},
-                                                 'level'    => $logger_conf->{'level'},
-                                                 'category' => $subroutine );
+# Set root directory for SlackMan (configuration, database, etc)
+my $root = '';
+   $root = $ENV{ROOT} if($ENV{ROOT});
+
+my $config_file = "$root/etc/slackman/slackman.conf";
+   $config_file = $slackman_opts->{'config'} if ($slackman_opts->{'config'});
+   $config_file =~ s|^//|/|;
+
+if ($root ne '' && ! -d $root) {
+  print "Slackware root directory '$root' not exists!\n";
+  exit(255);
+}
+
+unless (-f $config_file) {
+  print "Configuration file '$config_file' not found!\n";
+  exit(255);
+}
+
+# Load configuration file and save config hash
+$slackman_conf = get_config($config_file);
+
+# Set default slackman directories
+$slackman_conf->{'directory'}->{'root'}    ||= $root;
+$slackman_conf->{'directory'}->{'conf'}    ||= "$root/etc/slackman";
+$slackman_conf->{'directory'}->{'repos'}   ||= "$root/etc/slackman/repos.d";
+$slackman_conf->{'directory'}->{'renames'} ||= "$root/etc/slackman/renames.d";
+$slackman_conf->{'directory'}->{'log'}     ||= "$root/var/log";
+$slackman_conf->{'directory'}->{'lib'}     ||= "$root/var/lib/slackman";
+$slackman_conf->{'directory'}->{'cache'}   ||= "$root/var/cache/slackman";
+$slackman_conf->{'directory'}->{'lock'}    ||= "$root/var/lock";
+
+# Set default logger values
+$slackman_conf->{'logger'}->{'level'}      ||= 'debug';
+$slackman_conf->{'logger'}->{'file'}       ||= $slackman_conf->{'directory'}->{'log'} . '/slackman.log';
+$slackman_conf->{'logger'}->{'category'}   ||= '';
+
+# Set default value for color output
+$slackman_conf->{'main'}->{'color'} ||= 'always';
+
+# Verify terminal color capability using tput(1) utility
+if ($slackman_conf->{'main'}->{'color'} eq 'auto') {
+  qx { tput colors > /dev/null 2>&1 };
+  $ENV{ANSI_COLORS_DISABLED} = 1 if ( $? > 0 );
+}
+
+# Set config file location
+$slackman_conf->{'config'}->{'file'} = $config_file;
+
+# Set default renames
+$slackman_conf->{'renames'} = ();
+
+# Collect renames config files
+if ( -d $slackman_conf->{'directory'}->{'renames'} ) {
+
+  my %global_renames = ();
+
+  my @renames_files = grep { -f } glob(sprintf('%s/*.renames', $slackman_conf->{'directory'}->{'renames'}));
+
+  foreach my $renames_file (@renames_files) {
+
+    my $local_renames = get_config($renames_file);
+
+    foreach ( keys %{$local_renames} ) {
+      $global_renames{$_} = $local_renames->{$_};
+    }
+
+  }
+
+  $slackman_conf->{'renames'} = \%global_renames;
+
+}
+
+my $logger_conf = $slackman_conf->{'logger'};
+
+my $caller = (caller(0))[3];
+
+our $logger = Slackware::SlackMan::Logger->new( 'file'     => $logger_conf->{'file'},
+                                                'level'    => $logger_conf->{'level'},
+                                                'category' => $caller );
 
 # "die" signal trap
 $SIG{'__DIE__'} = sub {

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION   = 'v1.2.1';
+  $VERSION   = 'v1.3.0';
   @ISA       = qw(Exporter);
   @EXPORT_OK = qw{}
 
@@ -37,7 +37,7 @@ use constant CRITICAL  => 2;
 use constant ERROR     => 3;
 use constant WARNING   => 4;
 
-sub init {
+sub new {
 
   my $class  = shift;
   my $self   = {};
@@ -60,7 +60,7 @@ sub get_logger {
   my ($category) = @_;
   my $params = $self->{params};
 
-  return Slackware::SlackMan::Logger->init(
+  return Slackware::SlackMan::Logger->new(
     'file'     => $params->{'file'},
     'category' => $category,
     'level'    => $params->{'level'}
@@ -71,19 +71,22 @@ sub get_logger {
 sub log {
 
   my $self = shift;
+
   my ($level, $message) = @_;
 
+  $level = uc($level);
+
   my $file         = $self->{params}->{file};
-  my $logger_level = $self->{params}->{level};
+  my $logger_level = uc($self->{params}->{level});
   my $category     = $self->{params}->{category} || 'main';
   my $time         = Time::Piece->new();
 
   $category =~ s/::/./g;
 
-  return unless ( eval(uc($level)) <= eval(uc($logger_level)) );
+  return unless ( eval($level) <= eval($logger_level) );
 
   unless(open(LOG, '>>', $file)) {
-    open(LOG, '>&STDERR'); # Fallback to STDERR
+    open(LOG, '>&', \*STDERR); # Fallback to STDERR
   }
 
   LOG->autoflush(1);

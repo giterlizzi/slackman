@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,7 +21,6 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
@@ -29,7 +28,6 @@ use Slackware::SlackMan::Parser qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find       qw(pod_where);
 use File::Temp      qw(tempfile);
 use File::Basename;
 use File::Copy;
@@ -48,6 +46,8 @@ use constant COMMANDS_DISPATCHER => {
   'repo.add'     => \&call_repo_add,
   'repo.config'  => \&call_repo_config,
 
+  'list.repo'    => \&call_repo_list, # Alias
+
 };
 
 use constant COMMANDS_MAN => {
@@ -62,7 +62,7 @@ use constant COMMANDS_HELP => {
 sub call_repo_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -72,7 +72,7 @@ sub call_repo_man {
 sub call_repo_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -97,7 +97,7 @@ sub call_repo_add {
   my $repo_basename   = basename($repo_url);
   my $repo_name       = basename($repo_basename, '.repo');
   my $repo_content    = '';
-  my $repos_directory = $slackman_conf{'directory'}->{'repos'};
+  my $repos_directory = $slackman_conf->{'directory'}->{'repos'};
 
   if ( -e "$repos_directory/$repo_basename") {
     print colored('WARNING', 'yellow') . ": This repo config file already exists\n";
@@ -108,17 +108,12 @@ sub call_repo_add {
 
   if ( $repo_url =~ /^(http(|s)):\/\// ) {
 
-    my $http    = http();
-    my $request = $http->request( 'GET', $repo_url );
+    my $download_exit_code = download_file($repo_url, $repo_tmpfile);
 
-    if ($request->{'status'} == 404) {
-      print colored('ERROR', 'red bold') . ": Repository file not found ($repo_url)\n";
+    if ( $download_exit_code > 0 ) {
+      print colored('ERROR', 'red bold') . ": Repository file download error (cURL: $download_exit_code)\n";
       exit(255);
     }
-
-    $repo_content = $request->{'content'};
-    print $repo_fh $repo_content;
-    close($repo_fh);
 
   }
 
@@ -211,9 +206,9 @@ sub call_repo_list {
 
     print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
       $repo_id,
-      $repo_info->{name},
-      ($repo_info->{enabled} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
-      $repo_info->{priority},
+      $repo_info->{'name'},
+      ($repo_info->{'enabled'} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
+      $repo_info->{'priority'},
       $num_pkgs
     );
 
@@ -287,10 +282,12 @@ sub call_repo_info {
 
   my ($repo_id) = @_;
 
-  unless($repo_id) {
+  unless ($repo_id) {
     print "Usage: slackman repo info REPOSITORY\n";
     exit(255);
   }
+
+  update_repo_data($repo_id);
 
   my $repo_data = get_repository($repo_id);
 
@@ -299,15 +296,13 @@ sub call_repo_info {
     exit(255);
   }
 
-  update_repo_data();
-
   my $repo_content = file_read($repo_data->{config_file});
   my $repo_desc    = '';
 
   LINE: foreach my $line ( split(/\n/, $repo_content ) ) {
     last LINE if ( $line =~ /^\[/);
     $line =~ s/^#//;
-    $repo_desc .= sprintf("%-17s %s\n", ' ', trim($line));
+    $repo_desc .= sprintf("%-15s : %s\n", ' ', trim($line));
   }
 
   $repo_desc = trim($repo_desc);
@@ -318,24 +313,23 @@ sub call_repo_info {
   my @urls = qw/changelog packages manifest checksums gpgkey/;
 
   print "\n";
-  print sprintf("%-15s : %s\n",     "ID",            $repo_data->{id});
-  print sprintf("%-15s : %s\n",     "Name",          $repo_data->{name});
-  print sprintf("%-15s : %s\n",     "Configuration", $repo_data->{config_file});
+  print sprintf("%-15s : %s\n",   "ID",            $repo_data->{'id'});
+  print sprintf("%-15s : %s\n",   "Name",          $repo_data->{'name'});
+  print sprintf("%-15s : %s\n",   "Configuration", $repo_data->{'config_file'});
+  print sprintf("\n%-15s %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
+  print sprintf("%-15s : %s\n",   "Mirror",        $repo_data->{'mirror'});
+  print sprintf("%-15s : %s\n",   "Status",        (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')));
+  print sprintf("%-15s : %s\n",   "Last Update",   ($last_update || ''));
+  print sprintf("%-15s : %s\n",   "Priority",      $repo_data->{'priority'});
+  print sprintf("%-15s : %s\n",   "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
+  print sprintf("%-15s : %s\n",   "Packages",      $package_nums);
+  print sprintf("%-15s : %s\n",   "Directory",     $repo_data->{'cache_directory'});
 
-  print sprintf("\n%-15s : %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
-
-  print sprintf("%-15s : %s\n",     "Mirror",        $repo_data->{mirror});
-  print sprintf("%-15s : %s\n",     "Status",        (($repo_data->{enabled}) ? 'enabled' : 'disabled'));
-  print sprintf("%-15s : %s\n",     "Last Update",   ($last_update || ''));
-  print sprintf("%-15s : %s\n",     "Priority",      $repo_data->{priority});
-  print sprintf("%-15s : %s\n",     "Packages",      $package_nums);
-  print sprintf("%-15s : %s/%s\n",  "Directory",     $slackman_conf{directory}->{cache}, $repo_data->{id});
-
-  print "\nRepository URLs :\n";
+  print "\n\nRepository URLs\n\n";
 
   foreach (@urls) {
     next unless($repo_data->{$_});
-    print sprintf("  * %-15s : %s\n", $_, $repo_data->{$_});
+    print sprintf("  - %-10s : %s\n", $_, $repo_data->{$_});
   }
 
   print "\n";

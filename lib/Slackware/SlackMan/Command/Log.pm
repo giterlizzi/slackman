@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.2.1';
+  $VERSION     = 'v1.3.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -21,12 +21,11 @@ BEGIN {
 }
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config;
 use Slackware::SlackMan::Utils qw(:all);
 
 use Term::ANSIColor qw(color colored :constants);
 use Pod::Usage;
-use Pod::Find qw(pod_where);
+
 
 use constant COMMANDS_DISPATCHER => {
 
@@ -48,12 +47,10 @@ use constant COMMANDS_HELP => {
 };
 
 
-my $log_file = $slackman_conf{'logger'}->{'file'};
-
 sub call_log_man {
 
  pod2usage(
-    -input   => pod_where({-inc => 1}, __PACKAGE__),
+    -input   => __FILE__,
     -exitval => 0,
     -verbose => 2
   );
@@ -63,7 +60,7 @@ sub call_log_man {
 sub call_log_help {
 
   pod2usage(
-    -input    => pod_where({-inc => 1}, __PACKAGE__),
+    -input    => __FILE__,
     -exitval  => 0,
     -verbose  => 99,
     -sections => [ 'SYNOPSIS', 'OPTIONS' ]
@@ -72,6 +69,8 @@ sub call_log_help {
 }
 
 sub call_log_clean {
+
+  my $log_file = $slackman_conf->{'logger'}->{'file'};
 
   if (confirm('Are you sure? [Y/N]')) {
 
@@ -86,6 +85,8 @@ sub call_log_clean {
 }
 
 sub call_log_tail {
+
+  my $log_file = $slackman_conf->{'logger'}->{'file'};
 
   system("tail -f $log_file");
   exit(0);

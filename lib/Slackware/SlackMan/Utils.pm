@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
+  $VERSION = 'v1.3.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw(
@@ -44,7 +44,6 @@ BEGIN {
     get_slackware_release
     gpg_import_key
     gpg_verify
-    http
     ldd
     md5_check
     repo_option_to_sql
@@ -56,6 +55,7 @@ BEGIN {
     w3c_date_to_time
     success_sign
     failed_sign
+    versioncmp
 
   );
 
@@ -73,59 +73,16 @@ use IO::Handle;
 use Digest::MD5;
 use Time::Piece;
 use Time::Seconds;
-use HTTP::Tiny;
 use Carp ();
 use File::Basename;
 use Net::DBus;
 use Term::ANSIColor qw(color colored :constants);
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Config qw(:all);
-use Slackware::SlackMan::Logger;
 
 
 # Prevent Insecure $ENV{PATH} while running with -T switch
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
-
-sub http {
-
-  my %http_options = ( 'agent' => "SlackMan/$VERSION" );
-  my $proxy_conf   = $slackman_conf{'proxy'};
-
-  if ($proxy_conf->{'enable'}) {
-
-    my $proxy_url = undef;
-
-    if ($proxy_conf->{'username'}) {
-
-      $proxy_url = sprintf("%s://%s:%s@%s:%s",
-        $proxy_conf->{'protocol'},
-        $proxy_conf->{'username'},
-        $proxy_conf->{'password'},
-        $proxy_conf->{'hostname'},
-        $proxy_conf->{'port'},
-      );
-
-    } else {
-
-      $proxy_url = sprintf("%s://%s:%s",
-        $proxy_conf->{'protocol'},
-        $proxy_conf->{'hostname'},
-        $proxy_conf->{'port'},
-      );
-
-    }
-
-    $http_options{'http_proxy'}  = $proxy_url;
-    $http_options{'https_proxy'} = $proxy_url;
-
-  }
-
-  my $http = HTTP::Tiny->new( %http_options );
-
-  return $http;
-
-}
 
 
 # SlackMan DBus interface
@@ -145,11 +102,63 @@ sub dbus_notifications {
     ->get_object('/org/freedesktop/Notifications');
 }
 
+# Code from Sort::Versions module
+#
+sub versioncmp( $$ ) {
+
+  my @A = ($_[0] =~ /([-.]|\d+|[^-.\d]+)/g);
+  my @B = ($_[1] =~ /([-.]|\d+|[^-.\d]+)/g);
+
+  my ($A, $B);
+
+  while (@A and @B) {
+
+    $A = shift @A;
+    $B = shift @B;
+
+    if ($A eq '-' and $B eq '-') {
+      next;
+
+    } elsif ( $A eq '-' ) {
+      return -1;
+
+    } elsif ( $B eq '-') {
+      return 1;
+
+    } elsif ($A eq '.' and $B eq '.') {
+      next;
+
+    } elsif ( $A eq '.' ) {
+      return -1;
+
+    } elsif ( $B eq '.' ) {
+      return 1;
+
+    } elsif ($A =~ /^\d+$/ and $B =~ /^\d+$/) {
+      if ($A =~ /^0/ || $B =~ /^0/) {
+        return $A cmp $B if $A cmp $B;
+      } else {
+        return $A <=> $B if $A <=> $B;
+      }
+
+    } else {
+      $A = uc $A;
+      $B = uc $B;
+      return $A cmp $B if $A cmp $B;
+    }
+
+  }
+
+  @A <=> @B;
+
+}
+
 
 sub uniq {
   my %seen;
   return grep { !$seen{$_}++ } @_;
 }
+
 
 sub ldd {
 
@@ -162,26 +171,6 @@ sub ldd {
 
 }
 
-sub progress_bar {
-
-  my ( $url, $got, $total, $width, $char ) = @_;
-
-  $| = 1;
-
-  $width ||= 25;
-  $char  ||= '=';
-
-  my $got_h      = filesize_h($got, 1);
-  my $total_h    = filesize_h($total, 1);
-  my $num_width  = length $total_h;
-  my $file       = basename($url);
-  my $percentage = (100 * $got/+$total);
-
-  return sprintf "%-80s %3d%% [%-${width}s] %7s / %s\r",
-    $file, $percentage, $char x (($width-1)*$got/$total) . '>',
-    $got_h, $total_h;
-
-}
 
 sub datetime_h {
 
@@ -217,6 +206,7 @@ sub datetime_h {
 
 }
 
+
 sub filesize_h {
 
   my ($size, $decimal, $padding) = @_;
@@ -241,6 +231,7 @@ sub filesize_h {
   return $size_h;
 
 }
+
 
 sub datetime_calc {
 
@@ -268,6 +259,7 @@ sub datetime_calc {
 
 }
 
+
 sub file_read {
 
   my ($filename) = @_;
@@ -282,6 +274,7 @@ sub file_read {
 
 }
 
+
 sub file_write {
 
   my ($filename, $content) = @_;
@@ -293,6 +286,7 @@ sub file_write {
   return;
 
 }
+
 
 sub file_append {
 
@@ -308,6 +302,7 @@ sub file_append {
 
 }
 
+
 sub file_handler {
 
   my ($filename, $mode) = @_;
@@ -318,46 +313,61 @@ sub file_handler {
 
 }
 
+
+sub curl_cmd {
+
+  my ($curl_extra_flags) = @_;
+
+  my $curl_flags = qq/-H "User-Agent: SlackMan\/$VERSION" -C - -L -k --fail --retry 5 --retry-max-time 0/;
+
+  # Set proxy flags for cURL
+  if ($slackman_conf->{'proxy'}->{'enable'}) {
+
+    if ($slackman_conf->{'proxy'}->{'username'}) {
+
+      $curl_flags .= sprintf(" -x %s://%s:%s@%s:%s",
+        $slackman_conf->{'proxy'}->{'protocol'},
+        $slackman_conf->{'proxy'}->{'username'},
+        $slackman_conf->{'proxy'}->{'password'},
+        $slackman_conf->{'proxy'}->{'hostname'},
+        $slackman_conf->{'proxy'}->{'port'},
+      );
+
+    } else {
+      $curl_flags .= sprintf(" -x %s://%s:%s",
+        $slackman_conf->{'proxy'}->{'protocol'},
+        $slackman_conf->{'proxy'}->{'hostname'},
+        $slackman_conf->{'proxy'}->{'port'},
+      );
+    }
+
+  }
+
+  my $curl_cmd = "curl $curl_flags $curl_extra_flags";
+
+  logger->debug("CURL: $curl_cmd");
+
+  return $curl_cmd;
+
+}
+
+
 sub download_file {
 
   my ($url, $file, $progress) = @_;
 
-  my $total_data;
-  my $options = {};
-  my $http    = http();
+  my $extra_curl_flags = '-s';
+     $extra_curl_flags = '-#' if ($progress);
+
+  my $curl_cmd = curl_cmd("$extra_curl_flags -o $file $url");
 
   logger->info("[DOWNLOAD] Downloading $url and save into $file");
 
-  open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
-
-  print "\r" if ($progress);
-
-  $options->{data_callback} = sub {
-
-    my ($data, $response) = @_;
-    my $content_length = $response->{'headers'}->{'content-length'};
-
-    print DOWNLOAD $data; # Save chunk into file
-
-    $total_data .= $data;
-
-    STDOUT->printflush( progress_bar( $url, length($total_data), $content_length, 20, '=' ) ) if ($progress);
-
-  };
-
-  my $response = $http->request( 'GET', $url, $options );
-
-  close (DOWNLOAD);
-
-  if ( $response->{'success'} ) {
-    logger->info("[DOWNLOAD] done");
-    return $response->{status};
-  }
-
-  logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
-  return $response->{status};
+  system( $curl_cmd );
+  return $?;
 
 }
+
 
 sub get_last_modified {
 
@@ -375,22 +385,22 @@ sub get_last_modified {
 
   }
 
-  my $http = http();
+  my $curl_cmd = curl_cmd("-s -I $url");
 
   logger->debug("Get 'Last-Modified' date of $url");
 
-  my $response = $http->request('HEAD', $url);
+  my $headers = qx{ $curl_cmd };
+  my $result  = 0;
 
-  if ( $response->{'success'} ) {
-
-    my $last_modified = $response->{'headers'}{'last-modified'};
-    return w3c_date_to_time($last_modified) if ($last_modified);
-
+  if ($headers =~ m/Last\-Modified\:\s+(.*)/) {
+    my $match = $1;
+    return w3c_date_to_time(trim($match));
   }
 
-  return 0;
+  return $result;
 
 }
+
 
 sub trim {
 
@@ -401,6 +411,7 @@ sub trim {
   return $string;
 
 }
+
 
 sub confirm {
 
@@ -418,6 +429,7 @@ sub confirm {
 
 }
 
+
 sub confirm_choice {
 
   my ($prompt, $regex) = @_; 
@@ -433,6 +445,7 @@ sub confirm_choice {
   return uc($answer);
 
 }
+
 
 sub changelog_date_to_time {
 
@@ -458,6 +471,7 @@ sub changelog_date_to_time {
 
 }
 
+
 sub timestamp_to_time {
 
   my ($timestamp) = @_;
@@ -466,6 +480,7 @@ sub timestamp_to_time {
   return $t->epoch;
 
 }
+
 
 sub w3c_date_to_time {
 
@@ -482,6 +497,7 @@ sub w3c_date_to_time {
   return $t->epoch();
 
 }
+
 
 sub time_to_timestamp {
 
@@ -570,9 +586,11 @@ sub timestamp_options_to_sql {
 
 }
 
+
 sub callback_status {
   STDOUT->printflush(sprintf("%s... ", shift));
 }
+
 
 sub callback_spinner {
 
@@ -585,6 +603,7 @@ sub callback_spinner {
 
 }
 
+
 sub gpg_verify {
 
   my $file = shift;
@@ -595,6 +614,7 @@ sub gpg_verify {
   return ($?) ? 0 : 1;
 
 }
+
 
 sub gpg_import_key {
 
@@ -610,15 +630,17 @@ sub gpg_import_key {
 
 }
 
+
 sub get_arch {
   return (POSIX::uname())[4];
 }
+
 
 my $slackware_release;
 
 sub _get_slackware_release {
 
-  my $slackware_version_file = $slackman_conf{'directory'}->{'root'} . '/etc/slackware-version';
+  my $slackware_version_file = $slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
   my $slackware_version      = file_read($slackware_version_file);
 
   chomp($slackware_version);
@@ -628,9 +650,11 @@ sub _get_slackware_release {
 
 }
 
+
 sub get_slackware_release {
   return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
 }
+
 
 sub get_package_info {
 
@@ -678,6 +702,7 @@ sub get_package_info {
 
 }
 
+
 sub md5_check {
 
   my ($file, $checksum) = @_;
@@ -690,24 +715,27 @@ sub md5_check {
 
 }
 
+
 sub check_perl_module {
   my ($module) = @_;
   return 1 if (eval "require $module");
   return 0;
 }
 
+
 sub create_lock {
 
   my $pid = $$;
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
 
   file_write($lock_file, $pid);
 
 }
 
+
 sub get_lock_pid {
 
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
 
   open(my $fh, '<', $lock_file) or return undef;
   chomp(my $pid = <$fh>);
@@ -722,20 +750,24 @@ sub get_lock_pid {
 
 }
 
+
 sub delete_lock {
 
-  my $lock_file = $slackman_conf{'directory'}->{'lock'} . '/slackman';
+  my $lock_file = $slackman_conf->{'directory'}->{'lock'} . '/slackman';
   unlink($lock_file);
 
 }
+
 
 sub success_sign {
   return colored("\x{2713}", "green");
 }
 
+
 sub failed_sign {
   return colored("\x{2717}", "red");
 }
+
 
 1;
 __END__

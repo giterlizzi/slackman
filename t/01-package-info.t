@@ -6,6 +6,8 @@ use warnings FATAL => 'all';
 use Test::More;
 use File::Basename;
 
+use lib '/usr/share/slackman/lib';
+
 my $current_directory = dirname(__FILE__);
 $ENV{ROOT} = "$current_directory/root";
 

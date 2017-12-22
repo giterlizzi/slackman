@@ -5,18 +5,21 @@ use warnings FATAL => 'all';
 
 use 5.010;
 
+use lib qw(/usr/share/slackman/lib);
+
 use Net::DBus;
 use Net::DBus::Reactor;
 
 use POSIX;
 use Getopt::Long qw(:config);
 use Pod::Usage;
+use FindBin;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Config  qw(:all);
 use Slackware::SlackMan::Utils   qw(:all);
 
-my $VERSION = "v1.2.1";
+my $VERSION = "v1.3.0";
 my $options = {};
 
 GetOptions( $options,
@@ -34,6 +37,8 @@ pod2usage(-exitval => 0, -verbose => 2) if $options->{'man'};
 my $home_dir         = $ENV{'HOME'};
 my $user_config_file = "$home_dir/.slackman-notifier";
 
+my $cfg = Slackware::SlackMan::Config->new($user_config_file);
+
 create_user_config() unless (-e $user_config_file);
 
 my $action = $options->{'action'} || 'main';
@@ -47,8 +52,8 @@ if ($options->{'action'}) {
 
 } else {
 
-  fork or exec('/usr/libexec/slackman/slackman-notifier --action=listner');
-  fork or exec('/usr/libexec/slackman/slackman-notifier --action=notifier');
+  fork or exec("$FindBin::Bin/slackman-notifier --action=listner");
+  fork or exec("$FindBin::Bin/slackman-notifier --action=notifier");
 
 }
 
@@ -147,7 +152,7 @@ sub check_upgrade {
 
   return unless ( keys %{$upgrades} );
 
-  foreach my $package ( keys %{$upgrades} ) {
+  foreach my $package ( sort keys %{$upgrades} ) {
 
     push(@pkgs, $package);
 
@@ -160,19 +165,17 @@ sub check_upgrade {
 
   my $pkgs_string = join(',', sort(@pkgs));
 
-  my %current_config = read_config($user_config_file);
-
-  my $current_packages  = $current_config{'packages'}->{'upgrades'}    || '';
-  my $current_timestamp = $current_config{'last_update'}->{'upgrades'} || 0;
+  my $current_packages  = $cfg->get('packages.upgrades')    || '';
+  my $current_timestamp = $cfg->get('last_update.upgrades') || 0;
 
   # Remember the user after 6h
   return if ( $pkgs_string eq $current_packages && time() < ($current_timestamp + (3600 * 6)) );
 
   # Save actual package list
-  $current_config{'packages'}->{'upgrades'}    = $pkgs_string;
-  $current_config{'last_update'}->{'upgrades'} = time();
+  $cfg->set('packages.upgrades',    $pkgs_string);
+  $cfg->set('last_update.upgrades', time());
 
-  file_write($user_config_file, stringify_config(%current_config));
+  $cfg->save();
 
   return unless ($upgrades_body);
 
@@ -211,15 +214,12 @@ sub check_changelogs {
 
   }
 
-  my %current_config = read_config($user_config_file);
-  my $current_last_update = $current_config{'last_update'}->{'changelog'} || 0;
+  my $current_last_update = $cfg->get('last_update.changelog') || 0;
 
   return unless ($max_timestamp > $current_last_update);
 
-  # Set and write new config with new max timestamp
-  $current_config{'last_update'}->{'changelog'} = $max_timestamp;
-
-  file_write($user_config_file, stringify_config(%current_config));
+  $cfg->set('last_update.changelog', $max_timestamp);
+  $cfg->save();
 
   return unless ($changelog_body);
 
@@ -253,15 +253,12 @@ sub check_security_advisories {
     }
   }
 
-  my %current_config = read_config($user_config_file);
-  my $current_last_update = $current_config{'last_update'}->{'security_fix'} || 0;
+  my $current_last_update = $cfg->get('last_update.security_fix') || 0;
 
   return unless ($max_timestamp > $current_last_update);
 
-  # Set and write new config with new max timestamp
-  $current_config{'last_update'}->{'security_fix'} = $max_timestamp;
-
-  file_write($user_config_file, stringify_config(%current_config));
+  $cfg->set('last_update.security_fix', $max_timestamp);
+  $cfg->save();
 
   foreach my $repo (keys %{$security_fix_hash}) {
     foreach my $timestamp (keys %{$security_fix_hash->{$repo}}) {
@@ -354,14 +351,23 @@ sub action_listner {
   sub _notify_upgraded  { _notify('Upgraded',  @_) };
   sub _notify_removed   { _notify('Removed',   @_) };
 
-  $SlackMan->connect_to_signal("PackageInstalled", \&_notify_installed);
-  logger->debug('Listening to "org.lotarproject.SlackManPackageInstalled" signal');
 
-  $SlackMan->connect_to_signal("PackageUpgraded", \&_notify_upgraded);
-  logger->debug('Listening to "org.lotarproject.PackageUpgraded" signal');
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageInstalled" signal');
+  $SlackMan->connect_to_signal('PackageInstalled', \&_notify_installed);
 
-  $SlackMan->connect_to_signal("PackageRemoved", \&_notify_removed);
-  logger->debug('Listening to "org.lotarproject.PackageRemoved" signal');
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageUpgraded" signal');
+  $SlackMan->connect_to_signal('PackageUpgraded', \&_notify_upgraded);
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.PackageRemoved" signal');
+  $SlackMan->connect_to_signal('PackageRemoved', \&_notify_removed);
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedChangeLog" signal');
+  $SlackMan->connect_to_signal('UpdatedChangeLog', sub { check_changelogs;
+                                                         check_security_advisories });
+
+  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedPackages" signal');
+  $SlackMan->connect_to_signal('UpdatedPackages', sub { check_upgrade() });
+
 
   my $reactor=Net::DBus::Reactor->main();
   $reactor->run();
@@ -374,14 +380,16 @@ sub action_listner {
 #
 sub create_user_config {
 
-  my %user_config = (
+  logger->debug(sprintf('Create user config in %s', $cfg->{'file'}));
+
+  $cfg->{'data'} = {
     'last_update' => {
       'changelog'    => 0,
       'security_fix' => 0,
     }
-  );
+  };
 
-  file_write($user_config_file, stringify_config(%user_config));
+  $cfg->save();
 
 }
 
@@ -410,7 +418,7 @@ slackman-notifier - SlackMan Notification Tool
 
 =head1 SYNOPSIS
 
-  /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version]
+  /usr/libexec/slackman/slackman-notifier [-d|--daemon] [-h|--help] [-v|--version] [--man]
 
 =head1 DESCRIPTION
 

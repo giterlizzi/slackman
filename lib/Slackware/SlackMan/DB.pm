@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.2.1';
+  $VERSION = 'v1.3.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -38,13 +38,11 @@ BEGIN {
 }
 
 use DBI;
-use Sort::Versions;
 
 use Slackware::SlackMan;
-use Slackware::SlackMan::Utils   qw(:all);
-use Slackware::SlackMan::Config;
+use Slackware::SlackMan::Utils qw(:all);
 
-use constant SLACKMAN_SCHEMA_VERSION => 2;
+use constant SLACKMAN_SCHEMA_VERSION => 3;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -107,8 +105,7 @@ use constant SLACKMAN_MANIFEST_TABLE => qq/CREATE TABLE IF NOT EXISTS "manifest"
   "arch"              VARCHAR,
   "build"             INTEGER,
   "tag"               VARCHAR,
-  "directory"         VARCHAR,
-  "file"              VARCHAR)/;
+  "files"             TEXT)/;
 
 use constant SLACKMAN_MANIFEST_INDEX => qq/CREATE INDEX IF NOT EXISTS "manifest_idx" ON "manifest" (
   "directory"         ASC,
@@ -150,9 +147,9 @@ use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manife
 use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
 # Override built-in DBI module subroutines for loggin
-INIT {
+BEGIN {
 
-  if ( $slackman_conf{'logger'}->{'category'} =~ /sql/ ) {
+  if ( $slackman_conf->{'logger'}->{'category'} =~ /sql/ ) {
 
     no strict;
     no warnings;
@@ -233,7 +230,7 @@ our $dbh = dbh();
 
 sub dbh {
 
-  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf{'directory'}->{'lib'});
+  my $dsn = sprintf('dbi:SQLite:dbname=%s/db.sqlite', $slackman_conf->{'directory'}->{'lib'});
 
   our $dbh = DBI->connect($dsn, '', '', {
     PrintError       => 1,
@@ -248,10 +245,25 @@ sub dbh {
   $dbh->do('PRAGMA temp_store   = MEMORY');
   $dbh->do('PRAGMA cache_size   = 800000');
 
+
   $dbh->sqlite_create_function('version_compare', -1, sub {
     my ($old, $new) = @_;
     return versioncmp($old, $new);
   });
+
+
+  # Implement REGEXP function
+  # (see "The LIKE, GLOB, REGEXP, and MATCH operators" in https://sqlite.org/lang_expr.html)
+  #
+  $dbh->sqlite_create_function('regexp', -1, sub {
+
+    my ($string, $pattern) = @_;
+    my ($matches) = ( $string =~ /$pattern/ );
+
+    return $matches;
+
+  });
+
 
   logger->debug("Connected to $dsn");
 
@@ -264,7 +276,7 @@ sub dbh {
 sub db_check {
 
   my $slackman_schema_version = (($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0]);
-  
+
   # Init database if "user_version" pragma is not defined
   #
   unless ($slackman_schema_version) {
@@ -275,16 +287,16 @@ sub db_check {
   # Drop all table and index if schema version is less than SLACKMAN_SCHEMA_VERSION
   #
   if ( $slackman_schema_version < SLACKMAN_SCHEMA_VERSION ) {
-  
+
     logger->debug(sprintf('Detected previous SlackMan schema version (actual: %s, required: %s)',
       $slackman_schema_version, SLACKMAN_SCHEMA_VERSION));
-    
+
     logger->debug('Re-create SlackMan database');
 
     db_drop();
     db_compact();
     db_init();
-  
+
   }
 
 }
@@ -386,8 +398,6 @@ sub db_bulk_insert {
   $dbh->begin_work();
 
   my $sth = $dbh->prepare($query);
-
-  logger->debug(qq/$query/);
 
   foreach my $row (@$values) {
     $sth->execute(@$row);

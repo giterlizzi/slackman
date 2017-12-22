@@ -1,12 +1,12 @@
 # SlackMan TODO
 
- - [ ] FEATURE: Check dependencies command (eg. `slackman check-deps PACKAGE`)
- - [ ] FEATURE: Add rule in `.repo` file for 32-bit or ARM directory variant (i386, i486, i586, i686, x86, armv5, armv7, armel, etc.)
- - [ ] FEATURE: Add rule in `.repo` file to allow the repository only for particular arch (eg. `slackware:multilib` is only for `x86_64` arch)
- - [ ] FEATURE: Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
- - [ ] FIX: Display installed date in `slackman history` for packages installed and removed (never upgraded). Now dsplay only the removed date
- - [ ] FEATURE: Add option `d` in answer when using `slackman install` & `slackman upgrade` commands for download the packages (eg. `Perform upgrade of selected packages? [Y/N/d]`)
- - [ ] FEATURE: Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
+ - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
+ - [ ] Add rule in `.repo` file for 32-bit or ARM directory variant (i386, i486, i586, i686, x86, armv5, armv7, armel, etc.)
+ - [ ] Add rule in `.repo` file to allow the repository only for particular arch (eg. `slackware:multilib` is only for `x86_64` arch)
+ - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
+ - [ ] Display installed date in `slackman history` for packages installed and removed (never upgraded). Now dsplay only the removed date
+ - [ ] Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
+ - [ ] Notify the user of changed or installed `/etc/rc.d`
 
 ## SlackMan 1.1
 
@@ -35,3 +35,13 @@
  - [x] Display package "tag" on `slackman history` command
  - [x] Display extended download error ( eg. **404** ) in package summary
  - [x] Set repo config via CLI (eg. set new mirror url `slackman repo set slackware:packages mirror file:///srv/mirror/slackware`)
+
+
+## SlackMan 1.3
+
+ - [x] Trigger via D-Bus signal the end of SlackMan repository update (packages, manifest, and changelog)
+ - [x] Reload SlackMan Notifier check (updates, security fix, etc) on D-Bus signal
+ - [x] Add renamed or aliased package support (eg. `/etc/slackman/renames.d/00-default.renamed`)
+ - [x] Add local package install/upgrade using `--local FILE` option (eg. `slackman install --local /tmp/foo-1.2-noarch-1`)
+ - [x] Add option `d` in answer when using `slackman install` & `slackman upgrade` commands for download the packages (eg. `Perform upgrade of selected packages? [Y/N/d]`)
+ - [x] Increase SlackMan bootstrap and module loading

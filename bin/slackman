@@ -5,8 +5,16 @@ use warnings;
 
 use 5.010;
 
-use Slackware::SlackMan::Command qw(run);
-exit run;
+unless ($< == 0) {
+  print "Only root user can run SlackMan to install, remove and upgrade Slackware packages!\n";
+  exit(1);
+}
+
+use lib qw(/usr/share/slackman/lib);
+
+require Slackware::SlackMan::Command;
+
+exit Slackware::SlackMan::Command->run();
 
 __END__
 =head1 NAME
@@ -65,6 +73,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
   -n, --no                     Assume no
   --no-gpg-check               Disable GPG verify check
   --no-md5-check               Disable MD5 checksum check
+  --local=PACKAGE-FILE         Install or upgrade from a local package
 
 =head1 EXAMPLES
 

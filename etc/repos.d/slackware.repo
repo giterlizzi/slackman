@@ -11,14 +11,19 @@
 # 
 # NOTE: patches, pasture, extra and testing ChangeLog are included in main
 #       Slackware "packages" repository
-# 
+#
+# NOTE: KDE and Calligra (KOffice) localization packages are excluded by default.
+#       If you can install/upgrade this packages use "-no-excludes" options
 
 [packages]
 name      = Slackware{$release.suffix}-$release
 enabled   = true
 mirror    = http://mirrors.slackware.com/slackware/slackware{$release.suffix}-$release/
 manifest  = $mirror/slackware{$release.suffix}/MANIFEST.bz2
-exclude   = kde-l10n-*,calligra-l10n-*
+packages  = $mirror/slackware{$release.suffix}/PACKAGES.TXT
+checksums = $mirror/slackware{$release.suffix}/CHECKSUMS.md5
+gpgkey    = $mirror/GPG-KEY
+exclude   = kde-l10n-*,calligra-l10n-*,koffice-l10n-*
 
 [patches]
 name      = Slackware{$release.suffix}-$release (Patches)
