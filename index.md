@@ -12,7 +12,7 @@ update Slackware packages from a standard Slackware repository (official and 3th
  - Multiple [repository](repo.md) support
  - Dependency resolution
  - Bash Completion support
- - Flexible repository configuration via [variables][variables.md]
+ - Flexible repository configuration via [variables](variables.md)
  - [D-Bus interface](dbus.md) (via `org.lotarproject.SlackMan`) with PolicyKit support
  - Userspace D-Bus client to notify update & changelogs (via `org.freedesktop.Notification`) service
  - ... and more
@@ -30,6 +30,6 @@ update Slackware packages from a standard Slackware repository (official and 3th
 
 ## Copyright
 
- - Copyright 2016-2017 © Giuseppe Di Terlizzi
+ - Copyright 2016-2018 © Giuseppe Di Terlizzi
  - Slackware® is a Registered Trademark of Patrick Volkerding
  - Linux is a Registered Trademark of Linus Torvalds
