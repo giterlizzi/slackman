@@ -24,21 +24,11 @@
 
 
 PRGNAM=slackman-libsupport
-VERSION=${VERSION:-1.2.1}
+VERSION=${VERSION:-1.3.0}
 BUILD=${BUILD:-1}
 TAG=${TAG:-_lotar}
 
-# SlackMan dependencies:
-#
-#  - DBD::SQlite
-#  - Net::DBus
-#    - XML::Twig
-#
-DBDSQLITE=1.55_03
-XMLTWIG=3.52
-NETDBUS=1.1.0
-
-MAKETEST=no
+CPANM=${TAG:-"$CWD/cpanm"}
 
 if [ -z "$ARCH" ]; then
   case "$( uname -m )" in
@@ -68,81 +58,24 @@ else
 fi
 
 set -e
-
 rm -rf $PKG
 mkdir -p $TMP $PKG $OUTPUT
 cd $TMP
 rm -rf $PRGNAM-$VERSION
 
-SLACKMAN_PERL5LIBS=$PKG/usr/share/slackman/lib
-SLACKMAN_PERL5PREFIX=$PKG/usr/share/slackman/foo # Will be removed
+MODULES="DBD::SQLite XML::Parser XML::Twig Net::DBus IO::Socket::SSL Net::SSLeay"
 
-MAKEFILE_ARGS="PREFIX=$SLACKMAN_PERL5PREFIX LIB=$SLACKMAN_PERL5LIBS"
 
-( PKGNAME=XML-Twig-$XMLTWIG
-  PKGURL=http://search.cpan.org/CPAN/authors/id/M/MI/MIROD/$PKGNAME.tar.gz
+if [ ! -e $CPANM ]; then
+  curl -L https://cpanmin.us -o $CWD/cpanm
+fi
 
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
+for MODULE in $MODULES; do
+  perl $CPANM -L $PKG/usr/share/slackman --self-contained \
+    --configure-args="--cflags=$SLKCFLAGS" --verbose --notest $MODULE
+done
 
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  perl Makefile.PL -y $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
-
-( PKGNAME=Net-DBus-$NETDBUS
-  PKGURL=http://search.cpan.org/CPAN/authors/id/D/DA/DANBERR/$PKGNAME.tar.gz
-
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
-
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
-
-( PKGNAME=DBD-SQLite-$DBDSQLITE
-  PKGURL=http://search.cpan.org/CPAN/authors/id/I/IS/ISHIGAKI/$PKGNAME.tar.gz
-
-  [ -f $CWD/$PKGNAME.tar.gz ] || wget $PKGURL -O $CWD/$PKGNAME.tar.gz
-
-  tar xzvf $CWD/$PKGNAME.tar.gz
-
-  cd $PKGNAME
-  chown -R root:root .
-  perl Makefile.PL OPTIMIZE="$SLKCFLAGS" $MAKEFILE_ARGS
-  make || exit 1
-  if [ "$MAKETEST" = "yes" ]; then
-    make test
-  fi
-  make install
-  mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  cp -a README* LICENSE $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME
-  chmod 644 $PKG/usr/doc/$PRGNAM-$VERSION/$PKGNAME/*
-
-) || exit 1
-
-rm -rf $PKG/usr/share/slackman/foo
+rm -rf $PKG/usr/share/slackman/bin
 
 find $PKG -print0 | xargs -0 file | grep -e "executable" -e "shared object" | grep ELF \
   | cut -f 1 -d : | xargs strip --strip-unneeded 2> /dev/null || true
