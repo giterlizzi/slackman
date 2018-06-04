@@ -10,7 +10,7 @@ unless ($< == 0) {
   exit(1);
 }
 
-use lib qw(/usr/share/slackman/lib);
+use lib qw(/usr/share/slackman/lib/perl5);
 
 require Slackware::SlackMan::Command;
 
