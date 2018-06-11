@@ -55,6 +55,7 @@ load_repositories();
 sub load_repositories {
 
   my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf->{'directory'}->{'repos'}));
+  my $arch  = get_arch();
 
   foreach my $file (@files) {
 
@@ -66,8 +67,12 @@ sub load_repositories {
 
     foreach my $repo (@repos) {
 
+      # Skip main section "_"
+      next if ($repo eq '_');
+
       my $repo_config = $config_data->{$repo};
       my $repo_id     = "$config_name:$repo";
+      my $repo_arch   = {};
       my $mirror      = $repo_config->{'mirror'};
          $mirror      =~ s/\/$//;
 
@@ -78,6 +83,46 @@ sub load_repositories {
       $repo_config->{'priority'} ||= 0;
       $repo_config->{'enabled'}  ||= 0;
       $repo_config->{'exclude'}  ||= undef;
+
+      # Set repo arch support
+      if (defined($repo_config->{'arch'})) {
+
+        if (ref($repo_config->{'arch'}) ne 'ARRAY') {
+          $repo_config->{'arch'} = [ $repo_config->{'arch'} ];
+        }
+
+        foreach (@{$repo_config->{'arch'}}) {
+
+          my ($arch, $directory_prefix) = split(/:/, $_);
+          my $enabled = 1;
+
+          if ($arch =~ /^!/) {
+            $enabled = 0;
+            $arch =~ s/^!//;
+          }
+
+          $repo_arch->{$arch} = $enabled;
+          $repo_arch->{$arch} = $directory_prefix  if ($directory_prefix);
+
+        }
+
+        $repo_config->{'arch'} = $repo_arch;
+
+      } else {
+
+        $repo_config->{'arch'} = {
+          'x86'    => 1,
+          'x86-64' => 1,
+          'arm'    => 1,
+        };
+
+      }
+
+      # Disable the repo if arch is not supported (eg. slackware:multilib on non x86_64 machine)
+         if ($arch eq 'x86_64')        { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86-64'}); }
+      elsif ($arch =~ /x86|i[3456]86/) { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86'});    }
+      elsif ($arch =~ /arm(.*)/)       { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'arm'});    }
+
 
       $repo_config->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_config->{'changelog'}));
       $repo_config->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_config->{'packages'}));
@@ -405,7 +450,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

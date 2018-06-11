@@ -32,6 +32,7 @@ BEGIN {
     package_check_updates
     package_check_install
     package_search_files
+    package_changelog_announces
   };
 
   %EXPORT_TAGS = (
@@ -52,13 +53,38 @@ use Slackware::SlackMan::DB     qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
 use Slackware::SlackMan::Pkgtools;
 
+
+
+sub package_changelog_announces {
+
+  my @query_filters = ();
+
+  # Filter by date range
+  if (my $timestamp_options = timestamp_options_to_sql()) {
+    push(@query_filters, $timestamp_options);
+  }
+
+  # Filter enabled repositories
+  push(@query_filters, repo_option_to_sql());
+  push(@query_filters, 'announce IS NOT NULL');
+
+  my $query = 'SELECT repository, timestamp, announce FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
+     $query = sprintf($query, join(' AND ', @query_filters), ($slackman_opts->{'limit'} || 25));
+
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+
+  return $sth->fetchall_arrayref({});
+
+}
+
+
 sub package_changelogs {
 
   my ($package) = @_;
 
   my $option_repo   = $slackman_opts->{'repo'};
   my $option_cve    = $slackman_opts->{'cve'};
-  my @repositories  = get_enabled_repositories();
   my @query_filters = ();
 
   # Get only machine arch and "noarch" changelogs
@@ -90,6 +116,8 @@ sub package_changelogs {
   if ($option_cve) {
     push(@query_filters, sprintf('( "," || issues || "," LIKE %s )', $dbh->quote("%,$option_cve,%")));
   }
+
+  push(@query_filters, 'announce IS NULL');
 
   my $query = 'SELECT * FROM changelogs WHERE %s ORDER BY timestamp DESC LIMIT %s';
      $query = sprintf($query, join(' AND ', @query_filters), ($slackman_opts->{'limit'} || 25));
@@ -233,9 +261,12 @@ sub package_version_compare {
 
 sub package_install {
 
-  my $package = shift;
+  my ($package) = @_;
 
-  installpkg($package);
+  my $terse = undef;
+     $terse = 'terse' if ($slackman_opts->{'terse'});
+
+  installpkg($package, $terse);
   _update_history($package, 'install');
 
 }
@@ -243,7 +274,10 @@ sub package_install {
 
 sub package_upgrade {
 
-  my $package = shift;
+  my ($package) = @_;
+
+  my $terse = undef;
+     $terse = 'terse' if ($slackman_opts->{'terse'});
 
   my $pkg_info = get_package_info(basename($package));
 
@@ -252,7 +286,7 @@ sub package_upgrade {
   my $package_cmd = $package;
      $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
-  upgradepkg($package_cmd, 'reinstall', 'install-new');
+  upgradepkg($package_cmd, 'reinstall', 'install-new', $terse);
   _update_history($package, 'upgrade');
 
 }
@@ -396,6 +430,17 @@ sub package_check_install {
   if ($option_exclude) {
     $option_exclude =~ s/\*/%/g;
     push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
+  }
+
+  if (defined($slackman_conf->{'main'}->{'exclude'})) {
+
+    my @excluded = split(/,/, $slackman_conf->{'main'}->{'exclude'});
+
+    foreach my $exclude (@excluded) {
+      $exclude  =~ s/\*/%/g;
+      push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($exclude)));
+    }
+
   }
 
   push(@query_filters, sprintf('packages.category = "%s"', $slackman_opts->{'category'})) if ($slackman_opts->{'category'});
@@ -551,15 +596,26 @@ sub package_check_updates {
     push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
   }
 
+  if (defined($slackman_conf->{'main'}->{'exclude'})) {
+
+    my @excluded = split(/,/, $slackman_conf->{'main'}->{'exclude'});
+
+    foreach my $exclude (@excluded) {
+      $exclude  =~ s/\*/%/g;
+      push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($exclude)));
+    }
+
+  }
+
   # Filter installed package with tag
   if ($option_tag) {
     push(@query_filters, qq/history.tag = "$option_tag"/);
   }
 
-  foreach ( keys %{$slackman_conf->{'renames'}} ) {
+  foreach ( keys %{$slackman_conf->{'renames'}->{'_'}} ) {
 
     my $old_package_name = $_;
-    my $new_package_name = $slackman_conf->{'renames'}->{$_};
+    my $new_package_name = $slackman_conf->{'renames'}->{'_'}->{$_};
 
     push(@renamed_filters, qq/(history.name = "$old_package_name" AND packages.name = "$new_package_name")/);
 
@@ -694,7 +750,7 @@ sub package_download {
 
       my $download_package_status = download_file($package_url, "$package_path.part", 'progress-bar');
 
-      if ( $download_package_status eq 0 ) {
+      if ( $download_package_status eq 200 ) {
 
         logger->info(sprintf("Downloaded %s package", $pkg->{'package'}));
         rename("$package_path.part", $package_path);
@@ -702,7 +758,7 @@ sub package_download {
       } else {
 
         logger->error(sprintf("Error during download of %s package", $pkg->{'package'}));
-        push(@package_errors, "Download error (cURL: $download_package_status)");
+        push(@package_errors, "Download error ($download_package_status)");
 
       }
 
@@ -712,7 +768,9 @@ sub package_download {
 
   unless (-e "$package_path.asc") {
 
-    if ( download_file("$package_url.asc", "$package_path.asc") == 200 ) {
+    my $download_asc_status = download_file("$package_url.asc", "$package_path.asc");
+
+    if ( $download_asc_status eq 200 ) {
       logger->info(sprintf("Downloaded signature of %s package", $pkg->{'package'}));
     }
 
@@ -769,6 +827,7 @@ sub package_download {
     unless ($skip_check) {
 
       unless ($md5_check && $gpg_verify) {
+        unlink("$package_path.asc");
         unlink($package_path) or warn "Failed to remove file: $!";
       }
 
@@ -980,7 +1039,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

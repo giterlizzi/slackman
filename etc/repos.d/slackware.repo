@@ -70,6 +70,7 @@ priority  = -1
 [multilib]
 name      = Slackware64-$release (MultiLib)
 enabled   = false
+arch      = x86-64
 mirror    = http://www.slackware.com/~alien/multilib/$release/
 changelog = http://www.slackware.com/~alien/multilib/ChangeLog.txt
 gpgkey    = http://www.slackware.com/~alien/multilib/GPG-KEY

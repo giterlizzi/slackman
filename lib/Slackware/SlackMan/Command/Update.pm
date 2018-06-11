@@ -89,7 +89,7 @@ sub call_update_repo_packages {
     logger->info(qq/Update "$repo" repository packages/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush(sprintf("  * %-30s", $repo));
+    STDOUT->printflush(sprintf(" - %-30s", $repo));
     parse_packages($repo_data, \&callback_status);
     STDOUT->printflush(colored("done\n", 'green'));
 
@@ -121,7 +121,7 @@ sub call_update_repo_gpg_key {
     logger->info(qq/Update "$repo" repository GPG-KEY/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush(sprintf("  * %-30s", $repo));
+    STDOUT->printflush(sprintf(" - %-30s", $repo));
 
     my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{'directory'}->{'cache'}, $repo);
 
@@ -153,7 +153,7 @@ sub call_update_repo_changelog {
     logger->info(qq/Update "$repo" repository ChangeLog/);
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush(sprintf("  * %-30s", $repo));
+    STDOUT->printflush(sprintf(" - %-30s", $repo));
     parse_changelog($repo_data, \&callback_status);
     STDOUT->printflush(colored("done\n", 'green'));
 
@@ -181,7 +181,7 @@ sub call_update_repo_manifest {
 
     my $repo_data = get_repository($repo);
 
-    STDOUT->printflush(sprintf("  * %-30s", $repo));
+    STDOUT->printflush(sprintf(" - %-30s", $repo));
     parse_manifest($repo_data, \&callback_status);
     STDOUT->printflush(colored("done\n", 'green'));
 
@@ -311,7 +311,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

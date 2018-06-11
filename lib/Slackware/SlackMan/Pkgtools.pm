@@ -61,7 +61,11 @@ sub reinstallpkg {
 }
 
 sub _to_params {
-  return map { ((length($_) > 1) ? "--$_" : "-$_") } @_;
+
+  return map {
+    ((length($_) > 1) ? "--$_" : "-$_")
+  } grep { $_ ne '' } @_;
+
 }
 
 sub _pkg_exists {
@@ -92,6 +96,7 @@ sub _pkgtool_action {
 
   my $action   = shift;
   my $package  = shift;
+
   my @params   = _to_params(@_);
 
   _check_root($action);
@@ -185,7 +190,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

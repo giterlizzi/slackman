@@ -188,6 +188,54 @@ sub check_upgrade {
 }
 
 
+sub check_announces {
+
+  logger->info('Get new ChangeLog Announce items from SlackMan D-Bus service');
+
+  my $announces     = dbus_slackman->Announce( undef ); # Get ChangeLog Announces for all repositories
+  my $max_timestamp = 0; # Max ChangeLog entry timestamp
+  my $announce_body = '';
+
+  return unless ( keys %{$announces} );
+
+  foreach my $repo (keys %{$announces}) {
+
+    foreach ( @{$announces->{$repo}} ) {
+
+      my $announce = $_->{'announce'};
+         $announce =~ s/\n/ /gm;
+
+      $announce_body .= "<b>$repo repository</b>\n";
+      $announce_body .= sprintf("<i>%s</i>\n", datetime_h(timestamp_to_time($_->{'timestamp'})));
+      $announce_body .= "$announce\n";
+      $announce_body .= sprintf("\n%s\n", "-"x32);
+
+      $max_timestamp = timestamp_to_time($_->{'timestamp'}) if ($max_timestamp < timestamp_to_time($_->{'timestamp'}));
+
+    }
+
+    #$announce_body .= sprintf("\n%s\n", "-"x32);
+
+  }
+
+  my $current_last_update = $cfg->get('last_update.announce') || 0;
+
+  return unless ($max_timestamp > $current_last_update);
+
+  $cfg->set('last_update.announce', $max_timestamp);
+  $cfg->save();
+
+  return unless ($announce_body);
+
+  notify({
+    'icon'    => '/usr/share/slackman/slackware.png',
+    'summary' => 'Slackware ChangeLog Announces',
+    'body'    => $announce_body,
+  });
+
+}
+
+
 sub check_changelogs {
 
   logger->info('Get new ChangeLog items from SlackMan D-Bus service');
@@ -300,6 +348,11 @@ sub action_notifier {
 
     sleep(5);
 
+    # Check latest Slackware ChangeLog Announces from all Slackware repository
+    check_announces();
+
+    sleep(5);
+
     # Check latest Slackware ChangeLogs from all Slackware repository
     check_changelogs();
 
@@ -352,20 +405,20 @@ sub action_listner {
   sub _notify_removed   { _notify('Removed',   @_) };
 
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.PackageInstalled" signal');
+  logger->debug('Listen "org.lotarproject.SlackMan.PackageInstalled" signal');
   $SlackMan->connect_to_signal('PackageInstalled', \&_notify_installed);
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.PackageUpgraded" signal');
+  logger->debug('Listen "org.lotarproject.SlackMan.PackageUpgraded" signal');
   $SlackMan->connect_to_signal('PackageUpgraded', \&_notify_upgraded);
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.PackageRemoved" signal');
+  logger->debug('Listen "org.lotarproject.SlackMan.PackageRemoved" signal');
   $SlackMan->connect_to_signal('PackageRemoved', \&_notify_removed);
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedChangeLog" signal');
+  logger->debug('Listen "org.lotarproject.SlackMan.UpdatedChangeLog" signal');
   $SlackMan->connect_to_signal('UpdatedChangeLog', sub { check_changelogs;
                                                          check_security_advisories });
 
-  logger->debug('Listening to "org.lotarproject.SlackMan.UpdatedPackages" signal');
+  logger->debug('Listen "org.lotarproject.SlackMan.UpdatedPackages" signal');
   $SlackMan->connect_to_signal('UpdatedPackages', sub { check_upgrade() });
 
 
@@ -386,6 +439,7 @@ sub create_user_config {
     'last_update' => {
       'changelog'    => 0,
       'security_fix' => 0,
+      'announce'     => 0,
     }
   };
 
@@ -448,7 +502,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

@@ -110,8 +110,8 @@ sub call_repo_add {
 
     my $download_exit_code = download_file($repo_url, $repo_tmpfile);
 
-    if ( $download_exit_code > 0 ) {
-      print colored('ERROR', 'red bold') . ": Repository file download error (cURL: $download_exit_code)\n";
+    unless ( $download_exit_code == 200 ) {
+      print colored('ERROR', 'red bold') . ": Repository file download error ($download_exit_code)\n";
       exit(255);
     }
 
@@ -195,24 +195,30 @@ sub call_repo_list {
   my @repositories = get_repositories();
 
   print "\nAvailable repository\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-30s %-70s %-10s %-10s %-4s\n", "Repository ID",  "Description", "Status", "Priority", "Packages");
-  print sprintf("%s\n", "-"x132);
+
+  my @rows = ();
 
   foreach my $repo_id (@repositories) {
 
     my $repo_info = get_repository($repo_id);
     my $num_pkgs  = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
 
-    print sprintf("%-30s %-70s %-10s %-10s %-4s\n",
+    push(@rows, [
       $repo_id,
       $repo_info->{'name'},
       ($repo_info->{'enabled'} ? colored(sprintf("%-10s", 'Enabled'), 'GREEN') : 'Disabled'),
       $repo_info->{'priority'},
       $num_pkgs
-    );
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Repository ID',  'Description', 'Status', 'Priority', 'Packages' ],
+    'widths'    => [ 0, 0, 10, 0, 0 ]
+  });
 
   exit(0);
 
@@ -287,6 +293,13 @@ sub call_repo_info {
     exit(255);
   }
 
+  my @repos = get_repositories();
+
+  unless ( grep(/^$repo_id$/, @repos) ) {
+    print sprintf("%s Unknown repository!\n\n", colored('WARNING', 'yellow bold'));
+    exit(1);
+  }
+
   update_repo_data($repo_id);
 
   my $repo_data = get_repository($repo_id);
@@ -297,40 +310,63 @@ sub call_repo_info {
   }
 
   my $repo_content = file_read($repo_data->{config_file});
-  my $repo_desc    = '';
+  my @repo_desc    = ();
 
   LINE: foreach my $line ( split(/\n/, $repo_content ) ) {
     last LINE if ( $line =~ /^\[/);
     $line =~ s/^#//;
-    $repo_desc .= sprintf("%-15s : %s\n", ' ', trim($line));
+    push(@repo_desc, trim($line)) if (length($line));
   }
 
-  $repo_desc = trim($repo_desc);
 
   my $package_nums = $dbh->selectrow_array('SELECT COUNT(*) AS packages FROM packages WHERE repository = ?', undef, $repo_id);
   my $last_update  = time_to_timestamp(db_meta_get("last-update.$repo_id.packages"));
 
   my @urls = qw/changelog packages manifest checksums gpgkey/;
+  my @rows = ();
 
-  print "\n";
-  print sprintf("%-15s : %s\n",   "ID",            $repo_data->{'id'});
-  print sprintf("%-15s : %s\n",   "Name",          $repo_data->{'name'});
-  print sprintf("%-15s : %s\n",   "Configuration", $repo_data->{'config_file'});
-  print sprintf("\n%-15s %s\n\n", "Description",   $repo_desc) if ($repo_desc && scalar(split(/\n/, $repo_desc)) > 1);
-  print sprintf("%-15s : %s\n",   "Mirror",        $repo_data->{'mirror'});
-  print sprintf("%-15s : %s\n",   "Status",        (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')));
-  print sprintf("%-15s : %s\n",   "Last Update",   ($last_update || ''));
-  print sprintf("%-15s : %s\n",   "Priority",      $repo_data->{'priority'});
-  print sprintf("%-15s : %s\n",   "Excluded",      join(', ', @{$repo_data->{'exclude'}})) if ($repo_data->{'exclude'});
-  print sprintf("%-15s : %s\n",   "Packages",      $package_nums);
-  print sprintf("%-15s : %s\n",   "Directory",     $repo_data->{'cache_directory'});
+  push(@rows, [ 'ID',            $repo_data->{'id'} ]);
+  push(@rows, [ 'Name',          $repo_data->{'name'} ]);
+  push(@rows, [ 'Configuration', $repo_data->{'config_file'} ]);
 
-  print "\n\nRepository URLs\n\n";
+  if (@repo_desc) {
+
+    push(@rows, [ '', '' ]);
+
+    for (my $i=0; $i < @repo_desc; $i++) {
+      push(@rows, [ 'Description', $repo_desc[$i] ]) if ($i < 1);
+      push(@rows, [ ' ', $repo_desc[$i] ]) if ($i >= 1);
+    }
+
+  }
+
+  push(@rows, [ 'Arch Support', sprintf("x86: %s\tx86-64: %s\tarm: %s",
+    ($repo_data->{'arch'}->{'x86'}    ? colored('yes', 'GREEN') : 'no'),
+    ($repo_data->{'arch'}->{'x86-64'} ? colored('yes', 'GREEN') : 'no'),
+    ($repo_data->{'arch'}->{'arm'}    ? colored('yes', 'GREEN') : 'no')
+  )]);
+
+  push(@rows, [ 'Mirror',      $repo_data->{'mirror'} ]);
+  push(@rows, [ 'Status',      (($repo_data->{'enabled'}) ? colored('enabled', 'GREEN') : colored('disabled', 'RED')) ]);
+  push(@rows, [ 'Last Update', ($last_update || '') ]);
+  push(@rows, [ 'Priority',    $repo_data->{'priority'} ]);
+  push(@rows, [ 'Excluded',    join(', ', @{$repo_data->{'exclude'}}) ] ) if ($repo_data->{'exclude'});
+  push(@rows, [ 'Packages',    $package_nums ]);
+  push(@rows, [ 'Directory',   $repo_data->{'cache_directory'} ]);
+
+  push(@rows, [ '', '' ]);
+  push(@rows, [ 'Repository URLs', '' ]);
 
   foreach (@urls) {
     next unless($repo_data->{$_});
-    print sprintf("  - %-10s : %s\n", $_, $repo_data->{$_});
+    push(@rows, [ "  - $_" , $repo_data->{$_} ]);
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => ' : ' },
+  });
+
 
   print "\n";
 
@@ -488,7 +524,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

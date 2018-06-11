@@ -22,6 +22,7 @@ BEGIN {
     parse_changelog
     parse_module_name
     parse_package_history
+    parse_announces
   };
 
   %EXPORT_TAGS = (
@@ -40,6 +41,101 @@ use Slackware::SlackMan::Package qw(:all);
 use Slackware::SlackMan::Repo    qw(:all);
 
 
+sub parse_announces {
+
+  my ($repo) = @_;
+
+  my $repository          = $repo->{'id'};
+  my $changelog_separator = quotemeta('+--------------------------+');
+  my $changelog_file      = sprintf("%s/ChangeLog.txt", $repo->{'cache_directory'});
+  my $changelog_contents  = file_read($changelog_file);
+
+  $dbh->do('DELETE FROM changelogs WHERE repository = ? AND announce IS NOT NULL', undef, $repository);
+
+  chomp($changelog_contents);
+
+  my @changelogs = split(/$changelog_separator/, $changelog_contents);
+  my @columns    = qw(repository timestamp announce);
+  my @values     = ();
+  my $data       = {};
+
+  my @rules = (
+
+    # Standard Slackware ChangeLog
+    qr/^([[:graph:]]+\/[[:graph:]]+):\s+(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i,
+
+    #qr/^([[:graph:]]+\/[[:graph:]]+)\s(added|rebuilt|removed|upgraded|updated|patched|renamed|moved|name change|switched)/i,
+
+    # AlienBob
+    qr/^([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+([[:graph:]]+)/i,
+    qr/^([[:graph:]]+):\s+(updated to|upgraded to|added|added a|rebuilt|patched)\s+((v\s|v)([[:graph:]]+))/i,
+    qr/^([[:graph:]]+) added version (\d.([[:graph:]]+))/i,
+    qr/^([[:graph:]]+) updated for version (\d.([[:graph:]]+))/i,
+    qr/^([[:graph:]]+)\s:\s(built|upgraded|update|updated)/i,
+
+    # SlackOnly
+    qr/^(([[:graph:]]+)\/([[:graph:]]+))\s(added|removed|rebuilt|updated|upgraded)/i,
+
+    # CSB
+    qr/^([[:graph:]]+):\s+(added|removed|rebuilt|updated|upgraded)*/i,
+
+    # Others
+    qr/(\d+\.\d+)\/x86\:$/,
+    qr/compat32\:\s+|t?z\:\s+/i,
+    qr/\+\-\-\-/,
+    qr/latest\s-$/,
+
+  );
+
+  foreach my $changelog (@changelogs) {
+
+    chomp($changelog);
+
+    my @lines               = split(/\n/, trim($changelog));
+    my $changelog_time      = changelog_date_to_time($lines[0]);
+    my $changelog_timestamp = time_to_timestamp($changelog_time);
+
+    @lines = @lines[ 1 .. $#lines ];
+
+    $data->{$changelog_timestamp} = ();
+
+    CHANGELOG: foreach (@lines) {
+
+      foreach my $regex (@rules) {
+        last CHANGELOG if ($_ =~ /$regex/);
+      }
+
+      push(@{$data->{$changelog_timestamp}}, $_);
+
+    }
+
+  }
+
+  foreach my $timestamp (keys %{$data}) {
+
+    next unless ($data->{$timestamp});
+
+    my $announce = trim(join("\n", @{$data->{$timestamp}}));
+
+    my @row = (
+      $repository,
+      $timestamp,
+      $announce
+    );
+
+   push(@values, \@row) if ($announce);
+
+  }
+
+  db_bulk_insert(
+    'table'   => 'changelogs',
+    'columns' => \@columns,
+    'values'  => \@values,
+  );
+
+}
+
+
 sub parse_changelog {
 
   my ($repo, $callback_status) = @_;
@@ -55,7 +151,7 @@ sub parse_changelog {
   my $changelog_contents = file_read($changelog_file);
   return(0) unless($changelog_contents);
 
-  $dbh->do('DELETE FROM changelogs WHERE repository = ?', undef, $repository);
+  $dbh->do('DELETE FROM changelogs WHERE repository = ? AND announce IS NULL', undef, $repository);
 
   chomp($changelog_contents);
 
@@ -63,7 +159,7 @@ sub parse_changelog {
   my @columns    = qw(timestamp package status name version arch build tag repository security_fix category description issues);
   my @values     = ();
 
-  &$callback_status('parse') if ($callback_status);
+  &$callback_status('parsing') if ($callback_status);
 
   my $i = 0;
 
@@ -228,6 +324,8 @@ sub parse_changelog {
 
   &$callback_status('save') if ($callback_status);
 
+  parse_announces($repo);
+
   db_bulk_insert(
     'table'   => 'changelogs',
     'columns' => \@columns,
@@ -283,7 +381,7 @@ sub parse_packages {
   my @packages  = split(/\n{2,}/, $packages_contents);
   my @checksums = parse_checksums($repo, $callback_status);
 
-  &$callback_status('parse') if ($callback_status);
+  &$callback_status('parsing') if ($callback_status);
 
   my $last_update = shift(@packages);
      $last_update =~ s/PACKAGES.TXT;\s+// if ($last_update);
@@ -371,7 +469,7 @@ sub parse_manifest {
 
   db_meta_delete("manifest-last-update.$repository");
 
-  &$callback_status('parse') if ($callback_status);
+  &$callback_status('parsing') if ($callback_status);
 
   bunzip2 \$manifest_input => \$manifest_contents or die "bunzip2 failed: $Bunzip2Error\n";
 
@@ -556,7 +654,7 @@ sub parse_history {
   my @columns = qw(name package version build tag arch status timestamp upgraded
                    summary description size_compressed size_uncompressed);
 
-  &$callback_status('parse') if ($callback_status);
+  &$callback_status('parsing') if ($callback_status);
   logger->debug('Parsing all local history files from /var/log/packages & /var/log/removed_packages directories');
 
   my $i = 0;
@@ -645,6 +743,7 @@ sub parse_variables {
   my $release_suffix = '';
 
   $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
+  $release_conf = 'current' if (is_slackware_current());
 
      if ($arch eq 'x86_64')        { $arch_bit = 64; }
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }
@@ -839,7 +938,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

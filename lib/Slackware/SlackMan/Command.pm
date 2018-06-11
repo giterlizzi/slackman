@@ -29,6 +29,7 @@ use IO::Handle;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
+use HTTP::Tiny;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
@@ -48,6 +49,7 @@ use Getopt::Long qw(:config no_pass_through);
 
 GetOptions( $slackman_opts,
   'after=s',
+  'announces',
   'before=s',
   'category=s',
   'cve=s',
@@ -78,6 +80,7 @@ GetOptions( $slackman_opts,
   'show-files',
   'summary',
   'tag=s',
+  'terse',
   'version',
   'yes|y',
 );
@@ -119,6 +122,21 @@ $SIG{INT} = sub {
 };
 
 sub run {
+
+  my ($ssl_check, $ssl_reason) = HTTP::Tiny->can_ssl;
+
+  unless ($ssl_check) {
+
+    $ssl_reason =~ s/^/ - /gm;
+
+    print "Problem with SSL support for HTTP::Tiny module:\n\n";
+    print "$ssl_reason\n";
+    print "Please install the required modules and execute this command again.\n\n";
+
+    exit(100);
+
+  }
+
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
   my @skip_lock     = qw(log.tail);
@@ -323,7 +341,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

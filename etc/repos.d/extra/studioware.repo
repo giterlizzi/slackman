@@ -13,5 +13,6 @@
 
 [packages]
 name    = Studioware
+arch    = x64-64
 enabled = false
 mirror  = http://slackware.uk/studioware/$release.real/

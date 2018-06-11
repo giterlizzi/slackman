@@ -81,32 +81,38 @@ sub call_list_obsoletes {
   my $obsolete_rows = package_list_obsoletes($slackman_opts->{'repo'});
   my $num_rows      = scalar keys %$obsolete_rows;
 
-  print "\nObsolete package(s)\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-30s %-25s %-15s %-25s %-15s %-25s\n", "Package", "ChangeLog Repository", "Version", "Obsolete from", "Actual Version", "Installed at");
-  print sprintf("%s\n", "-"x132);
-
   unless ($num_rows) {
     print "\nNo obsolete packages found!\n\n";
     exit(0);
   }
 
   my @obsolete = ();
+  my @rows = ();
 
   foreach(keys %$obsolete_rows) {
 
     my $row = $obsolete_rows->{$_};
 
-    print sprintf("%-30s %-25s %-15s %-25s %-15s %-25s\n",
-      $row->{changelog_name},    $row->{changelog_repository},
-      $row->{changelog_version}, $row->{changelog_timestamp},
-      $row->{installed_version}, $row->{installed_timestamp});
+    push(@rows, [
+      $row->{changelog_name},
+      $row->{changelog_repository},
+      $row->{changelog_version},
+      $row->{changelog_timestamp},
+      $row->{installed_version},
+      $row->{installed_timestamp}
+    ]);
 
     push(@obsolete, $row->{changelog_name});
 
   }
 
-  print "\n\n";
+  print "\nObsolete package(s)\n\n";
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Package', 'ChangeLog Repository', 'Version', 'Obsolete from', 'Actual Version', 'Installed at' ],
+  });
 
   return (@obsolete);
 
@@ -117,13 +123,17 @@ sub call_list_variables {
   my @variables = ( 'arch', 'arch.bit', 'arch.family',
                     'release', 'release.real', 'release.suffix' );
 
-  print "\n";
-  print sprintf("%-20s %s\n", "Variable", "Value");
-  print sprintf("%s\n", "-"x40);
+  my @rows = ();
 
   foreach (@variables) {
-    print sprintf("%-20s %s\n", "$_", parse_variables("\$$_"));
+    push(@rows, [ $_, parse_variables("\$$_") ]);
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '    ', 'header' => '-' },
+    'headers'   => [ 'Variable', 'Value' ],
+  });
 
   print "\n";
 
@@ -134,25 +144,30 @@ sub call_list_variables {
 sub call_list_orphan {
 
   print "\nOrphan package(s)\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Installed", "Size");
-  print sprintf("%s\n", "-"x132);
 
   my $rows_ref = package_list_orphan();
+  my @rows = ();
 
   foreach (sort keys %$rows_ref) {
 
     my $row = $rows_ref->{$_};
 
-    print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n",
+    push(@rows, [
       $row->{name},
       $row->{arch},
       $row->{version},
       $row->{tag},
+      filesize_h(($row->{size_compressed} * 1024), 1, 1),
       $row->{timestamp},
-      filesize_h(($row->{size_compressed} * 1024), 1, 1));
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Installed/Upgraded at' ],
+  });
 
   exit(0);
 
@@ -163,25 +178,30 @@ sub call_list_installed {
   my (@search) = @_;
 
   print "\nInstalled packages\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Installed/Upgraded at");
-  print sprintf("%s\n", "-"x132);
 
   my $rows_ref = package_list_installed(@search);
+  my @rows = ();
 
   foreach (sort keys %$rows_ref) {
 
     my $row = $rows_ref->{$_};
 
-    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
+    push(@rows, [
       $row->{'name'},
       $row->{'arch'},
       ( $row->{'version'} . '-' . $row->{'build'} ),
       $row->{'tag'},
       filesize_h(($row->{'size_compressed'} * 1024), 1, 1),
-      $row->{'timestamp'});
+      $row->{'timestamp'}
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Installed/Upgraded at' ],
+  });
 
   exit(0);
 
@@ -191,9 +211,6 @@ sub call_list_installed {
 sub call_list_upgraded {
 
   print "\nUpgraded packages\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
-  print sprintf("%s\n", "-"x132);
 
   my @query_filters;
 
@@ -209,17 +226,26 @@ sub call_list_upgraded {
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
+  my @rows = ();
+
   while (my $row = $sth->fetchrow_hashref()) {
 
-    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
+    push(@rows, [
       $row->{name},
       $row->{arch},
       "$row->{version}-$row->{build}",
       $row->{tag},
       filesize_h(($row->{size_compressed} * 1024), 1, 1),
-      $row->{'timestamp'});
+      $row->{'timestamp'}
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+  });
 
   exit(0);
 
@@ -229,9 +255,6 @@ sub call_list_upgraded {
 sub call_list_removed {
 
   print "\nRemoved packages\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n", "Name", "Arch", "Version", "Tag", "Size", "Timestamp");
-  print sprintf("%s\n", "-"x132);
 
   my @query_filters;
 
@@ -247,18 +270,26 @@ sub call_list_removed {
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
+  my @rows = ();
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    print sprintf("%-40s %-10s\t%-25s %-15s %-10s %s\n",
+    push(@rows, [
       $row->{name},
       $row->{arch},
       "$row->{version}-$row->{build}",
       $row->{tag},
       filesize_h(($row->{size_compressed} * 1024), 1, 1),
-      $row->{'timestamp'});
+      $row->{'timestamp'}
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+  });
 
   exit(0);
 
@@ -269,9 +300,6 @@ sub call_list_packages {
   my (@search) = @_;
 
   print "\nAvailable packages\n\n";
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n", "Name", "Arch", "Version", "Tag", "Repository", "Size");
-  print sprintf("%s\n", "-"x132);
 
   my $option_repo = $slackman_opts->{'repo'};
 
@@ -306,17 +334,26 @@ sub call_list_packages {
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
+  my @rows = ();
+
   while (my $row = $sth->fetchrow_hashref()) {
 
-    print sprintf("%-40s %-10s\t%-25s %-10s %-25s %s\n",
+    push(@rows, [
       $row->{name},
       $row->{arch},
       "$row->{version}-$row->{build}",
       $row->{tag},
       $row->{repository},
-      filesize_h(($row->{size_compressed} * 1024), 1, 1));
+      filesize_h(($row->{size_compressed} * 1024), 1, 1)
+    ]);
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '   ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+  });
 
   exit(0);
 
@@ -387,7 +424,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

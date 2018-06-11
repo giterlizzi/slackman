@@ -348,28 +348,33 @@ sub call_package_remove {
     }
 
     print "Remove package(s)\n\n";
-    print sprintf("%s\n", "-"x80);
-    print sprintf("%-25s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
-    print sprintf("%s\n", "-"x80);
+
+    my @rows = ();
 
     foreach (@packages) {
 
-      if ($_ =~ /^(aaa\_(base|elflibs|terminfo)|slackman)/) {
-        print sprintf("%-25s Never remove this package !!!\n", $_);
+      if ($_ =~ /^(aaa\_(base|elflibs|terminfo)|slackman)$/) {
+        push(@rows, [ $_, colored('Don\'t remove this package', 'RED') ]);
       } else {
 
         my $pkg = package_info($_);
 
         if ($pkg) {
-          print sprintf("%-25s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'});
+          push(@rows , [ $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'} ]);
           push(@is_installed, $_);
         } else {
-          print sprintf("%-55s   %s\n", $_, colored('not installed', 'red bold'));
+          push(@rows, [ $_, colored('Not installed', 'RED') ]);
         }
 
       }
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Package', 'Version', 'Tag', 'Installed' ],
+    });
 
     print "\n\n";
 
@@ -470,12 +475,8 @@ sub call_package_install {
   if (scalar keys %$packages_to_install) {
 
     print "Package(s) to install\n\n";
-    print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-30s %-8s %-40s %-40s %s\n",
-      'Name', 'Arch', 'Version', 'Repository', 'Size');
-
-    print sprintf("%s\n", "-"x132);
+    my @rows = ();
 
     foreach (sort keys %$packages_to_install) {
 
@@ -484,14 +485,20 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-40s %-40s %s\n",
+      push(@rows, [
         $pkg->{name}, $pkg->{arch}, $pkg->{version},
         $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
-      );
+      ]);
 
       push(@packages_to_downloads, $pkg);
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Arch', 'Version', 'Repository', 'Size' ],
+    });
 
   }
 
@@ -500,12 +507,7 @@ sub call_package_install {
     print "\n\n";
     print "Required package(s) to install\n\n";
 
-    print sprintf("%s\n", "-"x132);
-
-    print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
-      'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
-
-    print sprintf("%s\n", "-"x132);
+    my @rows = ();
 
     foreach (sort keys %$dependency_pkgs) {
 
@@ -515,13 +517,19 @@ sub call_package_install {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-20s %-20s %-40s %s\n",
+      push(@rows, [
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
         $pkg->{repository}, filesize_h(($pkg->{size_compressed} * 1024), 1, 1)
-      );
+      ]);
 
       push(@packages_to_downloads, $pkg);
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size' ],
+    });
 
   }
 
@@ -646,16 +654,12 @@ sub call_package_search {
   my $sth = $dbh->prepare($query);
   $sth->execute($search, $search, $search, $search);
 
-  my $rows = 0;
-
-  print sprintf("%s\n", "-"x132);
-  print sprintf("%-80s %-15s %-8s %-10s %s\n",
-    'Name', 'Version', 'Arch', 'Status', 'Repository');
-  print sprintf("%s\n", "-"x132);
+  my $n_rows = 0;
+  my @rows   = ();
 
   while (my $row = $sth->fetchrow_hashref()) {
 
-    $rows++;
+    $n_rows++;
 
     my $name    = $row->{'name'};
     my $summary = $row->{'summary'};
@@ -663,17 +667,29 @@ sub call_package_search {
     $summary =~ s/^$name//;
     $summary =~ s/^\s+//;
 
-    print sprintf("%-80s %-15s %-8s %-10s %s\n",
+    push(@rows , [
       "$name $summary",
       $row->{'version'},
       $row->{'arch'},
       colored(sprintf('%-10s', $row->{'status'} ||' '), 'green'),
       $row->{'repository'}
-    );
+    ]);
 
   }
 
-  unless ($rows) {
+  if ($n_rows > 0) {
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Version', 'Arch', 'Status', 'Repository' ],
+      'widths'    => [ 0, 0, 0, 10, 0 ]
+    });
+
+  }
+
+
+  unless ($n_rows) {
     print "Package not found!\n";
     exit(255);
   }
@@ -701,11 +717,9 @@ sub call_package_history {
     exit 1;
   }
 
-  my $row_pattern = "%-10s %-20s %-10s %-25s %-20s %-25s\n";
+  my @rows = ();
 
   print sprintf("History of @{[ BOLD ]}%s@{[ RESET ]} package:\n\n", $package);
-  print sprintf($row_pattern, "Status", "Version", "Tag", "Timestamp", "Previous", "Upgraded");
-  print sprintf("%s\n", "-"x132);
 
   my $prev_version   = '';
   my $prev_status    = '';
@@ -728,17 +742,18 @@ sub call_package_history {
     $prev_version   = ''               if ($status_history eq 'removed');
     $prev_version   = ''               if ($status_history eq 'installed');
 
-    print sprintf(
-      $row_pattern,
-      $status_history, $version,
-      $tag, $timestamp,
-      $prev_version, $upgraded
-    );
+    push(@rows, [ $status_history, $version, $tag, $timestamp, $prev_version, $upgraded ]);
 
     $prev_version = $version;
     $prev_status  = $status;
 
   }
+
+  print table({
+    'rows'      => \@rows,
+    'separator' => { 'column' => '    ', 'header' => '-' },
+    'headers'   => [ 'Status', 'Version', 'Tag', 'Timestamp', 'Previous', 'Upgraded' ],
+  });
 
   print "\n";
 
@@ -822,12 +837,8 @@ sub call_package_upgrade {
   if (scalar keys %$packages_to_update) {
 
     print "Package(s) to upgrade\n\n";
-    print sprintf("%s\n", "-"x132);
 
-    print sprintf("%-30s %-8s %-40s %-40s %s\n",
-      'Name', 'Arch', 'Version', 'Repository', 'Size');
-
-    print sprintf("%s\n", "-"x132);
+    my @rows = ();
 
     foreach (sort keys %$packages_to_update) {
 
@@ -847,12 +858,17 @@ sub call_package_upgrade {
       $total_uncompressed_size += $pkg->{'size_uncompressed'};
       $total_compressed_size   += $pkg->{'size_compressed'};
 
-      print sprintf("%-30s %-8s %-40s %-40s %s\n",
-        $pkg_name, $pkg_arch, $pkg_version, $pkg_repository, $pkg_size);
+      push(@rows, [ $pkg_name, $pkg_arch, $pkg_version, $pkg_repository, $pkg_size ]);
 
       push(@packages_to_downloads, $pkg);
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Arch', 'Version', 'Repository', 'Size' ],
+    });
 
   }
 
@@ -861,12 +877,7 @@ sub call_package_upgrade {
     print "\n\n";
     print "Required package(s) to install\n\n";
 
-    print sprintf("%s\n", "-"x132);
-
-    print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
-      'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size');
-
-    print sprintf("%s\n", "-"x132);
+    my @rows = ();
 
     foreach (sort keys %$packages_to_install) {
 
@@ -876,13 +887,21 @@ sub call_package_upgrade {
       $total_uncompressed_size += $pkg->{size_uncompressed};
       $total_compressed_size   += $pkg->{size_compressed};
 
-      print sprintf("%-30s %-8s %-9s %-20s %-40s %s\n",
+      push(@rows, [
         $pkg->{name}, $pkg->{arch}, $pkg->{version}, $needed_by,
         $pkg->{repository}, filesize_h(($pkg->{size_uncompressed} * 1024), 1, 1)
-      );
+      ]);
 
       push(@packages_to_downloads, $pkg);
+
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Arch', 'Version', 'Needed by', 'Repository', 'Size' ],
+    });
+
 
   }
 
@@ -996,6 +1015,23 @@ sub call_package_file_search {
 }
 
 
+sub _changelog_announces {
+
+  my $announces = package_changelog_announces();
+
+  foreach my $row ( @{$announces} ) {
+
+    print sprintf("%s (%s)\n\n%s\n\n\n",
+      $row->{'timestamp'},
+      colored($row->{'repository'}, 'BOLD'),
+      wrap("  ", "  ", $row->{'announce'})
+    );
+
+  }
+
+}
+
+
 sub call_package_changelog {
 
   my ($package) = @_;
@@ -1006,23 +1042,36 @@ sub call_package_changelog {
     exit(1);
   }
 
+  if ($slackman_opts->{'announces'}) {
+    _changelog_announces();
+    exit(0);
+  }
+
   unless ($slackman_opts->{'details'}) {
 
-    print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n", "Package", "Version", " ", "Status", "Timestamp", "Repository");
-    print sprintf("%s\n", "-"x132);
+    my @rows = ();
 
     foreach my $row ( @{$changelogs} ) {
 
-      print sprintf("%-60s %-20s %-1s %-10s %-20s %s\n",
+      push(@rows, [
         ($row->{'package'}      || ''),
         ($row->{'version'}      || ''),
-        ($row->{'security_fix'} ? "@{[ BLINK ]}@{[ RED ]}!@{[ RESET ]}" : ''),
         ($row->{'status'}       || ''),
         ($row->{'timestamp'}    || ''),
         ($row->{'repository'}   || ''),
-      );
+        ($row->{'security_fix'} ? colored('!', 'RED') : ''),
+      ]);
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => '   ', 'header' => '-' },
+      'headers'   => [ 'Package', 'Version', 'Status', 'Timestamp', 'Repository' ],
+      'widths'    => [ undef, undef, undef, undef, undef, 1 ]
+    });
+
+    exit(0);
 
   }
 
@@ -1091,7 +1140,7 @@ sub call_package_new_config {
       $package = "(" . $manifest->[0]->{'package'} . ")";
     }
 
-    print sprintf("  * %-50s %s\n", $new_config_file, $package);
+    print sprintf("  %-50s %s\n", $new_config_file, $package);
 
   }
 
@@ -1257,9 +1306,11 @@ sub _packages_download {
 
     $count_downloads++;
 
-    print sprintf("[%03d/%03d] %-62s %s\n", $count_downloads, $num_downloads, $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
+    print sprintf("%-72s %s\r", $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
 
     my ($package_path, $package_errors) = package_download($pkg);
+
+    print "\n";
 
     if (scalar @$package_errors) {
       $packages_errors->{$pkg->{'package'}} = $package_errors;
@@ -1287,7 +1338,7 @@ sub _packages_upgraded {
 
     my $pkg = get_package_info(basename($_));
 
-    print sprintf("  * %s upgraded to %s version\n",
+    print sprintf("  %s upgraded to %s version\n",
       colored($pkg->{'name'}, 'bold'),
       colored($pkg->{'version'}, 'bold')
     );
@@ -1310,7 +1361,10 @@ sub _packages_installed {
 
   foreach (@$packages) {
     my $pkg = get_package_info(basename($_));
-    print sprintf("  * installed %s %s version\n", $pkg->{'name'}, $pkg->{'version'});
+    print sprintf("  installed %s %s version\n",
+      colored($pkg->{'name'}, 'bold'),
+      colored($pkg->{'version'}, 'bold')
+    );
   }
 
   print "\n\n";
@@ -1328,7 +1382,7 @@ sub _packages_errors {
   print sprintf("%s\n\n", "-"x80);
 
   foreach my $pkg (keys %$packages_errors) {
-    print sprintf("  * %-50s %s\n", $pkg, join(', ', @{$packages_errors->{$pkg}}));
+    print sprintf("  %-50s %s\n", $pkg, join(', ', @{$packages_errors->{$pkg}}));
   }
 
   print "\n\n";
@@ -1359,8 +1413,8 @@ sub _kernel_update_message {
   $message .= "with @{[ BOLD ]}$lilo_command@{[ RESET ]} command.\n\n";
 
   $message .= "For more information read:\n\n"
-           .  "  * /boot/README.initrd\n"
-           .  "  * mkinitrd(8)\n\n";
+           .  "  - /boot/README.initrd\n"
+           .  "  - mkinitrd(8)\n\n";
 
   print "\n";
   print wrap("", "\t", $message);
@@ -1526,6 +1580,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   -c, --config=FILE                     Configuration file
   --root                                Set Slackware root directory
   --color=[always|auto|never]           Colorize the output
+  --terse                               Display only a single description line when install or upgrade a package
 
 =head2 CHANGELOG OPTIONS
 
@@ -1534,6 +1589,7 @@ slackman-package - Install, upgrade and display information of Slackware package
   --details                             Display ChangeLog details
   --security-fix                        Display only ChangeLog Security Fix
   --cve=CVE-YYYY-NNNNNN                 Search a CVE identifier into ChangeLogs
+  --announces                           Display announce in ChangeLog
 
 =head2 INFO OPTIONS
 
@@ -1609,7 +1665,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

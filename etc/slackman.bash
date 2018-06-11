@@ -60,12 +60,12 @@ __slackman_list_installed_packages() {
 
 
 __slackman_list_packages() {
-  echo $(slackman list packages | grep ":" | awk '{ print $1 }')
+  echo $(slackman list packages | grep ":" | awk '{ print $1 }' | sort -u)
 }
 
 
 __slackman_list_no_installed_packages() {
-  echo $(slackman list packages --exclude-installed | grep ":" | awk '{ print $1 }')
+  echo $(slackman list packages --exclude-installed | grep ":" | awk '{ print $1 }' | sort -u)
 }
 
 
@@ -208,7 +208,7 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --no-priority --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local"
+  local slackman_options="--repo --exclude --no-priority --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -225,7 +225,7 @@ _slackman_upgrade() {
 
 _slackman_changelog() {
 
-  local slackman_options="--repo --limit --details --security-fix --before --after --cve"
+  local slackman_options="--repo --limit --details --security-fix --before --after --cve --announces"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,7 +239,7 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check --local"
+  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check --local --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -258,7 +258,7 @@ _slackman_install() {
 
 _slackman_reinstall() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --category --no-gpg-check --no-md5-check --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 

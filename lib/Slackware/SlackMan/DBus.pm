@@ -70,6 +70,7 @@ dbus_property('slackware', 'string', 'read');
 # ChangeLog methods
 dbus_method('ChangeLog',   [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
 dbus_method('SecurityFix', [], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]]);
+dbus_method('Announce',    [ 'string' ], [[ 'dict', 'string', [ 'array', [ 'dict', 'string', 'string' ] ]]], { 'param_names' => [ 'repo_id' ] });
 
 # Package methods
 dbus_method('PackageInfo',  [ 'string' ], [[ 'dict', 'string', 'string' ]], { 'param_names' => [ 'package_name' ] });
@@ -181,6 +182,32 @@ sub ChangeLog {
   _reload_data();
 
   my $changelogs = package_changelogs();
+  my $result     = {};
+
+  foreach (@{$changelogs}) {
+    push( @{ $result->{ $_->{'repository'} } } , $_ );
+  }
+
+  return $result;
+
+}
+
+
+sub Announce {
+
+  my ($self, $repo_id) = @_;
+
+  logger->debug("Call org.lotarproject.SlackMan.Announce method (args: repo_id=$repo_id)");
+
+  $slackman_opts = {};
+
+  $slackman_opts->{'after'}  = '-7d';
+  $slackman_opts->{'limits'} = 256;
+  $slackman_opts->{'repo'}   = $repo_id if ($repo_id);
+
+  _reload_data();
+
+  my $changelogs = package_changelog_announces();
   my $result     = {};
 
   foreach (@{$changelogs}) {
@@ -424,7 +451,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

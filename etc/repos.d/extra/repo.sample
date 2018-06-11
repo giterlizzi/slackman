@@ -1,15 +1,38 @@
+# This is a sample repository configuration file
+#
+# For more information see slackman.repo(5) man page
+
 [repository-id]
 
 # Short description of repository
 #
-name=My local repository
+name = My local repository
 
 
 # Enable or disable repository
 #   true  - enabled
 #   false - disabeld
 #
-enabled=false
+enabled = false
+
+
+# Arch support
+#
+# Specify the repository arch support (default is: x86,x86-64,arm).
+#
+# NOTE: Prepend "!" to disable the arch.
+#
+# Example:
+#
+#   Enable "only" x86-64:
+#
+#     arch = x86-64
+#
+#   Enable "x86" and "x86-64" and disable "arm":
+#
+#     arch = x86,x86-64,!arm
+#
+arch = x86,x86-64,arm
 
 
 # Mirror URL
@@ -24,45 +47,45 @@ enabled=false
 #   Remote URL: https://example.org/slackware/
 #        Local: file:///srv/slackware/
 #
-mirror=https://example.org/slackware/
+mirror = https://example.org/slackware/
 
 
 # Priority (optional)
 #
 # Specify repository priority (default is 0 - "zero")
 #
-priority=1
+priority = 1
 
 
 # Exclude packages (optional)
 #
 # Specify excluded packages for update or install (default "none")
 #
-exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+exclude = kernel-*,kde-l10n-*,calligra-l10n-*
 
 
 # Override metadata URLs if the file is in another location
 
 # GPG-KEY file URL
 #
-gpgkey=$mirror/GPG-KEY
+gpgkey = $mirror/GPG-KEY
 
 # Packages file URL
 #
-packages=$mirror/PACKAGES.TXT
+packages = $mirror/PACKAGES.TXT
 
 # Filelist file URL
 #
-filelist=$mirror/FILELIST.TXT
+filelist = $mirror/FILELIST.TXT
 
 # Changelog file URL
 #
-changelog=$mirror/ChangeLog.txt
+changelog = $mirror/ChangeLog.txt
 
 # Manifest file URL
 #
-manifest=$mirror/MANIFEST.bz2
+manifest = $mirror/MANIFEST.bz2
 
 # Checksums file URL
 #
-checksums=$mirror/CHECKSUMS.md5
+checksums = $mirror/CHECKSUMS.md5

@@ -1,12 +1,20 @@
 # SlackMan TODO
 
  - [ ] Check dependencies command (eg. `slackman check-deps PACKAGE`)
- - [ ] Add rule in `.repo` file for 32-bit or ARM directory variant (i386, i486, i586, i686, x86, armv5, armv7, armel, etc.)
- - [ ] Add rule in `.repo` file to allow the repository only for particular arch (eg. `slackware:multilib` is only for `x86_64` arch)
  - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
  - [ ] Display installed date in `slackman history` for packages installed and removed (never upgraded). Now dsplay only the removed date
  - [ ] Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
  - [ ] Notify the user of changed or installed `/etc/rc.d`
+
+## Next release
+
+ - [x] #11 - Use `/etc/slackware-version` to automatically detect Slackware -current (post 14.2)
+ - [x] #11 - Add `--terse` options for `slackman` command
+ - [x] #12 - Parse announces in ChangeLog
+ - [x] #12 - Add option for display the announces (eg. `slackman changelog --announces`) or create new command (eg. `slackman announces`)
+ - [x] #12 - Expose a new D-Bus methods to retrieve the announces (eg. `org.LotarProject.SlackMan.Announces`)
+ - [x] #13 - Add `arch` config option in `.repo` file with supported repository arch
+
 
 ## SlackMan 1.1
 

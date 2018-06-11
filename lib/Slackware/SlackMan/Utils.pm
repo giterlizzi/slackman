@@ -23,7 +23,6 @@ BEGIN {
     confirm
     confirm_choice
     create_lock
-    curl_cmd
     datetime_calc
     datetime_h
     dbus_notifications
@@ -31,12 +30,15 @@ BEGIN {
     delete_lock
     directory_files
     download_file
+    failed_sign
     file_append
     file_handler
     file_read
     file_read_url
     file_write
     filesize_h
+    str_pad
+    table
     get_arch
     get_last_modified
     get_lock_pid
@@ -44,17 +46,19 @@ BEGIN {
     get_slackware_release
     gpg_import_key
     gpg_verify
+    http_client
+    http_date_to_time
+    is_slackware_current
     ldd
     md5_check
     repo_option_to_sql
+    success_sign
+    terminal_width
     time_to_timestamp
     timestamp_options_to_sql
     timestamp_to_time
     trim
     uniq
-    w3c_date_to_time
-    success_sign
-    failed_sign
     versioncmp
 
   );
@@ -75,8 +79,8 @@ use Time::Piece;
 use Time::Seconds;
 use Carp ();
 use File::Basename;
-use Net::DBus;
 use Term::ANSIColor qw(color colored :constants);
+use HTTP::Tiny;
 
 use Slackware::SlackMan;
 
@@ -85,22 +89,97 @@ use Slackware::SlackMan;
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
 
+# HTTP Client
+#
+sub http_client {
+
+  my %http_options = ( 'agent' => "SlackMan/$VERSION" );
+  my $proxy_conf   = $slackman_conf->{'proxy'};
+
+  if ($proxy_conf->{'enable'}) {
+
+    my $proxy_url = undef;
+
+    if ($proxy_conf->{'username'}) {
+
+      $proxy_url = sprintf("%s://%s:%s@%s:%s",
+        $proxy_conf->{'protocol'},
+        $proxy_conf->{'username'},
+        $proxy_conf->{'password'},
+        $proxy_conf->{'hostname'},
+        $proxy_conf->{'port'},
+      );
+
+    } else {
+
+      $proxy_url = sprintf("%s://%s:%s",
+        $proxy_conf->{'protocol'},
+        $proxy_conf->{'hostname'},
+        $proxy_conf->{'port'},
+      );
+
+    }
+
+    $http_options{'http_proxy'}  = $proxy_url;
+    $http_options{'https_proxy'} = $proxy_url;
+
+  }
+
+  my $http = HTTP::Tiny->new( %http_options );
+
+  return $http;
+
+}
+
+
+# Progress bar
+#
+sub callback_progress_bar {
+
+  my ( $text, $got, $total, $width, $char ) = @_;
+
+  $| = 1;
+
+  $width ||= 25;
+  $char  ||= '=';
+
+  my $got_h      = filesize_h($got, 1);
+  my $total_h    = filesize_h($total, 1);
+  my $num_width  = length $total_h;
+  my $percentage = (100 * $got/+$total);
+
+  return sprintf "%-72s %-8s  %3d%% [%-${width}s] %8s\r",
+    $text, $total_h, $percentage, $char x (($width-1)*$got/$total) . '>',
+    $got_h;
+
+}
+
+
 # SlackMan DBus interface
 #
 sub dbus_slackman {
+
+  require Net::DBus;
+
   return Net::DBus->system
     ->get_service('org.lotarproject.SlackMan')
     ->get_object('/org/lotarproject/SlackMan');
+
 }
 
 
 # Notification DBus interface
 #
 sub dbus_notifications {
+
+  require Net::DBus;
+
   return Net::DBus->session
     ->get_service('org.freedesktop.Notifications')
     ->get_object('/org/freedesktop/Notifications');
+
 }
+
 
 # Code from Sort::Versions module
 #
@@ -154,12 +233,16 @@ sub versioncmp( $$ ) {
 }
 
 
+# Return unique values in array
+#
 sub uniq {
   my %seen;
   return grep { !$seen{$_}++ } @_;
 }
 
 
+# Return a list of libraries for specified binary file
+#
 sub ldd {
 
   my ($file) = @_;
@@ -172,6 +255,8 @@ sub ldd {
 }
 
 
+# Display datetime in human-readable format
+#
 sub datetime_h {
 
   my ($timestamp) = @_;
@@ -207,6 +292,8 @@ sub datetime_h {
 }
 
 
+# Display the a size in human-readable format
+#
 sub filesize_h {
 
   my ($size, $decimal, $padding) = @_;
@@ -233,6 +320,8 @@ sub filesize_h {
 }
 
 
+# Convert string to time
+#
 sub datetime_calc {
 
   my ($string) = @_;
@@ -260,6 +349,8 @@ sub datetime_calc {
 }
 
 
+# File read (aka slurp)
+#
 sub file_read {
 
   my ($filename) = @_;
@@ -275,6 +366,8 @@ sub file_read {
 }
 
 
+# File write (overwrite mode)
+#
 sub file_write {
 
   my ($filename, $content) = @_;
@@ -287,7 +380,7 @@ sub file_write {
 
 }
 
-
+# File write (append mode)
 sub file_append {
 
   my ($filename, $content, $autoflush) = @_;
@@ -303,6 +396,8 @@ sub file_append {
 }
 
 
+# Get file handler for file read/write/append
+#
 sub file_handler {
 
   my ($filename, $mode) = @_;
@@ -314,57 +409,44 @@ sub file_handler {
 }
 
 
-sub curl_cmd {
-
-  my ($curl_extra_flags) = @_;
-
-  my $curl_flags = qq/-H "User-Agent: SlackMan\/$VERSION" -C - -L -k --fail --retry 5 --retry-max-time 0/;
-
-  # Set proxy flags for cURL
-  if ($slackman_conf->{'proxy'}->{'enable'}) {
-
-    if ($slackman_conf->{'proxy'}->{'username'}) {
-
-      $curl_flags .= sprintf(" -x %s://%s:%s@%s:%s",
-        $slackman_conf->{'proxy'}->{'protocol'},
-        $slackman_conf->{'proxy'}->{'username'},
-        $slackman_conf->{'proxy'}->{'password'},
-        $slackman_conf->{'proxy'}->{'hostname'},
-        $slackman_conf->{'proxy'}->{'port'},
-      );
-
-    } else {
-      $curl_flags .= sprintf(" -x %s://%s:%s",
-        $slackman_conf->{'proxy'}->{'protocol'},
-        $slackman_conf->{'proxy'}->{'hostname'},
-        $slackman_conf->{'proxy'}->{'port'},
-      );
-    }
-
-  }
-
-  my $curl_cmd = "curl $curl_flags $curl_extra_flags";
-
-  logger->debug("CURL: $curl_cmd");
-
-  return $curl_cmd;
-
-}
-
-
 sub download_file {
 
   my ($url, $file, $progress) = @_;
 
-  my $extra_curl_flags = '-s';
-     $extra_curl_flags = '-#' if ($progress);
-
-  my $curl_cmd = curl_cmd("$extra_curl_flags -o $file $url");
+  my $total_data;
+  my $options = {};
+  my $http    = http_client();
 
   logger->info("[DOWNLOAD] Downloading $url and save into $file");
 
-  system( $curl_cmd );
-  return $?;
+  open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
+
+  print "\r" if ($progress);
+
+  $options->{data_callback} = sub {
+
+    my ($data, $response) = @_;
+    my $content_length = $response->{'headers'}->{'content-length'};
+
+    print DOWNLOAD $data; # Save chunk into file
+
+    $total_data .= $data;
+
+    STDOUT->printflush( callback_progress_bar( basename($url), length($total_data), $content_length, 20, '=' ) ) if ($progress);
+
+  };
+
+  my $response = $http->request( 'GET', $url, $options );
+
+  close (DOWNLOAD);
+
+  if ( $response->{'success'} ) {
+    logger->info("[DOWNLOAD] done");
+    return $response->{status};
+  }
+
+  logger->error(sprintf("[DOWNLOAD] Download error: %s - %s", $response->{status}, $response->{reason}));
+  return $response->{status};
 
 }
 
@@ -385,19 +467,18 @@ sub get_last_modified {
 
   }
 
-  my $curl_cmd = curl_cmd("-s -I $url");
+  my $http = http_client();
 
   logger->debug("Get 'Last-Modified' date of $url");
 
-  my $headers = qx{ $curl_cmd };
-  my $result  = 0;
+  my $response = $http->request('HEAD', $url);
 
-  if ($headers =~ m/Last\-Modified\:\s+(.*)/) {
-    my $match = $1;
-    return w3c_date_to_time(trim($match));
+  if ( $response->{'success'} ) {
+    my $last_modified = $response->{'headers'}{'last-modified'};
+    return http_date_to_time($last_modified) if ($last_modified);
   }
 
-  return $result;
+  return 0;
 
 }
 
@@ -482,7 +563,7 @@ sub timestamp_to_time {
 }
 
 
-sub w3c_date_to_time {
+sub http_date_to_time {
 
   my $timestamp = shift;
   return $timestamp unless($timestamp);
@@ -606,7 +687,7 @@ sub callback_spinner {
 
 sub gpg_verify {
 
-  my $file = shift;
+  my ($file) = @_;
 
   logger->debug(qq/[GPG] verify file "$file" with "$file.asc"/);
 
@@ -618,7 +699,7 @@ sub gpg_verify {
 
 sub gpg_import_key {
 
-  my $key_file     = shift;
+  my ($key_file)   = @_;
   my $key_contents = file_read($key_file);
      $key_contents =~ /uid\s+(.*)/;
   my $key_uid      = $1;
@@ -636,18 +717,27 @@ sub get_arch {
 }
 
 
-my $slackware_release;
+my $slackware_release    = '';
+my $is_slackware_current = 0;
 
 sub _get_slackware_release {
 
   my $slackware_version_file = $slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
-  my $slackware_version      = file_read($slackware_version_file);
 
-  chomp($slackware_version);
+  my ($slackware_version) = file_read($slackware_version_file) =~ (/Slackware (.*)/);
 
-  $slackware_version =~ /Slackware (.*)/;
-  return $1;
+  if ($slackware_version =~ /\+/) {
+    $slackware_version =~ s/\+//;
+    $is_slackware_current = 1;
+  }
 
+  return $slackware_version;
+
+}
+
+
+sub is_slackware_current {
+  return $is_slackware_current;
 }
 
 
@@ -769,6 +859,89 @@ sub failed_sign {
 }
 
 
+sub str_pad {
+
+  my ($input, $pad_length) = @_;
+
+  Carp::croak("Usage: str_pad(input, pad_length)") unless ($pad_length);
+
+  my $result = $input;
+  my $length = length($input);
+
+  for my $i (1..($pad_length-$length)) {
+    $result .= ' ';
+  }
+
+  return $result;
+
+}
+
+sub terminal_width {
+
+  my $res = qx{tput cols};
+  chomp($res);
+  return $res;
+
+}
+
+
+sub table {
+
+  my ($args) = @_;
+
+  my $col_separator    = $args->{'separator'}->{'column'} || ' ';
+  my $header_separator = $args->{'separator'}->{'header'} || undef;
+  my $rows             = $args->{'rows'}    || ();
+  my $headers          = $args->{'headers'} || ();
+  my $widths           = ();
+
+  my @checks = @$rows;
+
+  push(@checks, $headers) if ($headers);
+
+  for my $row (@checks) {
+    for (my $idx=0; $idx < @$row; $idx++) {
+
+      if (defined($args->{'widths'}) && $args->{'widths'}->[$idx] > 0) {
+        $widths->[$idx] = $args->{'widths'}->[$idx];
+        next;
+      }
+
+      my $col = $row->[$idx];
+      $widths->[$idx] = length($col) if (length($col) > ($widths->[$idx] || 0));
+
+    }
+  }
+
+  my $format = join($col_separator, map { "%-${_}s" } @$widths) . "\n";
+  my $table  = '';
+
+  if ($headers) {
+
+    my $header_row   = sprintf($format, @$headers);
+    my $header_width = length($header_row);
+
+    if ($header_separator) {
+      $table .= sprintf("%s\n", $header_separator x $header_width);
+    }
+
+    $table .= $header_row;
+
+    if ($header_separator) {
+      $table .= sprintf("%s\n", $header_separator x $header_width);
+    }
+
+  }
+
+  for my $row (@$rows) {
+    $table .= sprintf($format, @$row);
+  }
+
+  return $table;
+
+}
+
+
 1;
 __END__
 
@@ -824,7 +997,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.
