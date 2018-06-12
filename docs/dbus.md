@@ -16,6 +16,7 @@ This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, 
       /** Methods */
 
       arrayOfString ChangeLog(string repo_id);
+      arrayOfString Announce(string repo_id);
       arrayOfString SecurityFix();
 
       arrayOfString PackageInfo(string package_name);
@@ -76,6 +77,10 @@ This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, 
         </method>
       </interface>
       <interface name="org.lotarproject.SlackMan">
+        <method name="Announce">
+          <arg name="repo_id" type="s" direction="in"/>
+          <arg type="a{saa{ss}}" direction="out"/>
+        </method>
         <method name="ChangeLog">
           <arg name="repo_id" type="s" direction="in"/>
           <arg type="a{saa{ss}}" direction="out"/>
@@ -152,6 +157,17 @@ This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, 
 Return last ChangeLog entries from all Slackware Changelog repositories
 
     ARRAY of DICT<STRING,STRING> org.lotarproject.SlackMan.ChangeLog ( in STRING repo_id )
+
+Argument   | Type   | Description
+-----------|--------|------------
+`repo_id`  | STRING | Repository ID
+
+
+##### org.lotarproject.SlackMan.Announce
+
+Return last ChangeLog Annouce entries from all Slackware Changelog repositories
+
+    ARRAY of DICT<STRING,STRING> org.lotarproject.SlackMan.Announce ( in STRING repo_id )
 
 Argument   | Type   | Description
 -----------|--------|------------
