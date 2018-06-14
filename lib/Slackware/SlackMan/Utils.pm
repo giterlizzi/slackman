@@ -893,24 +893,40 @@ sub table {
   my $header_separator = $args->{'separator'}->{'header'} || undef;
   my $rows             = $args->{'rows'}    || ();
   my $headers          = $args->{'headers'} || ();
+  my $output_format    = $args->{'format'}  || 'default';
   my $widths           = ();
 
   my @checks = @$rows;
 
   push(@checks, $headers) if ($headers);
 
-  for my $row (@checks) {
-    for (my $idx=0; $idx < @$row; $idx++) {
+  if ($output_format eq 'default') {
 
-      if (defined($args->{'widths'}) && $args->{'widths'}->[$idx] > 0) {
-        $widths->[$idx] = $args->{'widths'}->[$idx];
-        next;
+    for my $row (@checks) {
+      for (my $idx=0; $idx < @$row; $idx++) {
+
+        if (defined($args->{'widths'}) && $args->{'widths'}->[$idx] > 0) {
+          $widths->[$idx] = $args->{'widths'}->[$idx];
+          next;
+        }
+
+        my $col = $row->[$idx];
+        $widths->[$idx] = length($col) if (length($col) > ($widths->[$idx] || 0));
+
       }
-
-      my $col = $row->[$idx];
-      $widths->[$idx] = length($col) if (length($col) > ($widths->[$idx] || 0));
-
     }
+
+  } else {
+
+    for (my $i=0; $i< @{$rows->[0]}; $i++) {
+      $widths->[$i] = 1;
+    }
+
+    $header_separator = undef;
+
+    $col_separator = ','  if ($output_format eq 'csv');
+    $col_separator = "\t" if ($output_format eq 'tsv');
+
   }
 
   my $format = join($col_separator, map { "%-${_}s" } @$widths) . "\n";
@@ -934,7 +950,14 @@ sub table {
   }
 
   for my $row (@$rows) {
-    $table .= sprintf($format, @$row);
+
+    if ($output_format eq 'default') {
+      $table .= sprintf($format, @$row);
+
+    } else {
+      $table .= sprintf($format, map { trim($_) } @$row);
+    }
+
   }
 
   return $table;

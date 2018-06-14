@@ -106,12 +106,13 @@ sub call_list_obsoletes {
 
   }
 
-  print "\nObsolete package(s)\n\n";
+  print "\nObsolete package(s)\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   print table({
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Package', 'ChangeLog Repository', 'Version', 'Obsolete from', 'Actual Version', 'Installed at' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   return (@obsolete);
@@ -133,6 +134,7 @@ sub call_list_variables {
     'rows'      => \@rows,
     'separator' => { 'column' => '    ', 'header' => '-' },
     'headers'   => [ 'Variable', 'Value' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   print "\n";
@@ -143,7 +145,7 @@ sub call_list_variables {
 
 sub call_list_orphan {
 
-  print "\nOrphan package(s)\n\n";
+  print "\nOrphan package(s)\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my $rows_ref = package_list_orphan();
   my @rows = ();
@@ -167,6 +169,7 @@ sub call_list_orphan {
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Installed/Upgraded at' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   exit(0);
@@ -177,7 +180,7 @@ sub call_list_installed {
 
   my (@search) = @_;
 
-  print "\nInstalled packages\n\n";
+  print "\nInstalled packages\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my $rows_ref = package_list_installed(@search);
   my @rows = ();
@@ -201,6 +204,7 @@ sub call_list_installed {
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Installed/Upgraded at' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   exit(0);
@@ -210,7 +214,7 @@ sub call_list_installed {
 
 sub call_list_upgraded {
 
-  print "\nUpgraded packages\n\n";
+  print "\nUpgraded packages\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my @query_filters;
 
@@ -245,6 +249,7 @@ sub call_list_upgraded {
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   exit(0);
@@ -254,7 +259,7 @@ sub call_list_upgraded {
 
 sub call_list_removed {
 
-  print "\nRemoved packages\n\n";
+  print "\nRemoved packages\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my @query_filters;
 
@@ -289,6 +294,7 @@ sub call_list_removed {
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   exit(0);
@@ -299,7 +305,7 @@ sub call_list_packages {
 
   my (@search) = @_;
 
-  print "\nAvailable packages\n\n";
+  print "\nAvailable packages\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my $option_repo = $slackman_opts->{'repo'};
 
@@ -352,7 +358,8 @@ sub call_list_packages {
   print table({
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
-    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Size', 'Timestamp' ],
+    'headers'   => [ 'Name', 'Arch', 'Version', 'Tag', 'Repository', 'Size' ],
+    'format'    => $slackman_opts->{'format'},
   });
 
   exit(0);
@@ -408,6 +415,7 @@ B<slackman list> display information of:
   --version                    Display version information
   -c, --config=FILE            Configuration file
   --color=[always|auto|never]  Colorize the output
+  --format=[default|csv|tsv]   Output format for list
 
 =head1 SEE ALSO
 

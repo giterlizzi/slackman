@@ -194,7 +194,7 @@ sub call_repo_list {
 
   my @repositories = get_repositories();
 
-  print "\nAvailable repository\n\n";
+  print "\nAvailable repository\n\n" if ($slackman_opts->{'format'} eq 'default');
 
   my @rows = ();
 
@@ -217,7 +217,8 @@ sub call_repo_list {
     'rows'      => \@rows,
     'separator' => { 'column' => '   ', 'header' => '-' },
     'headers'   => [ 'Repository ID',  'Description', 'Status', 'Priority', 'Packages' ],
-    'widths'    => [ 0, 0, 10, 0, 0 ]
+    'widths'    => [ 0, 0, 10, 0, 0 ],
+    'format'    => $slackman_opts->{'format'}
   });
 
   exit(0);

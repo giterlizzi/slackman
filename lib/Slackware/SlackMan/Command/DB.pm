@@ -86,17 +86,18 @@ sub call_db_info {
   my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size,
       $atime, $mtime, $ctime, $blksize, $blocks) = stat($db_path);
 
-  print sprintf("%-20s %s\n",     'Path:', $db_path);
-  print sprintf("%-20s %.1f M\n", 'Size:', ($size/1024/1024));
+  print sprintf("%-15s : %s\n",     'Database Path', $db_path);
+  print sprintf("%-15s : %.1f M\n", 'Database Size', filesize_h($size, 1));
+  print sprintf("%-15s : %s\n",     'Last modified', time_to_timestamp($mtime));
 
   my $user_version = ($dbh->selectrow_arrayref('PRAGMA user_version', undef))->[0];
-  print sprintf("%-20s %s\n", 'Schema Version:', $user_version);
+  print sprintf("%-15s : %s\n", 'Schema Version', $user_version);
 
   my $quick_check  = ($dbh->selectrow_arrayref('PRAGMA quick_check', undef))->[0];
-  print sprintf("%-20s %s\n", 'Quick check:', uc($quick_check));
+  print sprintf("%-15s : %s\n", 'Quick check', uc($quick_check));
 
   my $integrity_check = ($dbh->selectrow_arrayref('PRAGMA integrity_check', undef))->[0];
-  print sprintf("%-20s %s\n", 'Integrity check:', uc($integrity_check));
+  print sprintf("%-15s : %s\n", 'Integrity check', uc($integrity_check));
 
 }
 

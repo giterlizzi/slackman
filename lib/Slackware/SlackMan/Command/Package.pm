@@ -125,37 +125,49 @@ sub call_package_info {
 
     my $row = $installed_rows->{$_};
     my $description = $row->{description};
-    my $pkg_description = '';
-
-    LINE: foreach my $line ( split(/\n/, $description ) ) {
-      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
-    }
 
     push @packages_installed, $row->{name};
 
     my $pkg_dependency = $dbh->selectrow_hashref('SELECT * FROM packages WHERE package LIKE ?', undef, $row->{'package'}.'%');
 
-    print sprintf("%-15s : %s\n", 'Name',          $row->{name});
-    print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
-    print sprintf("%-15s : %s\n", 'Tag',           $row->{tag}) if ($row->{tag});
-    print sprintf("%-15s : %s\n", 'Version',       $row->{version});
-    print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
-    print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
-    print sprintf("%-15s : %s\n", 'Require',       $pkg_dependency->{'required'}) if ($pkg_dependency->{'required'});
-    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
+    my @rows = ();
+
+    push(@rows, [ 'Name',          $row->{name} ]);
+    push(@rows, [ 'Arch',          $row->{arch} ]);
+    push(@rows, [ 'Tag',           $row->{tag} ]) if ($row->{tag});
+    push(@rows, [ 'Version',       $row->{version} ]);
+    push(@rows, [ 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1) ]);
+    push(@rows, [ 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1) ]);
+    push(@rows, [ 'Require',       $pkg_dependency->{'required'} ]) if ($pkg_dependency->{'required'});
+
+    my $skip_summary_column = 0;
+
+    LINE: foreach my $line ( split(/\n/, $description ) ) {
+      push(@rows, [ (($skip_summary_column++) ? '' : 'Summary'), trim($line) ]);
+    }
+
+    push(@rows, [ '', '' ]);
 
     if ($slackman_opts->{'show-files'}) {
 
-      print sprintf("\n%-15s :\n\n", 'File lists');
+      my $skip_first_column = 0;
 
       my $package_meta = package_metadata(file_read("/var/log/packages/".$row->{'package'}));
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
-        print sprintf("%-5s /%s\n", ' ', $_);
+        my $file = $_;
+           $file = "/$file" unless ($file =~ /^\//);
+        push(@rows, [ (($skip_first_column++) ? '' : 'File list'), $file ]);
       }
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => ' : ' },
+      'widths'    => [ undef, 1 ],
+    });
 
     print sprintf("\n%s\n\n", "-"x80);
 
@@ -177,37 +189,49 @@ sub call_package_info {
 
     my $row = $available_rows->{$_};
     my $description = $row->{description};
-    my $pkg_description = '';
+
+    my @rows = ();
+
+    push(@rows, [ 'Name',          $row->{name} ]);
+    push(@rows, [ 'Arch',          $row->{arch} ]);
+    push(@rows, [ 'Tag',           $row->{tag} ])      if ($row->{tag});
+    push(@rows, [ 'Category',      $row->{category} ]) if ($row->{category});
+    push(@rows, [ 'Version',       $row->{version} ]);
+    push(@rows, [ 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1) ]);
+    push(@rows, [ 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1) ]);
+    push(@rows, [ 'Require',       $row->{required} ]) if ($row->{required});
+    push(@rows, [ 'Repo',          $row->{repository} ]);
+
+    my $skip_summary_column = 0;
 
     LINE: foreach my $line ( split(/\n/, $description ) ) {
-      $pkg_description .= sprintf("%s\n%-15s : ", trim($line), ' ');
+      push(@rows, [ (($skip_summary_column++) ? '' : 'Summary'), trim($line) ]);
     }
 
-    print sprintf("%-15s : %s\n", 'Name',          $row->{name});
-    print sprintf("%-15s : %s\n", 'Arch',          $row->{arch});
-    print sprintf("%-15s : %s\n", 'Tag',           $row->{tag})      if ($row->{tag});
-    print sprintf("%-15s : %s\n", 'Category',      $row->{category}) if ($row->{category});
-    print sprintf("%-15s : %s\n", 'Version',       $row->{version});
-    print sprintf("%-15s : %s\n", 'Size',          filesize_h(($row->{size_uncompressed} * 1024), 1));
-    print sprintf("%-15s : %s\n", 'Download Size', filesize_h(($row->{size_compressed}   * 1024), 1));
-    print sprintf("%-15s : %s\n", 'Require',       $row->{required}) if ($row->{required});
-    print sprintf("%-15s : %s\n", 'Repo',          $row->{repository});
-    print sprintf("%-15s : %s\n", 'Summary',       $pkg_description);
+    push(@rows, [ '', '' ]);
 
     if ($slackman_opts->{'show-files'}) {
-
-      print sprintf("\n%-15s :\n\n", 'File lists');
 
       my $sth = $dbh->prepare('SELECT * FROM manifest WHERE package = ? ORDER BY files');
       $sth->execute($row->{'package'});
 
       my $row = $sth->fetchrow_hashref();
 
+      my $skip_first_column = 0;
+
       foreach ( split(/\n/, $row->{'files'}) ) {
-        print sprintf("%-5s /%s\n", ' ', $_);
+        my $file = $_;
+           $file = "/$file" unless ($file =~ /^\//);
+        push(@rows, [ (($skip_first_column++) ? '' : 'File list'), $file ]);
       }
 
     }
+
+    print table({
+      'rows'      => \@rows,
+      'separator' => { 'column' => ' : ' },
+      'widths'    => [ undef, 1 ],
+    });
 
     print sprintf("\n%s\n\n", "-"x80);
 

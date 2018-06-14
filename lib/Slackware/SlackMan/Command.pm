@@ -61,6 +61,7 @@ GetOptions( $slackman_opts,
   'exclude-installed',
   'exclude|x=s',
   'force|f',
+  'format=s',
   'help|h',
   'limit=i',
   'local',
@@ -85,8 +86,11 @@ GetOptions( $slackman_opts,
   'yes|y',
 );
 
+# Set default format to "default"
+$slackman_opts->{'format'} ||= 'default';
 
-$slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+# Color output is always enabled
+$slackman_opts->{'color'} ||= 'always';
 
 # Options Alias
 $slackman_opts->{'category'} = $slackman_opts->{'series'} if ($slackman_opts->{'series'});
@@ -179,6 +183,23 @@ sub run {
     unless ( grep(/^$repo/, @repos) ) {
       print sprintf("%s Unknown repository!\n\n", colored('WARNING', 'yellow bold'));
       exit(1);
+    }
+
+  }
+
+  # Check output format (default, csv or tsv)
+  if ($slackman_opts->{'format'}) {
+
+    my $format = $slackman_opts->{'format'};
+
+    unless (grep(/^$format$/, qw(csv tsv default))) {
+      print colored('WARNING', 'yellow bold') . " Invalid output format (allowed: default, csv, tsv)\n\n";
+      exit(1);
+    }
+
+    # Disable colors for csv and tsv output format
+    if ($format ne 'default') {
+      $ENV{ANSI_COLORS_DISABLED} = 1;
     }
 
   }
