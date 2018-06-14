@@ -55,33 +55,33 @@ __slackman_list_config() {
 }
 
 __slackman_list_installed_packages() {
-  echo $(slackman list installed | grep ":" | awk '{ print $1 }')
+  echo $(slackman list installed --format=tsv | tail -n +2 | awk '{ print $1 }')
 }
 
 
 __slackman_list_packages() {
-  echo $(slackman list packages | grep ":" | awk '{ print $1 }' | sort -u)
+  echo $(slackman list packages --format=tsv | tail -n +2 | awk '{ print $1 }' | sort -u)
 }
 
 
 __slackman_list_no_installed_packages() {
-  echo $(slackman list packages --exclude-installed | grep ":" | awk '{ print $1 }' | sort -u)
+  echo $(slackman list packages --exclude-installed --format=tsv | tail -n +2 | awk '{ print $1 }' | sort -u)
 }
 
 
 __slackman_list_repos() {
 
-  local slackman_cmd="slackman repo list --color=never"
+  local slackman_cmd="slackman list repo --format=tsv | tail -n +2"
 
   case "$1" in
     enabled)
-      echo $($slackman_cmd | grep -i enabled | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | grep -i enabled | awk '{ print $1 }')
       ;;
     disabled)
-      echo $($slackman_cmd | grep -i disabled | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | grep -i disabled | awk '{ print $1 }')
       ;;
     *)
-      echo $($slackman_cmd | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | awk '{ print $1 }')
   esac
 
   return
@@ -217,6 +217,11 @@ _slackman_upgrade() {
     return 0
   fi
 
+  if [[ "$prev" == "--local" ]]; then
+    _filedir 't[bglx]z'
+    return 0
+  fi
+
   COMPREPLY=( $(compgen -W "$(__slackman_list_installed_packages "$@")" -- "$cur") )
   __ltrim_colon_completions "$cur"
 
@@ -245,6 +250,11 @@ _slackman_install() {
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
+  if [[ "$prev" == "--local" ]]; then
+    _filedir 't[bglx]z'
     return 0
   fi
 
@@ -308,7 +318,7 @@ _slackman_help() {
 
 _slackman_list() {
 
-  local slackman_options="--exclude-installed --after --before"
+  local slackman_options="--exclude-installed --after --before --format"
 
   __slackman_complete_options "$cur" "$prev" && return
 
