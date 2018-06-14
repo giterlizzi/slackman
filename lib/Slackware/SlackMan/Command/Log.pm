@@ -88,6 +88,8 @@ sub call_log_tail {
 
   my $log_file = $slackman_conf->{'logger'}->{'file'};
 
+  exit(1) unless (-e $log_file);
+
   system("tail -f $log_file");
   exit(0);
 
