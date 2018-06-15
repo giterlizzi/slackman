@@ -160,6 +160,22 @@ _slackman_repo() {
 }
 
 
+_slackman_list_packages() {
+
+  local slackman_options="--repo"
+
+  __slackman_complete_options "$cur" "$prev" && return
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
+  __slackman_complete_options "$cur" "$prev" && return
+
+}
+
+
 _slackman_log() {
 
   local subcommands="help clean tail"
