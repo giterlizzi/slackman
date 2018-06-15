@@ -67,6 +67,9 @@ Enable C<x86> and C<x86-64> and disable C<arm>:
 
     arch = x86,x86-64,!arm
 
+Override C<$arch> variable:
+
+    arch =x86:i486,x86-64
 
 =back
 
