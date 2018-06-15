@@ -214,8 +214,6 @@ sub check_announces {
 
     }
 
-    #$announce_body .= sprintf("\n%s\n", "-"x32);
-
   }
 
   my $current_last_update = $cfg->get('last_update.announce') || 0;
@@ -320,8 +318,7 @@ sub check_security_advisories {
         my $description = $changelog->{'description'};
            $description = "\n<i>$description</i>" if ($description);
 
-        $security_fix_body .= sprintf("\n%s\n ● %s\n%s\n",
-          "-"x32, $package, $description);
+        $security_fix_body .= sprintf(" ● %s\n%s\n", $package, $description);
 
       }
 
