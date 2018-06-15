@@ -1,5 +1,7 @@
 # Slackers (Conraid's Repository for Slackware64 current)
 
+# Home-Page: http://slack.conraid.net/
+
 [packages]
 name    = Slackers (Conraid's Repository for Slackware64 current)
 arch    = x86-64

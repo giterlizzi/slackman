@@ -8,6 +8,7 @@
 [packages]
 name      = KDE5 ktown packages
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://bear.alienbase.nl/mirrors/alien-kde/$release/latest/$arch.family/
 changelog = http://bear.alienbase.nl/mirrors/alien-kde/ChangeLog.txt
 priority  = 1
