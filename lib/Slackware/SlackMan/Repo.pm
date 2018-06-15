@@ -135,8 +135,21 @@ sub load_repositories {
                               gpgkey filelist );
 
       foreach (@keys_to_parse) {
+
         $repo_config->{$_} =~ s/(\{|\})//g;
         $repo_config->{$_} =~ s/\$mirror/$mirror/;
+
+        # Replace repo arch in $arch variable
+        if ($repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
+          my $repo_arch = $repo_config->{'arch'}->{'x86'};
+          $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+        }
+
+        if ($repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
+          my $repo_arch = $repo_config->{'arch'}->{'arm'};
+          $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+        }
+
       }
 
       foreach (@keys_to_parse) {

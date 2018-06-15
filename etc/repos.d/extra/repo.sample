@@ -32,6 +32,10 @@ enabled = false
 #
 #     arch = x86,x86-64,!arm
 #
+#   Override $arch variable:
+#
+#     arch =x86:i486,x86-64
+#
 arch = x86,x86-64,arm
 
 
