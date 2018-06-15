@@ -1,0 +1,14 @@
+# Ponce (Matteo Bernardini Slackware Repository)
+
+# Home-Page:  http://slackware.ponce.cc/blog/
+
+[packages]
+name    = Ponce Slackware$release.suffix-$release packages
+enabled = false
+mirror  = http://ponce.cc/slackware/slackware$release.suffix-$release/packages/
+
+[lxde]
+name    = Ponce LXDE Slackware$release.suffix-$release packages
+enabled = false
+mirror  = http://ponce.cc/slackware/slackware$release.suffix-$release/lxde
+
