@@ -263,10 +263,7 @@ sub package_install {
 
   my ($package) = @_;
 
-  my $terse = undef;
-     $terse = 'terse' if ($slackman_opts->{'terse'});
-
-  installpkg($package, $terse);
+  installpkg($package);
   _update_history($package, 'install');
 
 }
@@ -276,9 +273,6 @@ sub package_upgrade {
 
   my ($package) = @_;
 
-  my $terse = undef;
-     $terse = 'terse' if ($slackman_opts->{'terse'});
-
   my $pkg_info = get_package_info(basename($package));
 
   my $package_installed = ($dbh->selectrow_arrayref("SELECT package FROM history WHERE status = 'installed' AND name = ?", undef, $pkg_info->{'name'}))->[0];
@@ -286,7 +280,7 @@ sub package_upgrade {
   my $package_cmd = $package;
      $package_cmd = "$package_installed%$package_cmd" if ($package_installed);
 
-  upgradepkg($package_cmd, 'reinstall', 'install-new', $terse);
+  upgradepkg($package_cmd, 'reinstall', 'install-new');
   _update_history($package, 'upgrade');
 
 }
@@ -932,7 +926,8 @@ sub package_search_files {
 
   my ($file) = @_;
 
-  $file = "/$file" unless ($file =~ /^\//);
+  #$file = "/$file" unless ($file =~ /^\//);
+  #$file = quotemeta($file);
 
   my $sth = $dbh->prepare('SELECT * FROM manifest WHERE files REGEXP(?)');
   $sth->execute(qr/$file/);

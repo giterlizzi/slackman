@@ -187,6 +187,9 @@ sub run {
 
   }
 
+  # Set TERSE env for pkgtools
+  $ENV{TERSE} = 1 if ($slackman_opts->{'terse'});
+
   # Check output format (default, csv or tsv)
   if ($slackman_opts->{'format'}) {
 
