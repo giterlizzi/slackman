@@ -341,9 +341,9 @@ sub call_repo_info {
 
   }
 
-  push(@rows, [ 'Arch Support', sprintf("x86: %s\tx86-64: %s\tarm: %s",
+  push(@rows, [ 'Arch Support', sprintf("x86: %s\tx86_64: %s\tarm: %s",
     ($repo_data->{'arch'}->{'x86'}    ? colored('yes', 'GREEN') : 'no'),
-    ($repo_data->{'arch'}->{'x86-64'} ? colored('yes', 'GREEN') : 'no'),
+    ($repo_data->{'arch'}->{'x86_64'} ? colored('yes', 'GREEN') : 'no'),
     ($repo_data->{'arch'}->{'arm'}    ? colored('yes', 'GREEN') : 'no')
   )]);
 
