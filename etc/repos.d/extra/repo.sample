@@ -18,25 +18,25 @@ enabled = false
 
 # Arch support
 #
-# Specify the repository arch support (default is: x86,x86-64,arm).
+# Specify the repository arch support (default is: x86,x86_64,arm).
 #
 # NOTE: Prepend "!" to disable the arch.
 #
 # Example:
 #
-#   Enable "only" x86-64:
+#   Enable "only" x86_64:
 #
-#     arch = x86-64
+#     arch = x86_64
 #
-#   Enable "x86" and "x86-64" and disable "arm":
+#   Enable "x86" and "x86_64" and disable "arm":
 #
-#     arch = x86,x86-64,!arm
+#     arch = x86,x86_64,!arm
 #
 #   Override $arch variable:
 #
-#     arch =x86:i486,x86-64
+#     arch =x86:i486,x86_64
 #
-arch = x86,x86-64,arm
+arch = x86,x86_64,arm
 
 
 # Mirror URL
