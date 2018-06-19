@@ -4,6 +4,6 @@
 
 [packages]
 name    = Slackers (Conraid's Repository for Slackware64 current)
-arch    = x86-64
+arch    = x86_64
 enabled = false
 mirror  = http://slack.conraid.net/repository/slackware64-current/

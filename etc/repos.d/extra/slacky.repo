@@ -5,5 +5,5 @@
 [packages]
 name    = Italian Slackware Community
 enabled = false
-arch    = x86,x86-64
+arch    = x86,x86_64
 mirror  = http://repository.slacky.eu/slackware{$release.suffix}-{$release.real}/
