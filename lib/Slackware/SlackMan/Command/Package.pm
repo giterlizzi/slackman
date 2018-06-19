@@ -1091,8 +1091,8 @@ sub call_package_changelog {
     print table({
       'rows'      => \@rows,
       'separator' => { 'column' => '   ', 'header' => '-' },
-      'headers'   => [ 'Package', 'Version', 'Status', 'Timestamp', 'Repository' ],
-      'widths'    => [ undef, undef, undef, undef, undef, 1 ]
+      'headers'   => [ 'Package', 'Version', 'Status', 'Timestamp', 'Repository', '' ],
+      'widths'    => [ 0, 0, 0, 0, 0, 1 ]
     });
 
     exit(0);
