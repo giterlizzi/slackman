@@ -53,23 +53,23 @@ B<arch>
 
 =over
 
-Specify the repository arch support (default is: x86,x86-64,arm).
+Specify the repository arch support (default is: x86,x86_64,arm).
 
 NOTE: Prepend C<!> to disable the arch.
 
 B<Example>
 
-Enable "only" C<x86-64>:
+Enable "only" C<x86_64>:
 
-    arch = x86-64
+    arch = x86_64
 
-Enable C<x86> and C<x86-64> and disable C<arm>:
+Enable C<x86> and C<x86_64> and disable C<arm>:
 
-    arch = x86,x86-64,!arm
+    arch = x86,x86_64,!arm
 
 Override C<$arch> variable:
 
-    arch =x86:i486,x86-64
+    arch =x86:i486,x86_64
 
 =back
 
