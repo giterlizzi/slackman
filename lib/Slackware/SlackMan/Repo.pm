@@ -88,6 +88,7 @@ sub load_repositories {
       if (defined($repo_config->{'arch'})) {
 
         if (ref($repo_config->{'arch'}) ne 'ARRAY') {
+          $repo_config->{'arch'} = 'x86_64' if ($repo_config->{'arch'} eq 'x86-64');
           $repo_config->{'arch'} = [ $repo_config->{'arch'} ];
         }
 
@@ -101,6 +102,8 @@ sub load_repositories {
             $arch =~ s/^!//;
           }
 
+          $arch = 'x86_64' if ($arch eq 'x86-64');
+
           $repo_arch->{$arch} = $enabled;
           $repo_arch->{$arch} = $directory_prefix  if ($directory_prefix);
 
@@ -112,14 +115,14 @@ sub load_repositories {
 
         $repo_config->{'arch'} = {
           'x86'    => 1,
-          'x86-64' => 1,
+          'x86_64' => 1,
           'arm'    => 1,
         };
 
       }
 
       # Disable the repo if arch is not supported (eg. slackware:multilib on non x86_64 machine)
-         if ($arch eq 'x86_64')        { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86-64'}); }
+         if ($arch eq 'x86_64')        { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86_64'}); }
       elsif ($arch =~ /x86|i[3456]86/) { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86'});    }
       elsif ($arch =~ /arm(.*)/)       { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'arm'});    }
 
@@ -140,12 +143,12 @@ sub load_repositories {
         $repo_config->{$_} =~ s/\$mirror/$mirror/;
 
         # Replace repo arch in $arch variable
-        if ($repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
+        if (defined($repo_config->{'arch'}->{'x86'}) && $repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
           my $repo_arch = $repo_config->{'arch'}->{'x86'};
           $repo_config->{$_} =~ s/\$arch/$repo_arch/;
         }
 
-        if ($repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
+        if (defined($repo_config->{'arch'}->{'arm'}) && $repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
           my $repo_arch = $repo_config->{'arch'}->{'arm'};
           $repo_config->{$_} =~ s/\$arch/$repo_arch/;
         }
