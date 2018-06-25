@@ -7,6 +7,7 @@ This release introduce the automatic detection of Slackware `-current` release u
 ## Added
 
   * Added `--terse` option for display only a single description line when install or upgrade package
+  * Added `slackman clean removed` command for delete removed packages and scripts file in pkgtools directory (`/var/log/removed_{packages,scripts}`)
   * Added new entry for `00-default.renames` file
   * #11 - Added automatic detection of Slackware-current (since **14.2+** release)
   * #12 - Added `org.LotarProject.SlackMan.Announces` D-Bus method to retrieve ChangeLog announces
