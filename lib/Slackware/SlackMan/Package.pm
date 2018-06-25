@@ -733,7 +733,7 @@ sub package_download {
       my $local_file = $package_url;
          $local_file =~ s/file:\/\///;
 
-      logger->info(sprintf("Create link of %s package and .asc file", $pkg->{'package'}));
+      logger->info(sprintf("Create link of %s package and %s.asc file", $pkg->{'package'}, $pkg->{'package'}));
 
       symlink($local_file, $package_path);
       symlink("$local_file.asc", "$package_path.asc");
