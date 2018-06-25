@@ -270,10 +270,7 @@ sub call_package_reinstall {
 
   _check_last_metadata_update();
 
-  print "\nReinstall package(s)\n\n";
-  print sprintf("%s\n", "-"x80);
-  print sprintf("%-25s %-20s %-10s %s\n", "Package", "Version", "Tag", "Installed");
-  print sprintf("%s\n", "-"x80);
+  my @table1 = ();
 
   foreach (@packages) {
 
@@ -281,29 +278,32 @@ sub call_package_reinstall {
 
     if ($pkg) {
       push(@is_installed, $pkg);
-      print sprintf("%-25s %-20s %-10s %s\n", $_, "$pkg->{version}-$pkg->{build}", $pkg->{tag}, $pkg->{timestamp});
+      push(@table1, [ $_, $pkg->{'version'} . '-' . $pkg->{'build'}, $pkg->{'tag'}, $pkg->{'timestamp'} ]);
     } else {
-      print sprintf("%-25s not installed\n", $_);
+      push(@table1, [ $_, 'not installed' ]);
     }
 
   }
+
+  print "\nReinstall package(s)\n\n";
+
+  print table({
+    'rows'      => \@table1,
+    'separator' => { 'column' => '    ', 'header' => '-' },
+    'headers'   => [ 'Name', 'Version', 'Tag', 'Installed' ],
+  });
 
   exit(0) unless(@is_installed);
 
   print "\n\n";
 
-  unless ($slackman_opts->{'yes'}) {
-    exit(0) unless(confirm("Are you sure? [Y/N]"));
-  }
-
   my @filters = ();
   my @filter_packages = ();
 
-  foreach (@is_installed) {
-    push(@filter_packages, sprintf('( package LIKE "%s%%" )', $_->{'package'}));
-  }
+  push(@filter_packages, sprintf('( name IN ("%s"))',   join('", "', map { $_->{'name'} } @is_installed)));
+  push(@filter_packages, sprintf('( category = "%s" )', $slackman_opts->{'category'})), if ($slackman_opts->{'category'});
 
-  push(@filters, sprintf('( %s )', join(' OR ', @filter_packages)));
+  push(@filters, sprintf('( %s )', join(' AND ', @filter_packages)));
 
   # Filter repository
   push(@filters, repo_option_to_sql());
@@ -311,7 +311,60 @@ sub call_package_reinstall {
   my $query = 'SELECT * FROM packages WHERE ' . join(' AND ', @filters);
   my $rows  = $dbh->selectall_hashref($query, 'id', undef);
 
-  @packages_to_downloads = values(%$rows);
+  if ($slackman_opts->{'category'}) {
+
+    my @table_category = ();
+
+    foreach (keys %{$rows}) {
+      my $row = $rows->{$_};
+      push(@table_category, [ $row->{'name'}, $row->{'version'} . '-' . $row->{'build'}, $row->{'tag'}, $row->{'repository'} ]);
+    }
+
+    print "\nCategory Package(s)\n\n";
+
+    print table({
+      'rows'      => \@table_category,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ 'Name', 'Version', 'Tag', 'Repository' ],
+    });
+
+    print "\n";
+
+    exit(0) unless(confirm("Are you sure? [Y/N]"));
+
+    @packages_to_downloads = values(%$rows);
+
+  } else {
+
+    my @table_found_packages = ();
+    my $pkg_id   = 0;
+    my @packages = ();
+
+    foreach (keys %{$rows}) {
+
+      my $row = $rows->{$_};
+      push(@packages, $row);
+
+      push(@table_found_packages, [ ++$pkg_id, $row->{'name'}, $row->{'version'} . '-' . $row->{'build'}, $row->{'tag'}, $row->{'repository'} ]);
+
+    }
+
+    print "\nFound Package(s)\n\n";
+
+    print table({
+      'rows'      => \@table_found_packages,
+      'separator' => { 'column' => '    ', 'header' => '-' },
+      'headers'   => [ '#', 'Name', 'Version', 'Tag', 'Repository' ],
+    });
+
+    print "\n";
+
+    my $pkg_id_regex = "([1-$pkg_id])";
+    my $choice = confirm_choice("Select package number [1-$pkg_id] ?", qr/$pkg_id_regex/);
+
+    @packages_to_downloads = $packages[$choice-1];
+
+  }
 
   exit(0) unless (@packages_to_downloads);
 
@@ -741,7 +794,7 @@ sub call_package_history {
     exit 1;
   }
 
-  my @rows = ();
+  my @table = ();
 
   print sprintf("History of @{[ BOLD ]}%s@{[ RESET ]} package:\n\n", $package);
 
@@ -766,7 +819,7 @@ sub call_package_history {
     $prev_version   = ''               if ($status_history eq 'removed');
     $prev_version   = ''               if ($status_history eq 'installed');
 
-    push(@rows, [ $status_history, $version, $tag, $timestamp, $prev_version, $upgraded ]);
+    push(@table, [ $status_history, $version, $tag, $timestamp, $prev_version, $upgraded ]);
 
     $prev_version = $version;
     $prev_status  = $status;
@@ -774,7 +827,7 @@ sub call_package_history {
   }
 
   print table({
-    'rows'      => \@rows,
+    'rows'      => \@table,
     'separator' => { 'column' => '    ', 'header' => '-' },
     'headers'   => [ 'Status', 'Version', 'Tag', 'Timestamp', 'Previous', 'Upgraded' ],
   });
@@ -1534,12 +1587,10 @@ sub _check_package_duplicates {
 
     foreach (keys %$pkg_rows_ref) {
 
-      $pkg_id++;
-
       my $row = $pkg_rows_ref->{$_};
       push(@packages, $row->{'package'});
 
-      print sprintf("   %s) %-40s (%s)\n", $pkg_id, $row->{'package'}, $row->{'timestamp'});
+      print sprintf("   %s) %-40s (%s)\n", $pkg_id++, $row->{'package'}, $row->{'timestamp'});
 
     }
 
