@@ -407,7 +407,13 @@ sub call_package_remove {
 
   _check_package_duplicates();
 
-  my @is_installed = ();
+  my @is_installed  = ();
+  my @table         = ();
+  my $filter        = '';
+  my @packages_in   = ();
+  my @packages_like = ();
+
+  print "Remove package(s)\n\n";
 
   if ($slackman_opts->{'obsolete-packages'}) {
 
@@ -418,40 +424,57 @@ sub call_package_remove {
 
     if ($slackman_opts->{'category'}) {
 
-      my $packages_ref = $dbh->selectall_hashref('SELECT name FROM packages WHERE category = ?', 'name', undef, $slackman_opts->{'category'});
+      my $category = $dbh->selectall_hashref('SELECT name FROM packages WHERE category = ?', 'name', undef, $slackman_opts->{'category'});
 
-      @packages = sort keys %$packages_ref;
+      @packages = sort keys %{$category};
+
+      exit(0) unless (@packages);
 
     }
 
-    print "Remove package(s)\n\n";
+    foreach my $pkg (@packages) {
 
-    my @rows = ();
-
-    foreach (@packages) {
-
-      if ($_ =~ /^(aaa\_(base|elflibs|terminfo)|slackman)$/) {
-        push(@rows, [ $_, colored('Don\'t remove this package', 'RED') ]);
+      if ($pkg =~ /\*/) {
+        $pkg =~ s/\*/%/g;
+        push(@packages_like, qq/name LIKE "$pkg"/);
       } else {
-
-        my $pkg = package_info($_);
-
-        if ($pkg) {
-          push(@rows , [ $_, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'} ]);
-          push(@is_installed, $_);
-        } else {
-          push(@rows, [ $_, colored('Not installed', 'RED') ]);
-        }
-
+        push(@packages_in, $pkg);
       }
 
     }
 
-    print table({
-      'rows'      => \@rows,
-      'separator' => { 'column' => '    ', 'header' => '-' },
-      'headers'   => [ 'Package', 'Version', 'Tag', 'Installed' ],
-    });
+    $filter .= '(';
+    $filter .= sprintf('name IN ("%s")', join('","', @packages_in)) if (@packages_in);
+    $filter .= ' OR '                                               if (@packages_in && @packages_like);
+    $filter .= sprintf('(%s)', join(' OR ', @packages_like))        if (@packages_like);
+    $filter .= ') AND status = "installed"';
+
+    my $installed_packages = $dbh->selectall_hashref("SELECT * FROM history WHERE $filter ORDER BY name", 'name', undef);
+
+    foreach (sort keys %{$installed_packages}) {
+
+      my $pkg = $installed_packages->{$_};
+
+      if ($pkg->{'name'} =~ /^(aaa\_(base|elflibs|terminfo)|slackman)$/) {
+        push(@table, [ $pkg->{'name'}, colored('Don\'t remove this package', 'RED') ]);
+      } else {
+        push(@table , [ $pkg->{'name'}, "$pkg->{version}-$pkg->{build}", $pkg->{'tag'}, $pkg->{'timestamp'} ]);
+        push(@is_installed, $pkg->{'name'});
+      }
+
+    }
+
+    if (@table) {
+
+      print table({
+        'rows'      => \@table,
+        'separator' => { 'column' => '    ', 'header' => '-' },
+        'headers'   => [ 'Package', 'Version', 'Tag', 'Installed' ],
+      });
+
+    } else {
+      print 'Package not found!';
+    }
 
     print "\n\n";
 
@@ -465,9 +488,7 @@ sub call_package_remove {
   }
 
   foreach my $package_path (@is_installed) {
-
     package_remove($package_path);
-
   }
 
   # Send the list of removed packages via D-Bus
