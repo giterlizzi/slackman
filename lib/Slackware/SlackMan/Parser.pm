@@ -619,12 +619,9 @@ sub parse_history {
 
   my ($callback_status) = @_;
 
-  my $slackware_root     = $ENV{ROOT} || '';
-  my $slackware_log_path = "$slackware_root/var/log";
-
-  my @files           = grep { -f } glob("$slackware_log_path/*packages/*");
-  my @installed_files = grep { -f } glob("$slackware_log_path/packages/*");
-  my @removed_files   = grep { -f } glob("$slackware_log_path/removed_packages/*");
+  my @installed_files = grep { -f } glob($slackman_conf->{'pkgtools'}->{'packages'} . '/*');
+  my @removed_files   = grep { -f } glob($slackman_conf->{'pkgtools'}->{'removed-packages'} . '/*');
+  my @files           = ( @installed_files, @removed_files);
 
   my $local_history   = scalar @files;
   my $local_installed = scalar @installed_files;

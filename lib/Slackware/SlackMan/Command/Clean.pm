@@ -83,9 +83,8 @@ sub call_clean_all {
 
 sub call_clean_removed {
 
-  my $slackware_root                 = $ENV{ROOT} || '';
-  my $slackware_removed_packages_dir = "$slackware_root/var/log/removed_packages";
-  my $slackware_removed_scripts_dir  = "$slackware_root/var/log/removed_scripts";
+  my $slackware_removed_packages_dir = $slackman_conf->{'pkgtools'}->{'removed-packages'};
+  my $slackware_removed_scripts_dir  = $slackman_conf->{'pkgtools'}->{'removed-scripts'};
 
   exit(0) unless(confirm("Do you want remove Slackware log files placed in $slackware_removed_packages_dir and $slackware_removed_scripts_dir ? [Y/N]"));
 
