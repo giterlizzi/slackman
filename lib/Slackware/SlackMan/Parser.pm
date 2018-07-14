@@ -544,7 +544,9 @@ sub parse_package_history {
 
   my $slackware_root = $ENV{ROOT} || '';
 
-  my @files = grep { -f } glob("$slackware_root/var/log/*packages/$package*");
+  my @installed_files = grep { -f } glob($slackman_conf->{'pkgtools'}->{'packages'} . "/$package*");
+  my @removed_files   = grep { -f } glob($slackman_conf->{'pkgtools'}->{'removed-packages'} . "/$package*");
+  my @files           = ( @installed_files, @removed_files);
 
   logger->info("Update history of $package package");
 

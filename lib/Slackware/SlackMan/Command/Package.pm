@@ -152,7 +152,7 @@ sub call_package_info {
 
       my $skip_first_column = 0;
 
-      my $package_meta = package_metadata(file_read("/var/log/packages/".$row->{'package'}));
+      my $package_meta = package_metadata(file_read($slackman_conf->{'pkgtools'}->{'packages'} . '/' . $row->{'package'}));
 
       foreach (@{$package_meta->{'file_list'}}) {
         next if (/^(install|\.\/)/);
@@ -347,6 +347,11 @@ sub call_package_reinstall {
 
       push(@table_found_packages, [ ++$pkg_id, $row->{'name'}, $row->{'version'} . '-' . $row->{'build'}, $row->{'tag'}, $row->{'repository'} ]);
 
+    }
+
+    if ($pkg_id == 0) {
+      print "No package found!\n\n";
+      exit(1);
     }
 
     print "\nFound Package(s)\n\n";
