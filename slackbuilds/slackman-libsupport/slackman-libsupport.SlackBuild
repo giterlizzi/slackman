@@ -2,7 +2,7 @@
 
 # Slackware build script for slackman-libsupport
 
-# Copyright 2017 Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
+# Copyright 2017-2018 Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use of this script, with or without modification, is
@@ -25,10 +25,8 @@
 
 PRGNAM=slackman-libsupport
 VERSION=${VERSION:-1.3.0}
-BUILD=${BUILD:-1}
+BUILD=${BUILD:-2}
 TAG=${TAG:-_lotar}
-
-CPANM=${CPANM:-"$CWD/cpanm"}
 
 if [ -z "$ARCH" ]; then
   case "$( uname -m )" in
@@ -63,8 +61,13 @@ mkdir -p $TMP $PKG $OUTPUT
 cd $TMP
 rm -rf $PRGNAM-$VERSION
 
-MODULES="DBD::SQLite XML::Parser XML::Twig Net::DBus IO::Socket::SSL Net::SSLeay"
 
+CPANM=${CPANM:-"$CWD/cpanm"}
+SLACKWARE_VERSION=$(cat /etc/slackware-version | awk '{ print $2 }')
+MODULES="DBD::SQLite XML::Twig Net::DBus XML::Parser IO::Socket::SSL Net::SSLeay"
+
+# TODO  Add check of installed Perl modules (eg. Slackware 14.2+/15.0 include
+#       IO::Socket::SSL, Net::SSLeay and XML::Parser modules)
 
 if [ ! -e $CPANM ]; then
   curl -L https://cpanmin.us -o $CWD/cpanm
