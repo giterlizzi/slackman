@@ -169,7 +169,7 @@ sub call_package_info {
       'widths'    => [ undef, 1 ],
     });
 
-    print sprintf("\n%s\n\n", "-"x80);
+    print sprintf("%s\n\n", "-"x80);
 
   }
 
@@ -233,7 +233,7 @@ sub call_package_info {
       'widths'    => [ undef, 1 ],
     });
 
-    print sprintf("\n%s\n\n", "-"x80);
+    print sprintf("%s\n\n", "-"x80);
 
   }
 
