@@ -161,6 +161,10 @@ sub package_metadata {
     $size_uncompressed = $1 if ($_ =~ /^UNCOMPRESSED PACKAGE SIZE:\s+((.*)(K|M))/);
   }
 
+  # Convert "," to "."
+  $size_compressed   =~ s/,/./;
+  $size_uncompressed =~ s/,/./;
+
   if ($size_compressed =~ /M/) {
     $size_compressed =~ s/M//;
     $size_compressed = trim($size_compressed) * 1024;
