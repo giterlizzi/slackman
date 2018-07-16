@@ -425,11 +425,15 @@ sub package_check_install {
   # Filter repository
   push(@query_filters, repo_option_to_sql('packages'));
 
+  # Filter excluded packages
   if ($option_exclude) {
-    $option_exclude =~ s/\*/%/g;
-    push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($option_exclude)));
+    foreach my $exclude (@{$option_exclude}) {
+      $exclude =~ s/\*/%/g;
+      push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($exclude)));
+    }
   }
 
+  # Global main excluded packages
   if (defined($slackman_conf->{'main'}->{'exclude'})) {
 
     my @excluded = split(/,/, $slackman_conf->{'main'}->{'exclude'});
@@ -588,12 +592,15 @@ sub package_check_updates {
   my $option_exclude  = $slackman_opts->{'exclude'};
   my $option_tag      = $slackman_opts->{'tag'};
 
-  # Exclude package
+  # Filter excluded packages
   if ($option_exclude) {
-    $option_exclude =~ s/\*/%/g;
-    push(@query_filters, qq/packages.name NOT LIKE "$option_exclude"/);
+    foreach my $exclude (@{$option_exclude}) {
+      $exclude =~ s/\*/%/g;
+      push(@query_filters, sprintf('packages.name NOT LIKE %s', $dbh->quote($exclude)));
+    }
   }
 
+  # Global excluded packages
   if (defined($slackman_conf->{'main'}->{'exclude'})) {
 
     my @excluded = split(/,/, $slackman_conf->{'main'}->{'exclude'});
