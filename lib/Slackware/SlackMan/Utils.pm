@@ -905,7 +905,7 @@ sub table {
     for my $row (@checks) {
       for (my $idx=0; $idx < @$row; $idx++) {
 
-        if (defined($args->{'widths'}) && $args->{'widths'}->[$idx] > 0) {
+        if (defined($args->{'widths'}->[$idx]) && $args->{'widths'}->[$idx] > 0) {
           $widths->[$idx] = $args->{'widths'}->[$idx];
           next;
         }
