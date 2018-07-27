@@ -954,7 +954,8 @@ sub call_package_upgrade {
       my $pkg_size       = filesize_h(($pkg->{'size_compressed'} * 1024), 1, 1);
 
       # Detect renamed package name
-      if ($pkg->{'new_name'} ne $pkg->{'old_name'}) {
+      if (    ( defined($pkg->{'new_name'}) && defined($pkg->{'old-name'}) )
+           && ( $pkg->{'new_name'} ne $pkg->{'old_name'}) ) {
         $pkg_name = sprintf("%s -> %s", $pkg->{'old_name'}, $pkg->{'new_name'});
       }
 
