@@ -1410,7 +1410,7 @@ sub _packages_download {
 
     $count_downloads++;
 
-    print sprintf("%-72s %s\r", $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
+    print sprintf("%-72s%8s\r", "[$count_downloads/$num_downloads] " . $pkg->{'package'}, filesize_h(($pkg->{'size_compressed'} * 1024), 1));
 
     my ($package_path, $package_errors) = package_download($pkg);
 
@@ -1435,7 +1435,7 @@ sub _packages_upgraded {
   return 1 unless(@$packages);
 
   print "\n\n";
-  print sprintf("%s Package(s) upgraded\n", colored('SUCCESS', 'green bold'));
+  print sprintf("%s Package(s) upgraded\n", colored('DONE', 'green bold'));
   print sprintf("%s\n\n", "-"x80);
 
   foreach (@$packages) {
@@ -1460,7 +1460,7 @@ sub _packages_installed {
   return 1 unless(@$packages);
 
   print "\n\n";
-  print sprintf("%s Package(s) installed\n", colored('SUCCESS', 'green bold'));
+  print sprintf("%s Package(s) installed\n", colored('DONE', 'green bold'));
   print sprintf("%s\n\n", "-"x80);
 
   foreach (@$packages) {
