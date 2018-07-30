@@ -54,6 +54,7 @@ BEGIN {
     repo_option_to_sql
     success_sign
     terminal_width
+    time_h
     time_to_timestamp
     timestamp_options_to_sql
     timestamp_to_time
@@ -136,21 +137,38 @@ sub http_client {
 #
 sub callback_progress_bar {
 
-  my ( $text, $got, $total, $width, $char ) = @_;
+  my ( $options ) = @_;
 
   $| = 1;
 
-  $width ||= 25;
-  $char  ||= '=';
+  my $progress_width = 25;
+  my $progress_char  = '=';
 
-  my $got_h      = filesize_h($got, 1);
-  my $total_h    = filesize_h($total, 1);
-  my $num_width  = length $total_h;
-  my $percentage = (100 * $got/+$total);
+  my $text            = $options->{'text'};
+  my $downloaded_size = $options->{'downloaded-size'};
+  my $download_size   = $options->{'download-size'};
+  my $download_start  = $options->{'download-start'};
 
-  return sprintf "%-72s %-8s  %3d%% [%-${width}s] %8s\r",
-    $text, $total_h, $percentage, $char x (($width-1)*$got/$total) . '>',
-    $got_h;
+  my $download_time       = time - $download_start;
+  my $downloaded_size_h   = filesize_h($downloaded_size, 1);
+  my $download_size_h     = filesize_h($download_size, 1);
+  my $num_width           = length $download_size_h;
+  my $percent             = ($downloaded_size / +$download_size);
+  my $download_sec_left   = ($download_time / $percent - $download_time);
+  my $download_speed      = ($download_time && $downloaded_size) ? ($downloaded_size / $download_time) : 0;
+  my $percent_h           = (100 * $percent);
+  my $download_speed_h    = filesize_h($download_speed) . 'B/s';
+  my $download_sec_left_h = 'ETA ' . time_h(int($download_sec_left));
+  my $progress_size       = (($progress_width - 1) * $downloaded_size / $download_size);
+
+  if ($percent_h == 100) {
+    $download_sec_left_h = 'in ' . time_h($download_time) . '    ';
+    $download_speed_h    = ($download_time && $downloaded_size) ? filesize_h(($download_size / $download_time)) . 'B/s' : '-';
+  }
+
+  return sprintf("\t%8s    %3d%% [%-${progress_width}s]    %8s  %s    \r",
+    $downloaded_size_h, $percent_h, $progress_char x $progress_size . '>',
+    $download_speed_h, $download_sec_left_h);
 
 }
 
@@ -255,13 +273,36 @@ sub ldd {
 }
 
 
+# Display seconds in human-readable format
+#
+sub time_h {
+
+  my ($seconds) = @_;
+
+  if ($seconds > 24 * 60 * 60 * 2) {
+    return sprintf('%dd', ($seconds / (24 * 60 * 60)));
+  }
+
+  if ($seconds > 60 * 60 * 2) {
+    return sprintf('%dh', ($seconds / (60 * 60)));
+  }
+
+  if ($seconds > 60 * 2) {
+    return sprintf('%dm', ($seconds / (60)));
+  }
+
+  return sprintf('%ds', $seconds);
+
+}
+
+
 # Display datetime in human-readable format
 #
 sub datetime_h {
 
   my ($timestamp) = @_;
 
-  my $ago = time() - $timestamp;
+  my $ago = time - $timestamp;
 
   if ($ago > 24 * 60 * 60 * 30 * 12 * 2) {
     return sprintf('%d years ago', ($ago / (24 * 60 * 60 * 30 * 12)));
@@ -414,6 +455,7 @@ sub download_file {
   my ($url, $file, $progress) = @_;
 
   my $total_data;
+  my $download_start = time;
   my $options = {};
   my $http    = http_client();
 
@@ -421,7 +463,7 @@ sub download_file {
 
   open(DOWNLOAD, '>', $file) or Carp::croak("Can't open file $file for downloading: $?");
 
-  print "\r" if ($progress);
+  print "\n\r" if ($progress);
 
   $options->{data_callback} = sub {
 
@@ -432,7 +474,11 @@ sub download_file {
 
     $total_data .= $data;
 
-    STDOUT->printflush( callback_progress_bar( basename($url), length($total_data), $content_length, 20, '=' ) ) if ($progress);
+    STDOUT->printflush( callback_progress_bar( {
+      'text'            => basename($url),
+      'downloaded-size' => length($total_data),
+      'download-size'   => $content_length,
+      'download-start'  => $download_start } ) ) if ($progress);
 
   };
 
@@ -441,6 +487,7 @@ sub download_file {
   close (DOWNLOAD);
 
   if ( $response->{'success'} ) {
+    print "\n" if ($progress);
     logger->info("[DOWNLOAD] done");
     return $response->{status};
   }
