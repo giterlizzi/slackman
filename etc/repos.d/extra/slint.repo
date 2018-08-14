@@ -1,0 +1,27 @@
+# Slint
+
+# Originally the Slackware Internationalization project, Slint is now a Linux
+# distribution derived from Slackware and Salix. It is polyglot, versatile,
+# beginner friendly, and accessible for the visually impaired. A full Slint
+# installation is functional out of the box and can be tailored to fit most
+# computing requirements.
+
+# Home-Page: http://slint.fr
+
+[14.2]
+arch    = x86:i586,x86_64,!arm
+name    = Slint 14.2
+enabled = false
+mirror  = http://slackware.uk/slint/$arch/slint-14.2/
+
+[14.2.1]
+arch    = x86:i586,x86_64,!arm
+name    = Slint 14.2.1
+enabled = false
+mirror  = http://slackware.uk/slint/$arch/slint-14.2.1/
+
+[latest]
+arch    = x86:i586,x86_64,!arm
+name    = Slint latest (14.2.1)
+enabled = false
+mirror  = http://slackware.uk/slint/$arch/slint-14.2.1/
