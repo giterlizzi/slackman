@@ -17,9 +17,9 @@ my $pid = -1;
 $pid = open3 'WRITE', 'READ', 'ERROR', $slackman_cmd;
 cmp_ok($pid, '!=', 0, "Check 'slackman' PID");
 
-$pid = open3 'WRITE', 'READ', 'ERROR', $slackman_cmd, '--version';
-cmp_ok($pid, '!=', 0, "Check 'slackman --version' PID");
-
-like(scalar <READ>, qr/^SlackMan - Slackware Package Manager v(\d)\.(\d)\.(\d)$/, "Check 'slackman --version' output");
+# $pid = open3 'WRITE', 'READ', 'ERROR', 'sudo', $slackman_cmd, '--version';
+# cmp_ok($pid, '!=', 0, "Check 'slackman --version' PID");
+# 
+# like(scalar <READ>, qr/^SlackMan - Slackware Package Manager v(\d)\.(\d)\.(\d)$/, "Check 'slackman --version' output");
 
 done_testing();
