@@ -22,6 +22,7 @@ BEGIN {
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::DB     qw(:all);
+use Slackware::SlackMan::Config qw(:all);
 use Slackware::SlackMan::Repo   qw(:all);
 use Slackware::SlackMan::Utils  qw(:all);
 use Slackware::SlackMan::Parser qw(:all);
@@ -144,9 +145,9 @@ sub call_repo_add {
 
   $repo_desc = trim($repo_desc);
 
-  my %repo_config = parse_config($repo_content);
+  my $repo_config = get_config($repo_tmpfile);
 
-  unless ( %repo_config ) {
+  unless ( $repo_config ) {
     print colored('ERROR', 'red bold') . ": Invalid repository file ($repo_url)\n";
     exit(255);
   }
@@ -158,11 +159,11 @@ sub call_repo_add {
   print sprintf("%-30s %-50s\n", "Repository ID",  "Description");
   print sprintf("%s\n", "-"x80);
 
-  foreach ( keys %repo_config ) {
+  foreach ( keys %{$repo_config} ) {
 
     my $repo_id     = "$repo_name:$_";
-    my $repo_name   = parse_variables($repo_config{$_}->{'name'});
-    my $repo_mirror = $repo_config{$_}->{'mirror'};
+    my $repo_name   = parse_variables($repo_config->{$_}->{'name'});
+    my $repo_mirror = $repo_config->{$_}->{'mirror'};
 
     unless ($repo_mirror) {
       print colored('ERROR', 'red bold') . ": Invalid repository file ($repo_url)\n";
