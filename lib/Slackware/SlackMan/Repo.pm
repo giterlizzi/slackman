@@ -94,18 +94,18 @@ sub load_repositories {
 
         foreach (@{$repo_config->{'arch'}}) {
 
-          my ($arch, $directory_prefix) = split(/:/, $_);
+          my ($config_arch, $directory_prefix) = split(/:/, $_);
           my $enabled = 1;
 
-          if ($arch =~ /^!/) {
+          if ($config_arch =~ /^!/) {
             $enabled = 0;
-            $arch =~ s/^!//;
+            $config_arch =~ s/^!//;
           }
 
-          $arch = 'x86_64' if ($arch eq 'x86-64');
+          $config_arch = 'x86_64' if ($config_arch eq 'x86-64');
 
-          $repo_arch->{$arch} = $enabled;
-          $repo_arch->{$arch} = $directory_prefix  if ($directory_prefix);
+          $repo_arch->{$config_arch} = $enabled;
+          $repo_arch->{$config_arch} = $directory_prefix  if ($directory_prefix);
 
         }
 
@@ -143,20 +143,26 @@ sub load_repositories {
         $repo_config->{$_} =~ s/\$mirror/$mirror/;
 
         # Replace repo arch in $arch variable
-        if (defined($repo_config->{'arch'}->{'x86'}) && $repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
-          my $repo_arch = $repo_config->{'arch'}->{'x86'};
-          $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+        if ($arch ne 'x86_64' && $arch =~ /x86|i[3456]86/) {
+
+          if (defined($repo_config->{'arch'}->{'x86'}) && $repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
+            my $repo_arch = $repo_config->{'arch'}->{'x86'};
+            $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+          }
+
         }
 
-        if (defined($repo_config->{'arch'}->{'arm'}) && $repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
-          my $repo_arch = $repo_config->{'arch'}->{'arm'};
-          $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+        if ($arch =~ /arm(.*)/) {
+
+          if (defined($repo_config->{'arch'}->{'arm'}) && $repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
+            my $repo_arch = $repo_config->{'arch'}->{'arm'};
+            $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+          }
+
         }
 
-      }
-
-      foreach (@keys_to_parse) {
         $repo_config->{$_} = parse_variables($repo_config->{$_});
+
       }
 
       my $repo_cache_directory = $repo_id;
@@ -194,7 +200,7 @@ sub set_repository_value {
   logger->debug(qq{$repo_id - Set "$key" = "$value"});
 
   my $cfg = Slackware::SlackMan::Config->new($repo_file);
-     $cfg->replaceAndSave("$repo_section.$key", $value);
+     $cfg->replace_and_save("$repo_section.$key", $value);
 
 }
 
