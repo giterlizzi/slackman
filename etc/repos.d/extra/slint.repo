@@ -20,8 +20,3 @@ name    = Slint 14.2.1
 enabled = false
 mirror  = http://slackware.uk/slint/$arch/slint-14.2.1/
 
-[latest]
-arch    = x86:i586,x86_64,!arm
-name    = Slint latest (14.2.1)
-enabled = false
-mirror  = http://slackware.uk/slint/$arch/slint-14.2.1/
