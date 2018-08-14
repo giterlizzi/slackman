@@ -319,7 +319,7 @@ sub replace {
 }
 
 
-sub replaceAndSave {
+sub replace_and_save {
 
   my ($self, $param, $new_value, $file) = @_;
 
