@@ -63,6 +63,7 @@ dbus_signal('UpdatedManifest',  [ 'string' ]);
 # Slackware and SlackMan version properties
 dbus_property('version',   'string', 'read');
 dbus_property('slackware', 'string', 'read');
+dbus_property('isCurrent', 'bool', 'read');
 
 
 # Methods
@@ -96,12 +97,12 @@ sub version {
 
 
 sub slackware {
+  return get_slackware_release();
+}
 
-  my $release = get_slackware_release();
-     $release = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
 
-  return $release;
-
+sub isCurrent {
+  return is_slackware_current();
 }
 
 

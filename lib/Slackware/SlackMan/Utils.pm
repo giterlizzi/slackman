@@ -90,6 +90,19 @@ use Slackware::SlackMan;
 $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin';
 
 
+my $slackware_release    = '';
+my $is_slackware_current = 0;
+
+my $slackware_version_file = $slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
+
+my ($slackware_version) = file_read($slackware_version_file) =~ (/Slackware (.*)/);
+
+if ($slackware_version =~ /\+/) {
+  $slackware_version =~ s/\+//;
+  $is_slackware_current = 1;
+}
+
+
 # HTTP Client
 #
 sub http_client {
@@ -764,32 +777,13 @@ sub get_arch {
 }
 
 
-my $slackware_release    = '';
-my $is_slackware_current = 0;
-
-sub _get_slackware_release {
-
-  my $slackware_version_file = $slackman_conf->{'directory'}->{'root'} . '/etc/slackware-version';
-
-  my ($slackware_version) = file_read($slackware_version_file) =~ (/Slackware (.*)/);
-
-  if ($slackware_version =~ /\+/) {
-    $slackware_version =~ s/\+//;
-    $is_slackware_current = 1;
-  }
-
-  return $slackware_version;
-
-}
-
-
 sub is_slackware_current {
   return $is_slackware_current;
 }
 
 
 sub get_slackware_release {
-  return $slackware_release ||= _get_slackware_release(); # Reduce "open" system call
+  return $slackware_version;
 }
 
 
