@@ -480,7 +480,7 @@ slackman-notifier - SlackMan Notification Tool
 
 B<slackman-notifier> is user-space utility to receive a desktop notification via
 D-Bus (using B<org.freedesktop.Notification> service) for Slackware Security
-Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
+Advisories, Announces, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
 
 =head1 OPTIONS
 
