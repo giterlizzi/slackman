@@ -1,20 +1,20 @@
-# Supported Respositories
+# Supported Repositories
 
 ## Slackware & Multilib
 
 Slackware **main** and **patches** repository is enabled by default with 
 additional **extra**, **pasture** and **testing** repository support.
 
- - File: slackware.repo
+ - File: `slackware.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-slackware:packages | Slackware main packages directory (enabled)
-slackware:patches  | Slackware patches directory (enabled)
-slackware:extra    | Slackware extra directory
-slackware:pasture  | Slackware pasture directory
-slackware:testing  | Slackware testing directory
-slackware:multilib | MultiLib repository (only for x86_64)
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`slackware:packages` | ✓   | ✓      | ✓   | Slackware main packages directory (enabled)
+`slackware:patches`  | ✓   | ✓      | ✓   | Slackware patches directory (enabled)
+`slackware:extra`    | ✓   | ✓      | ✓   | Slackware extra directory
+`slackware:pasture`  | ✓   | ✓      | ✓   | Slackware pasture directory
+`slackware:testing`  | ✓   | ✓      | ✓   | Slackware testing directory
+`slackware:multilib` |     | ✓      |     | MultiLib repository
 
 
 ## AlienBob SlackBuilds
@@ -22,12 +22,12 @@ slackware:multilib | MultiLib repository (only for x86_64)
 Eric Hameleers (AlienBob) SlackBuilds.
 
  - Home-Page: https://alien.slackbook.org/
- - File: alienbob.repo
+ - File: `alienbob.repo`
 
-Repo ID             | Note
---------------------|---------------------------------------
-alienbob:packages   | AlienBob SlackBuilds
-alienbob:restricted | AlienBob Restricted SlackBuilds
+Repo ID               | x86 | x86_64 | arm | Note
+----------------------|-----|--------|-----|------------------------------------
+`alienbob:packages`   | ✓   | ✓      |     | AlienBob SlackBuilds
+`alienbob:restricted` | ✓   | ✓      |     | AlienBob Restricted SlackBuilds
 
 
 ## Robby Workman's Slackware Package
@@ -37,30 +37,41 @@ release (14.2). This repository also contain packages for oldest Slackware
 release (from 11.0 to 14.1).
 
  - Home-Page: https://rlworkman.net/
- - File: rlworkman.repo
+ - File: `rlworkman.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-rlworkman:packages | 
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`rlworkman:packages` | ✓   | ✓      | ✓   | 
 
 
 ## Slackers (Slackware Current Repository)
 
- - File: slackers.repo
+ - Home-Page: http://slack.conraid.net/
+ - File: `slackers.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-slackers:packages  | This repository support **only** Slackware64-current
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`slackers:packages`  |     | ✓      |     |
 
 
 ## Slacky (Slackware Italian Community Repository)
 
  - Home-Page: https://slacky.eu
- - File: slackers.repo
+ - File: `slackers.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-slacky:packages    | 
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`slacky:packages`    | ✓   | ✓      |     | 
+
+
+## Ponce (Matteo Bernardini Slackware Repository)
+
+ - Home-Page: http://slack.conraid.net/
+ - File: `slackers.repo`
+
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`ponce:packages`     | ✓   | ✓      | ✓   |
 
 
 ## SlackOnly SlackBuilds
@@ -75,11 +86,11 @@ read such information. SlackOnly assumes that its users are running a full
 installation of Slackware Linux prior to use.
 
  - HomePage: https://slackonly.com
- - File: slackonly.repo
+ - File: `slackonly.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-slackonly:packages | 
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`slackonly:packages` | ✓   | ✓      |     |
 
 
 ## KDE Plasma5
@@ -88,11 +99,12 @@ KDE Plasma 5 is the fifth generation of the desktop environment created by KDE
 primarily for Linux systems.
 
  - Home-Page: http://alien.slackbook.org/ktown/
- - File: ktown.repo
+ - File: `ktown.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-ktown:packages     | 
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`ktown:packages`     | ✓   | ✓      |     | 
+`ktown:testing`      | ✓   | ✓      |     | 
 
 
 ## Cinnamon SlackBuilds - CSB
@@ -101,11 +113,11 @@ These SlackBuilds are intended to provide a means for a user to build and
 install the Cinnamon Desktop Environment on Slackware Linux.
 
  - Home-Page: https://cinnamonslackbuilds.github.io/
- - File: csb.repo
+ - File: `csb.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-csb:packages       | 
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`csb:packages`       | ✓   | ✓      |     | 
 
 
 ## MATE SlackBuilds - MSB
@@ -114,18 +126,18 @@ These SlackBuilds are intended to provide a means for a user to build and
 install the MATE Desktop Environment on Slackware Linux.
 
  - Home-Page: https://mateslackbuilds.github.io/
- - File: msb.repo
+ - File: `msb.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-msb:latest         | MATE latest version (for stable, and current)
-msb:1.18           | MATE v1.18 (14.2 *, current *)
-msb:1.16           | MATE v1.16 (14.2)
-msb:1.14           | MATE v1.14 (14.2)
-msb:1.12           | MATE v1.12 (14.1 *)
-msb:1.10           | MATE v1.10 (14.1)
-msb:1.8            | MATE v1.8 (14.1)
-msb:1.6            | MATE v1.6 (14.1 *, 14.0 *)
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`msb:latest`         | ✓   | ✓      |     | MATE latest version (for stable, and current)
+`msb:1.18`           | ✓   | ✓      |     | MATE v1.18 (14.2 *, current *)
+`msb:1.16`           | ✓   | ✓      |     | MATE v1.16 (14.2)
+`msb:1.14`           | ✓   | ✓      |     | MATE v1.14 (14.2)
+`msb:1.12`           | ✓   | ✓      |     | MATE v1.12 (14.1 *)
+`msb:1.10`           | ✓   | ✓      |     | MATE v1.10 (14.1)
+`msb:1.8`            | ✓   | ✓      |     | MATE v1.8 (14.1)
+`msb:1.6`            | ✓   | ✓      |     | MATE v1.6 (14.1 *, 14.0 *)
 
 (*) "latest" repository version for this Slackware release
 
@@ -145,13 +157,13 @@ A handful of stock Slackware packages have been rebuilt for enhanced
 functionality.
 
  - Home-Page: https://www.microlinux.eu/
- - File: microlinux.repo
+ - File: `microlinux.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-microlinux:desktop | Microlinux Enterprise - Desktop
-microlinux:extras  | Microlinux Enterprise - Extras
-microlinux:server  | Microlinux Enterprise - Server
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`microlinux:desktop` | ✓   | ✓      |     | Microlinux Enterprise - Desktop
+`microlinux:extras`  | ✓   | ✓      |     | Microlinux Enterprise - Extras
+`microlinux:server`  | ✓   | ✓      |     | Microlinux Enterprise - Server
 
 
 ## Salix
@@ -164,12 +176,12 @@ their favorite distribution. Like a bonsai, Salix is small, light & the
 product of infinite care.
 
  - Home-Page: https://www.salixos.org/
- - File: salix.repo
+ - File: `salix.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-salix:extra        | Salix extra
-salix:packages     | Salix packages
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`salix:extra`        | ✓   | ✓      | ✓   | Salix extra
+`salix:packages`     | ✓   | ✓      | ✓   | Salix packages
 
 
 ## Studioware
@@ -182,11 +194,11 @@ you need to install. Although Studioware is quite a small project, the
 maintainers are Slackware users of many years experience.
 
  - Home-Page: http://studioware.org/
- - File: studioware.repo
+ - File: `studioware.repo`
 
-Repo ID             | Note
---------------------|---------------------------------------
-studioware:packages | This repository support only Slackware64 release
+Repo ID               | x86 | x86_64 | arm | Note
+----------------------|-----|--------|-----|------------------------------------
+`studioware:packages` |     | ✓      |     | 
 
 
 
@@ -198,9 +210,27 @@ applications. SlackE18 provides tested Slackware packages so you can use E18
 without compiling anything.
 
  - Home-Page: http://slacke18.sourceforge.net/
- - File: slacke18.repo
+ - File: `slacke18.repo`
 
-Repo ID            | Note
--------------------|---------------------------------------
-slacke18:packages  | Slackware Enlightenment DR18 (E18) Packages
+Repo ID              | x86 | x86_64 | arm | Note
+---------------------|-----|--------|-----|-------------------------------------
+`slacke18:packages`  | ✓   | ✓      | ✓   | Slackware Enlightenment DR18 (E18) Packages
+
+
+
+## Slint
+
+Originally the Slackware Internationalization project, Slint is now a Linux
+distribution derived from Slackware and Salix. It is polyglot, versatile,
+beginner friendly, and accessible for the visually impaired. A full Slint
+installation is functional out of the box and can be tailored to fit most
+computing requirements.
+
+  - Home-Page: http://slint.fr
+  - File: `slint.repo`
+
+Repo ID               | x86 | x86_64 | arm | Note
+----------------------|-----|--------|-----|------------------------------------
+`slint:14.2`          | ✓   | ✓      |     | 
+`slint:14.2.1`        | ✓   | ✓      |     | 
 

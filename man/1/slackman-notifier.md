@@ -11,7 +11,7 @@ slackman-notifier - SlackMan Notification Tool
 
 **slackman-notifier** is user-space utility to receive a desktop notification via
 D-Bus (using **org.freedesktop.Notification** service) for Slackware Security
-Advisories, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
+Advisories, Announces, ChangeLogs, new packages upgrade and post-install/upgrade/remove summary.
 
 # OPTIONS
 
@@ -35,7 +35,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

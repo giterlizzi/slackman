@@ -20,6 +20,8 @@ update Slackware packages from a standard Slackware repository (official and 3th
 ## Read more
 
  - [Install & Build](install.md)
+ - [ChangeLog](release.md)
+ - [Contributing](contributing.md)
  - [Examples](examples.md)
  - [Repository](repo.md)
    - [Supported repository](supported-repo.md)

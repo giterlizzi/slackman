@@ -8,6 +8,7 @@ slackman-clean - Clean and control SlackMan cache
     slackman clean cache
     slackman clean metadata
     slackman clean db
+    slackman clean removed
     slackman clean all
     slackman clean help
 
@@ -20,6 +21,7 @@ slackman-clean - Clean and control SlackMan cache
     slackman clean cache       Clean cache package download directory
     slackman clean metadata    Clean database metadata (packages, changelog, manifest)
     slackman clean db          Clean database file
+    slackman clean removed     Delete Slackware removed packages and scripts log from pkgtools log directory
     slackman clean all         Clean database file and cache directory
     slackman clean help        Display clean command help usage
 
@@ -46,7 +48,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

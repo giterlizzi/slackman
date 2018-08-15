@@ -45,6 +45,7 @@ slackman-list - List packages and other info
     --version                    Display version information
     -c, --config=FILE            Configuration file
     --color=[always|auto|never]  Colorize the output
+    --format=[default|csv|tsv]   Output format for list
 
 # SEE ALSO
 
@@ -61,7 +62,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

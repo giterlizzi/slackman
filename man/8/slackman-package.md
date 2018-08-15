@@ -42,6 +42,7 @@ slackman-package - Install, upgrade and display information of Slackware package
     -c, --config=FILE                     Configuration file
     --root                                Set Slackware root directory
     --color=[always|auto|never]           Colorize the output
+    --terse                               Display only a single description line when install or upgrade a package
 
 ## CHANGELOG OPTIONS
 
@@ -50,6 +51,7 @@ slackman-package - Install, upgrade and display information of Slackware package
     --details                             Display ChangeLog details
     --security-fix                        Display only ChangeLog Security Fix
     --cve=CVE-YYYY-NNNNNN                 Search a CVE identifier into ChangeLogs
+    --announces                           Display announce in ChangeLog
 
 ## INFO OPTIONS
 
@@ -125,7 +127,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

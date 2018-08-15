@@ -32,7 +32,7 @@ file) identified with a specific section:
 >
 > **Example**
 >
->     name=My local repository
+>     name = My local repository
 
 **enabled**
 
@@ -40,7 +40,27 @@ file) identified with a specific section:
 >
 > **Example**
 >
->     enabled=true
+>     enabled = true
+
+**arch**
+
+> Specify the repository arch support (default is: x86,x86\_64,arm).
+>
+> NOTE: Prepend `!` to disable the arch.
+>
+> **Example**
+>
+> Enable "only" `x86_64`:
+>
+>     arch = x86_64
+>
+> Enable `x86` and `x86_64` and disable `arm`:
+>
+>     arch = x86,x86_64,!arm
+>
+> Override `$arch` variable:
+>
+>     arch =x86:i486,x86_64
 
 **mirror**
 
@@ -53,7 +73,7 @@ file) identified with a specific section:
 >
 > **Example**
 >
->     mirror=http://example.org/slackware/
+>     mirror = http://example.org/slackware/
 
 **priority**
 
@@ -63,7 +83,7 @@ file) identified with a specific section:
 >
 > **Example**
 >
->     priority=1
+>     priority = 1
 
 **exclude**
 
@@ -73,7 +93,7 @@ file) identified with a specific section:
 >
 > **Example**
 >
->     exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+>     exclude = kernel-*,kde-l10n-*,calligra-l10n-*
 
 ## OPTIONS TO OVERRIDE METADATA URLs
 
@@ -88,7 +108,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     gpgkey=http://example.org/slackware/GPG-KEY
+>     gpgkey = http://example.org/slackware/GPG-KEY
 
 **packages**
 
@@ -96,7 +116,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     packages=http://example.org/slackware/PACKAGES.TXT
+>     packages = http://example.org/slackware/PACKAGES.TXT
 
 **filelist**
 
@@ -104,7 +124,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     filelist=http://example.org/slackware/FILELIST.TXT
+>     filelist = http://example.org/slackware/FILELIST.TXT
 
 **changelog**
 
@@ -112,7 +132,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     changelog=http://example.org/slackware/ChangeLog.txt
+>     changelog = http://example.org/slackware/ChangeLog.txt
 
 **manifest**
 
@@ -120,7 +140,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     manifest=http://example.org/slackware/MANIFEST.bz2
+>     manifest = http://example.org/slackware/MANIFEST.bz2
 
 **checksums**
 
@@ -128,7 +148,7 @@ repository require a little extra configuration to point at the correct metadata
 >
 > **Example**
 >
->     chechsums=http://example.org/slackware/CHECHSUMS.md5
+>     chechsums = http://example.org/slackware/CHECHSUMS.md5
 
 ## VARIABLES
 
@@ -180,25 +200,25 @@ For display all variable values use `slackman list variables` command:
 
 **Slackware-14.2 (32-bit)**
 
-    name=Slackware{$release.suffix}-{$release.real} repository
-    mirror=http://example.org/slackware{$release.suffix}-{$release.real}/
+    name = Slackware{$release.suffix}-{$release.real} repository
+    mirror = http://example.org/slackware{$release.suffix}-{$release.real}/
 
       release.suffix => 
       release.real   => 14.2
 
-    name=Slackware64-14.2
-    mirror=http://example.org/slackware-14.2
+    name   = Slackware64-14.2
+    mirror = http://example.org/slackware-14.2
 
 **Slackware64-current (64-bit)**
 
-    name=Slackware{$release.suffix}-{$release} repository
-    mirror=http://example.org/slackware{$release.suffix}-{$release}/
+    name   = Slackware{$release.suffix}-{$release} repository
+    mirror = http://example.org/slackware{$release.suffix}-{$release}/
 
       release.suffix => 64
       release        => current
 
-    name=Slackware64-current
-    mirror=http://example.org/slackware64-current
+    name   = Slackware64-current
+    mirror = http://example.org/slackware64-current
 
 # DISPLAY REPOSITORY CONFIGURATION
 
@@ -255,7 +275,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

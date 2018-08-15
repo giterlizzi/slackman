@@ -7,8 +7,9 @@ SlackMan support different Slackware repository including:
  - Slackware stable and **-current**
  - SlackOnly
  - Slackers (Conraid)
+ - Ponce (Matteo Bernardini)
  - Slacky (Italian Slackware Community)
- - AlienBob (and **restricted** repository)
+ - AlienBob (with **restricted** repository)
  - Robby Workman
  - ktown (KDE5)
  - Cinnamon SlackBuilds
@@ -41,9 +42,9 @@ Follow this easy steps:
 
 ```
     [packages]
-    name=My personal repository
-    enabled=true
-    mirror=http://example.org/my-personal-repository
+    name    = My personal repository
+    enabled = true
+    mirror  = http://example.org/my-personal-repository
 ```
 
  - Update the repository metadata using `slackman update --repo custom:packages`
@@ -60,14 +61,14 @@ This is a sample .repo configuration
 
     # Short description of repository
     #
-    name=My local repository
+    name = My local repository
 
 
     # Enable or disable repository
     #   true  - enabled
     #   false - disabeld
     #
-    enabled=false
+    enabled = false
 
 
     # Mirror URL
@@ -82,45 +83,68 @@ This is a sample .repo configuration
     #   Remote URL: https://example.org/slackware/
     #        Local: file:///srv/slackware/
     #
-    mirror=https://example.org/slackware/
+    mirror = https://example.org/slackware/
+
+
+    # Supported Architectures (optional)
+    #
+    # Specify the repository arch support (default is: x86,x86_64,arm).
+    #
+    # NOTE: Prepend "!" to disable the arch.
+    #
+    # Example:
+    #
+    #   Enable "only" "x86_64":
+    #
+    #      arch = x86_64
+    #
+    #   Enable "x86" and "x86_64" and disable "arm":
+    #
+    #     arch = x86,x86_64,!arm
+    #
+    #   Override $arch variable:
+    #
+    #     arch =x86:i486,x86_64
+    #
+    arch = x86,x86_64,arm
 
 
     # Priority (optional)
     #
     # Specify repository priority (default is 0 - "zero")
     #
-    priority=1
+    priority = 1
 
 
     # Exclude packages (optional)
     #
     # Specify excluded packages for update or install (default "none")
     #
-    exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+    exclude = kernel-*,kde-l10n-*,calligra-l10n-*
 
 
     # Override metadata URLs if the file is in another location
 
     # GPG-KEY file URL
     #
-    gpgkey=$mirror/GPG-KEY
+    gpgkey = $mirror/GPG-KEY
 
     # Packages file URL
     #
-    packages=$mirror/PACKAGES.TXT
+    packages = $mirror/PACKAGES.TXT
 
     # Filelist file URL
     #
-    filelist=$mirror/FILELIST.TXT
+    filelist = $mirror/FILELIST.TXT
 
     # Changelog file URL
     #
-    changelog=$mirror/ChangeLog.txt
+    changelog = $mirror/ChangeLog.txt
 
     # Manifest file URL
     #
-    manifest=$mirror/MANIFEST.bz2
+    manifest = $mirror/MANIFEST.bz2
 
     # Checksums file URL
     #
-    checksums=$mirror/CHECKSUMS.md5
+    checksums = $mirror/CHECKSUMS.md5

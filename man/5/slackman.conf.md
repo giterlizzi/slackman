@@ -99,10 +99,10 @@ This section provide the proxy configuration for SlackMan.
 
 # \[slackware\] SECTION
 
-**version** (default: actual Slackware release)
+**version** (default: actual Slackware release) DEPRECATED
 
 > Force Slackware version. The default value is actual Slackware version in
-> `/etc/slackware-release` file.
+> `/etc/slackware-version` file.
 >
 > **!!! ATTENTION !!!**
 >
@@ -150,7 +150,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 # COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
