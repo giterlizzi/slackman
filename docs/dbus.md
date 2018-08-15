@@ -36,6 +36,7 @@ This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, 
 
       readonly attribute string slackware;
       readonly attribute string version;
+      readonly attribute boolean isCurrent;
 
       /** Signals */
 
@@ -143,6 +144,7 @@ This section describe the `org.lotarproject.SlackMan` D-Bus interface (methods, 
         <signal name="UpdatedPackages">
           <arg type="s"/>
         </signal>
+        <property name="isCurrent" type="b" access="read"/>
         <property name="slackware" type="s" access="read"/>
         <property name="version" type="s" access="read"/>
       </interface>
@@ -379,6 +381,10 @@ Advisories, ChangeLogs and new packages upgrade.
 **Slackware Security**
 
 ![Slackware Security notification](images/dbus-notification-slackware-security.png)
+
+**Slackware ChangeLog Announces**
+
+![Slackware Security notification](images/dbus-notification-slackware-announces.png)
 
 **Slackware Upgrade**
 
