@@ -2,7 +2,7 @@
 
 ## [Develop]
 
-This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second.
+This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second. Improved download information (added speed, ETA, etc).
 
 ## Added
 
@@ -10,6 +10,7 @@ This release introduce the automatic detection of Slackware `-current` release u
   * Added `slackman clean removed` command for delete removed packages and scripts file in pkgtools directory (`/var/log/removed_{packages,scripts}`)
   * Added new entry for `00-default.renames` file
   * Added `--format` option for `slackman list` commands
+  * Added support for Slint repository (`slint.repo`)
   * Accept multiple `--exclude` option for `slackman install` and `slackman upgrade` commands
   * #11 - Added automatic detection of Slackware-current (since **14.2+** release)
   * #12 - Added `org.LotarProject.SlackMan.Announces` D-Bus method to retrieve ChangeLog announces
