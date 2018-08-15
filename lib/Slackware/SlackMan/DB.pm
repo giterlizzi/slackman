@@ -147,7 +147,7 @@ use constant SLACKMAN_SCHEMA => {
 use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );
 use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
-# Override built-in DBI module subroutines for loggin
+# Override built-in DBI module subroutines for log all SQL statements
 BEGIN {
 
   if ( $slackman_conf->{'logger'}->{'category'} =~ /sql/ ) {
