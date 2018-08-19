@@ -80,6 +80,12 @@ slackware (out 's')
 
 Return the Slackware version (eg. _14.2_ or _current_)
 
+## isCurrent
+
+isCurrent (out 'b')
+
+Return _true_ if this is _Slackware-current_
+
 # SIGNALS
 
 ## PackageInstalled
