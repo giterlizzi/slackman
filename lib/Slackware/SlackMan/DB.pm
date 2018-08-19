@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION = 'v1.3.0';
+  $VERSION = 'v1.4.0';
   @ISA     = qw(Exporter);
 
   @EXPORT_OK = qw{
@@ -42,7 +42,7 @@ use DBI;
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
 
-use constant SLACKMAN_SCHEMA_VERSION => 3;
+use constant SLACKMAN_SCHEMA_VERSION => 4;
 
 use constant SLACKMAN_PACKAGES_TABLE => qq/CREATE TABLE IF NOT EXISTS "packages" (
   "id"                INTEGER PRIMARY KEY,
@@ -124,6 +124,7 @@ use constant SLACKMAN_CHANGELOGS_TABLE => qq/CREATE TABLE IF NOT EXISTS "changel
   "category"          VARCHAR,
   "status"            VARCHAR,
   "description"       VARCHAR,
+  "announce"          TEXT,
   "security_fix"      BOOL,
   "issues"            VARCHAR)/;
 
@@ -146,7 +147,7 @@ use constant SLACKMAN_SCHEMA => {
 use constant SLACKMAN_TABLES  => qw( packages metadata changelogs history manifest );
 use constant SLACKMAN_INDEXES => qw( history_idx packages_idx manifest_idx );
 
-# Override built-in DBI module subroutines for loggin
+# Override built-in DBI module subroutines for log all SQL statements
 BEGIN {
 
   if ( $slackman_conf->{'logger'}->{'category'} =~ /sql/ ) {
@@ -526,7 +527,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

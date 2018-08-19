@@ -33,7 +33,7 @@ Short description of repository
 
 B<Example>
 
-    name=My local repository
+    name = My local repository
 
 =back
 
@@ -45,7 +45,31 @@ Enable or disable repository
 
 B<Example>
 
-    enabled=true
+    enabled = true
+
+=back
+
+B<arch>
+
+=over
+
+Specify the repository arch support (default is: x86,x86_64,arm).
+
+NOTE: Prepend C<!> to disable the arch.
+
+B<Example>
+
+Enable "only" C<x86_64>:
+
+    arch = x86_64
+
+Enable C<x86> and C<x86_64> and disable C<arm>:
+
+    arch = x86,x86_64,!arm
+
+Override C<$arch> variable:
+
+    arch =x86:i486,x86_64
 
 =back
 
@@ -62,7 +86,7 @@ Support local (via "file" protocol) and remote url (http, https, ftp, etc.)
 
 B<Example>
 
-    mirror=http://example.org/slackware/
+    mirror = http://example.org/slackware/
 
 =back
 
@@ -76,7 +100,7 @@ Specify repository priority (default is C<0> - "zero")
 
 B<Example>
 
-    priority=1
+    priority = 1
 
 =back
 
@@ -90,7 +114,7 @@ Specify excluded packages for update or install (default C<>)
 
 B<Example>
 
-    exclude=kernel-*,kde-l10n-*,calligra-l10n-*
+    exclude = kernel-*,kde-l10n-*,calligra-l10n-*
 
 =back
 
@@ -109,7 +133,7 @@ GPG-KEY file URL
 
 B<Example>
 
-    gpgkey=http://example.org/slackware/GPG-KEY
+    gpgkey = http://example.org/slackware/GPG-KEY
 
 =back
 
@@ -121,7 +145,7 @@ Packages file URL
 
 B<Example>
 
-    packages=http://example.org/slackware/PACKAGES.TXT
+    packages = http://example.org/slackware/PACKAGES.TXT
 
 =back
 
@@ -133,7 +157,7 @@ Filelist file URL
 
 B<Example>
 
-    filelist=http://example.org/slackware/FILELIST.TXT
+    filelist = http://example.org/slackware/FILELIST.TXT
 
 =back
 
@@ -145,7 +169,7 @@ Changelog file URL
 
 B<Example>
 
-    changelog=http://example.org/slackware/ChangeLog.txt
+    changelog = http://example.org/slackware/ChangeLog.txt
 
 =back
 
@@ -157,7 +181,7 @@ Manifest file URL
 
 B<Example>
 
-    manifest=http://example.org/slackware/MANIFEST.bz2
+    manifest = http://example.org/slackware/MANIFEST.bz2
 
 =back
 
@@ -169,7 +193,7 @@ Checksums file URL
 
 B<Example>
 
-    chechsums=http://example.org/slackware/CHECHSUMS.md5
+    chechsums = http://example.org/slackware/CHECHSUMS.md5
 
 =back
 
@@ -251,25 +275,25 @@ Slackware release suffix (eg. C<64> - for Slackware64,  C<arm> - for Slackwarear
 
 B<Slackware-14.2 (32-bit)>
 
-    name=Slackware{$release.suffix}-{$release.real} repository
-    mirror=http://example.org/slackware{$release.suffix}-{$release.real}/
+    name = Slackware{$release.suffix}-{$release.real} repository
+    mirror = http://example.org/slackware{$release.suffix}-{$release.real}/
 
       release.suffix => 
       release.real   => 14.2
 
-    name=Slackware64-14.2
-    mirror=http://example.org/slackware-14.2
+    name   = Slackware64-14.2
+    mirror = http://example.org/slackware-14.2
 
 B<Slackware64-current (64-bit)>
 
-    name=Slackware{$release.suffix}-{$release} repository
-    mirror=http://example.org/slackware{$release.suffix}-{$release}/
+    name   = Slackware{$release.suffix}-{$release} repository
+    mirror = http://example.org/slackware{$release.suffix}-{$release}/
 
       release.suffix => 64
       release        => current
 
-    name=Slackware64-current
-    mirror=http://example.org/slackware64-current
+    name   = Slackware64-current
+    mirror = http://example.org/slackware64-current
 
 =head1 DISPLAY REPOSITORY CONFIGURATION
 
@@ -331,7 +355,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

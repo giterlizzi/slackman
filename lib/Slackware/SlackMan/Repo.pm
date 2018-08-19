@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.3.0';
+  $VERSION     = 'v1.4.0';
   @ISA         = qw(Exporter);
 
   @EXPORT_OK   = qw{
@@ -55,6 +55,7 @@ load_repositories();
 sub load_repositories {
 
   my @files = grep { -f } glob(sprintf('%s/*.repo', $slackman_conf->{'directory'}->{'repos'}));
+  my $arch  = get_arch();
 
   foreach my $file (@files) {
 
@@ -66,8 +67,12 @@ sub load_repositories {
 
     foreach my $repo (@repos) {
 
+      # Skip main section "_"
+      next if ($repo eq '_');
+
       my $repo_config = $config_data->{$repo};
       my $repo_id     = "$config_name:$repo";
+      my $repo_arch   = {};
       my $mirror      = $repo_config->{'mirror'};
          $mirror      =~ s/\/$//;
 
@@ -78,6 +83,49 @@ sub load_repositories {
       $repo_config->{'priority'} ||= 0;
       $repo_config->{'enabled'}  ||= 0;
       $repo_config->{'exclude'}  ||= undef;
+
+      # Set repo arch support
+      if (defined($repo_config->{'arch'})) {
+
+        if (ref($repo_config->{'arch'}) ne 'ARRAY') {
+          $repo_config->{'arch'} = 'x86_64' if ($repo_config->{'arch'} eq 'x86-64');
+          $repo_config->{'arch'} = [ $repo_config->{'arch'} ];
+        }
+
+        foreach (@{$repo_config->{'arch'}}) {
+
+          my ($config_arch, $directory_prefix) = split(/:/, $_);
+          my $enabled = 1;
+
+          if ($config_arch =~ /^!/) {
+            $enabled = 0;
+            $config_arch =~ s/^!//;
+          }
+
+          $config_arch = 'x86_64' if ($config_arch eq 'x86-64');
+
+          $repo_arch->{$config_arch} = $enabled;
+          $repo_arch->{$config_arch} = $directory_prefix  if ($directory_prefix);
+
+        }
+
+        $repo_config->{'arch'} = $repo_arch;
+
+      } else {
+
+        $repo_config->{'arch'} = {
+          'x86'    => 1,
+          'x86_64' => 1,
+          'arm'    => 1,
+        };
+
+      }
+
+      # Disable the repo if arch is not supported (eg. slackware:multilib on non x86_64 machine)
+         if ($arch eq 'x86_64')        { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86_64'}); }
+      elsif ($arch =~ /x86|i[3456]86/) { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'x86'});    }
+      elsif ($arch =~ /arm(.*)/)       { $repo_config->{'enabled'} = 0 if (! $repo_config->{'arch'}->{'arm'});    }
+
 
       $repo_config->{'changelog'} = "$mirror/ChangeLog.txt"  unless(defined($repo_config->{'changelog'}));
       $repo_config->{'packages'}  = "$mirror/PACKAGES.TXT"   unless(defined($repo_config->{'packages'}));
@@ -90,12 +138,31 @@ sub load_repositories {
                               gpgkey filelist );
 
       foreach (@keys_to_parse) {
+
         $repo_config->{$_} =~ s/(\{|\})//g;
         $repo_config->{$_} =~ s/\$mirror/$mirror/;
-      }
 
-      foreach (@keys_to_parse) {
+        # Replace repo arch in $arch variable
+        if ($arch ne 'x86_64' && $arch =~ /x86|i[3456]86/) {
+
+          if (defined($repo_config->{'arch'}->{'x86'}) && $repo_config->{'arch'}->{'x86'} =~ /x86|i[3456]86/) {
+            my $repo_arch = $repo_config->{'arch'}->{'x86'};
+            $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+          }
+
+        }
+
+        if ($arch =~ /arm(.*)/) {
+
+          if (defined($repo_config->{'arch'}->{'arm'}) && $repo_config->{'arch'}->{'arm'} =~ /arm(.*)/) {
+            my $repo_arch = $repo_config->{'arch'}->{'arm'};
+            $repo_config->{$_} =~ s/\$arch/$repo_arch/;
+          }
+
+        }
+
         $repo_config->{$_} = parse_variables($repo_config->{$_});
+
       }
 
       my $repo_cache_directory = $repo_id;
@@ -133,7 +200,7 @@ sub set_repository_value {
   logger->debug(qq{$repo_id - Set "$key" = "$value"});
 
   my $cfg = Slackware::SlackMan::Config->new($repo_file);
-     $cfg->replaceAndSave("$repo_section.$key", $value);
+     $cfg->replace_and_save("$repo_section.$key", $value);
 
 }
 
@@ -405,7 +472,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

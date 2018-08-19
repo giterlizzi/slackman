@@ -7,10 +7,10 @@
 
                    |-----handy-ruler------------------------------------------------------|
 slackman-libsupport: slackman-libsupport (Perl library for SlackMan Package Manager)
-slackman-libsupport:
-slackman-libsupport:  - DBD::SQLite
-slackman-libsupport:  - Net::DBus
-slackman-libsupport:    - XML::Twig
+slackman-libsupport: 
+slackman-libsupport: 
+slackman-libsupport: 
+slackman-libsupport: 
 slackman-libsupport: 
 slackman-libsupport: 
 slackman-libsupport: 

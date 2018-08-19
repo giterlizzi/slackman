@@ -9,6 +9,7 @@
 [packages]
 name      = Robby Workman's Slackware Packages
 enabled   = false
+arch      = x86:i486,x86_64,arm
 mirror    = http://slackware.uk/people/rlworkman/$release.real/$arch/
 changelog = http://slackware.uk/people/rlworkman/$release.real/ChangeLog.txt
 packages  = http://slackware.uk/people/rlworkman/$release.real/PACKAGES.TXT

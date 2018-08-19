@@ -13,7 +13,7 @@ UPDATE_MANIFEST_METADATA="no"
 DOWNLOAD_UPGRADED_PACKAGES="no"
 
 if [ -f /etc/slackman/slackman-cron.conf ]; then
-  source /etc/slackman/slackman-cron.conf
+  . /etc/slackman/slackman-cron.conf
 fi
 
 if [ "$UPDATE_METADATA" == "yes" ]; then

@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.3.0';
+  $VERSION     = 'v1.4.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw( get_config );
   %EXPORT_TAGS = (
@@ -203,12 +203,10 @@ sub parse {
 
   my ($self, $config_string) = @_;
 
-  my @lines = split(/\n/, $config_string);
+  my $section = '_'; # Root section
+  my $config_data = {};
 
-  my $section;
-  my %config_data = ();
-
-  foreach my $line (@lines) {
+  foreach my $line ( split(/\n/, $config_string) ) {
 
     chomp($line);
 
@@ -229,19 +227,19 @@ sub parse {
       my $value = (( @$parsed_value == 1 ) ? $parsed_value->[0] : $parsed_value);
 
       if (not defined $section) {
-        $config_data{$field} = $value;
+        $config_data->{$field} = $value;
         next;
       }
 
-      $config_data{$section}{$field} = $value;
+      $config_data->{$section}->{$field} = $value;
 
     }
 
   }
 
-  $self->{'data'} = \%config_data;
+  $self->{'data'} = $config_data;
 
-  return \%config_data;
+  return $config_data;
 
 }
 
@@ -321,7 +319,7 @@ sub replace {
 }
 
 
-sub replaceAndSave {
+sub replace_and_save {
 
   my ($self, $param, $new_value, $file) = @_;
 
@@ -460,7 +458,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

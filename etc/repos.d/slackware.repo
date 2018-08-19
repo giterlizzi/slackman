@@ -7,7 +7,7 @@
 #  - pasture
 #  - extra
 #  - testing
-#  - multilib (only for x86-64 arch)
+#  - multilib (only for x86_64 arch)
 # 
 # NOTE: patches, pasture, extra and testing ChangeLog are included in main
 #       Slackware "packages" repository
@@ -70,6 +70,7 @@ priority  = -1
 [multilib]
 name      = Slackware64-$release (MultiLib)
 enabled   = false
+arch      = x86_64
 mirror    = http://www.slackware.com/~alien/multilib/$release/
 changelog = http://www.slackware.com/~alien/multilib/ChangeLog.txt
 gpgkey    = http://www.slackware.com/~alien/multilib/GPG-KEY

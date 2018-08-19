@@ -1,5 +1,32 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.4.0]
+
+This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second. Improved download information (added speed, ETA, etc). Added information of supported arch in all `.repo` config file.
+
+## Added
+
+  * Added `--terse` option for display only a single description line when install or upgrade package
+  * Added `slackman clean removed` command for delete removed packages and scripts file in pkgtools directory (`/var/log/removed_{packages,scripts}`)
+  * Added new entry for `00-default.renames` file
+  * Added `--format` option for `slackman list` commands
+  * Added support for Slint repository (`slint.repo`)
+  * Added supported arch in `.repo` files
+  * Accept multiple `--exclude` option for `slackman install` and `slackman upgrade` commands
+  * #11 - Added automatic detection of Slackware-current (since **14.2+** release)
+  * #12 - Added `org.LotarProject.SlackMan.Announces` D-Bus method to retrieve ChangeLog announces
+  * #12 - Added `slackman changelog --announces` option to retrieve Slackware ChangeLog announces
+  * #13 - Added `arch` config option in `.repo` files with supported repository arch
+
+## Changed
+
+  * Re-added `HTTP::Tiny` support with check of SSL Perl modules (`IO::Socket::SSL` and `Net::SSLeay`)
+  * Optimization for `slackman.bash` completion file
+  * Changed location of required Perl module in `@INC`
+  * Load `Net::DBus` module when necessary (this reduce `slackman` command startup by ~0.3 second)
+  * slackman-libsupport.SlackBuild` file now use `cpanm` for download and build the required Perl modules
+
+
 ## [v1.3.0]
 
 This release introduce new options (`--local` for install or upgrade from local package) and new feature (`.renames` configuration file). Now SlackMan use cURL command for download th packages and repository metadata. Added new D-Bus methods and signals and improved `slackman-notifier` client.
@@ -141,9 +168,11 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.4.0]: https://github.com/LotarProject/slackman/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/LotarProject/slackman/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/LotarProject/slackman/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.2.0
+[v1.1.2]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/LotarProject/slackman/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/LotarProject/slackman/compare/v1.0.4...v1.1.0
 [v1.0.4]: https://github.com/LotarProject/slackman/compare/v1.0.3...v1.0.4

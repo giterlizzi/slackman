@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
-use lib qw(/usr/share/slackman/lib);
+use lib qw(/usr/share/slackman/lib/perl5);
 
 WriteMakefile(
     NAME             => 'Slackware::SlackMan',
@@ -23,6 +23,7 @@ WriteMakefile(
     PREREQ_PM => {
         'DBD::SQLite' => '0',
         'Net::DBus'   => '0',
+        'HTTP::Tiny'  => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Slackware-Slackman-*' },

@@ -17,14 +17,17 @@
 [desktop]
 name    = Microlinux Enterprise - Desktop
 enabled = false
+arch    = x86,x86_64
 mirror  = http://slackware.uk/microlinux/desktop-$release.real-${arch.bit}bit/
 
 [extras]
 name    = Microlinux Enterprise - Extras
 enabled = false
+arch    = x86,x86_64
 mirror  = http://slackware.uk/microlinux/extras-$release.real-${arch.bit}bit/
 
 [server]
 name    = Microlinux Enterprise - Server
 enabled = false
+arch    = x86,x86_64
 mirror  = http://slackware.uk/microlinux/server-$release.real-${arch.bit}bit/

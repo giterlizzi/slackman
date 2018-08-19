@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.3.0';
+  $VERSION     = 'v1.4.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -29,6 +29,7 @@ use IO::Handle;
 use Term::ANSIColor qw(color colored :constants);
 use Text::Wrap;
 use Pod::Usage;
+use HTTP::Tiny;
 
 use Slackware::SlackMan;
 use Slackware::SlackMan::Utils qw(:all);
@@ -48,6 +49,7 @@ use Getopt::Long qw(:config no_pass_through);
 
 GetOptions( $slackman_opts,
   'after=s',
+  'announces',
   'before=s',
   'category=s',
   'cve=s',
@@ -57,8 +59,9 @@ GetOptions( $slackman_opts,
   'details',
   'download-only',
   'exclude-installed',
-  'exclude|x=s',
+  'exclude|x=s@',
   'force|f',
+  'format=s',
   'help|h',
   'limit=i',
   'local',
@@ -78,12 +81,16 @@ GetOptions( $slackman_opts,
   'show-files',
   'summary',
   'tag=s',
+  'terse',
   'version',
   'yes|y',
 );
 
+# Set default format to "default"
+$slackman_opts->{'format'} ||= 'default';
 
-$slackman_opts->{'color'} ||= 'always'; # Color output is always enabled
+# Color output is always enabled
+$slackman_opts->{'color'} ||= 'always';
 
 # Options Alias
 $slackman_opts->{'category'} = $slackman_opts->{'series'} if ($slackman_opts->{'series'});
@@ -119,6 +126,21 @@ $SIG{INT} = sub {
 };
 
 sub run {
+
+  my ($ssl_check, $ssl_reason) = HTTP::Tiny->can_ssl;
+
+  unless ($ssl_check) {
+
+    $ssl_reason =~ s/^/ - /gm;
+
+    print "Problem with SSL support for HTTP::Tiny module:\n\n";
+    print "$ssl_reason\n";
+    print "Please install the required modules and execute this command again.\n\n";
+
+    exit(100);
+
+  }
+
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
   my @skip_lock     = qw(log.tail);
@@ -161,6 +183,26 @@ sub run {
     unless ( grep(/^$repo/, @repos) ) {
       print sprintf("%s Unknown repository!\n\n", colored('WARNING', 'yellow bold'));
       exit(1);
+    }
+
+  }
+
+  # Set TERSE env for pkgtools
+  $ENV{TERSE} = 1 if ($slackman_opts->{'terse'});
+
+  # Check output format (default, csv or tsv)
+  if ($slackman_opts->{'format'}) {
+
+    my $format = $slackman_opts->{'format'};
+
+    unless (grep(/^$format$/, qw(csv tsv default))) {
+      print colored('WARNING', 'yellow bold') . " Invalid output format (allowed: default, csv, tsv)\n\n";
+      exit(1);
+    }
+
+    # Disable colors for csv and tsv output format
+    if ($format ne 'default') {
+      $ENV{ANSI_COLORS_DISABLED} = 1;
     }
 
   }
@@ -323,7 +365,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

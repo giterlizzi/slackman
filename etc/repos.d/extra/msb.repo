@@ -32,42 +32,49 @@
 [latest]
 name      = MATE SlackBuilds (MSB) - latest
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/latest/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.18]
 name      = MATE SlackBuilds (MSB) - 1.18
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.18/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.16]
 name      = MATE SlackBuilds (MSB) - 1.16
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.16/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.14]
 name      = MATE SlackBuilds (MSB) - 1.14
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.14/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.12]
 name      = MATE SlackBuilds (MSB) - 1.12
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.12/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.10]
 name      = MATE SlackBuilds (MSB) - 1.10
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.10/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
 [1.8]
 name      = MATE SlackBuilds (MSB) - 1.8
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/msb/$release/1.8/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
 
@@ -76,3 +83,4 @@ name      = MATE SlackBuilds (MSB) - 1.6
 enabled   = false
 mirror    = http://slackware.uk/msb/$release/1.6/$arch/
 changelog = http://slackware.uk/msb/ChangeLog.txt
+

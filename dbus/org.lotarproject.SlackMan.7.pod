@@ -4,14 +4,18 @@ B<org.lotarproject.SlackMan> - D-Bus interface for L<slackman(8)> Package Manage
 
 =head1 DESCRIPTION
 
-The SlackMan service is  accessed  through the D-Bus object at /org/lotarproject/SlackMan.
-Which provides the following interface.
+The SlackMan service is accessed through the D-Bus object at C</org/lotarproject/SlackMan> 
+which provides the following interface.
 
 =head1 METHODS
 
 =head2 ChangeLog
 
 ChangeLog ( in: 's' I<repo_id>, out 'a{saa{ss}}' )
+
+=head2 Announce
+
+Announce ( in: 's' I<repo_id>, out 'a{saa{ss}}' )
 
 =head2 CheckUpgrade
 
@@ -75,6 +79,12 @@ slackware (out 's')
 
 Return the Slackware version (eg. I<14.2> or I<current>)
 
+=head2 isCurrent
+
+isCurrent (out 'b')
+
+Return I<true> if this is I<Slackware-current>
+
 =head1 SIGNALS
 
 =head2 PackageInstalled
@@ -116,7 +126,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

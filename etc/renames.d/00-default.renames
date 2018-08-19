@@ -21,3 +21,7 @@
 
 #tetex = texlive
 
+
+# Wireless Tools (renamed in Slackware 15.0)
+
+Wireless-tools = wireless-tools

@@ -17,5 +17,6 @@
 [packages]
 name      = Cinnamon SlackBuilds (CSB)
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://slackware.uk/csb/$release.real/$arch.family/
 changelog = http://slackware.uk/csb/ChangeLog.txt

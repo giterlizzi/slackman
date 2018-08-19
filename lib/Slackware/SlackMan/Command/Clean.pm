@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.3.0';
+  $VERSION     = 'v1.4.0';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw();
   %EXPORT_TAGS = (
@@ -35,6 +35,7 @@ use constant COMMANDS_DISPATCHER => {
   'clean'           => \&call_clean_help,
   'clean.help'      => \&call_clean_help,
 
+  'clean.removed'   => \&call_clean_removed,
   'clean.cache'     => \&call_clean_cache,
   'clean.db'        => \&call_clean_db,
   'clean.metadata'  => \&call_clean_metadata,
@@ -77,6 +78,27 @@ sub call_clean_all {
   call_clean_cache();
 
   exit(0);
+
+}
+
+sub call_clean_removed {
+
+  my $slackware_removed_packages_dir = $slackman_conf->{'pkgtools'}->{'removed-packages'};
+  my $slackware_removed_scripts_dir  = $slackman_conf->{'pkgtools'}->{'removed-scripts'};
+
+  exit(0) unless(confirm("Do you want remove Slackware log files placed in $slackware_removed_packages_dir and $slackware_removed_scripts_dir ? [Y/N]"));
+
+  logger->debug(qq/Delete removed packages in "$slackware_removed_packages_dir"/);
+
+  STDOUT->printflush("\nDelete removed packages in $slackware_removed_packages_dir... ");
+  unlink glob "$slackware_removed_packages_dir/*";
+  STDOUT->printflush(colored("done\n", 'green'));
+
+  logger->debug(qq/Delete removed scripts in "$slackware_removed_scripts_dir"/);
+
+  STDOUT->printflush("\nDelete removed scripts in $slackware_removed_scripts_dir... ");
+  unlink glob "$slackware_removed_scripts_dir/*";
+  STDOUT->printflush(colored("done\n", 'green'));
 
 }
 
@@ -131,6 +153,7 @@ slackman-clean - Clean and control SlackMan cache
   slackman clean cache
   slackman clean metadata
   slackman clean db
+  slackman clean removed
   slackman clean all
   slackman clean help
 
@@ -143,6 +166,7 @@ B<slackman clean> clean and control SlackMan cache.
   slackman clean cache       Clean cache package download directory
   slackman clean metadata    Clean database metadata (packages, changelog, manifest)
   slackman clean db          Clean database file
+  slackman clean removed     Delete Slackware removed packages and scripts log from pkgtools log directory
   slackman clean all         Clean database file and cache directory
   slackman clean help        Display clean command help usage
 
@@ -169,7 +193,7 @@ Giuseppe Di Terlizzi <giuseppe.diterlizzi@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a

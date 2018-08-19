@@ -7,6 +7,7 @@
 [packages]
 name      = AlienBob SlackBuilds
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://bear.alienbase.nl/mirrors/people/alien/sbrepos/$release/$arch/
 changelog = http://bear.alienbase.nl/mirrors/people/alien/sbrepos/ChangeLog.txt
 priority  = 1
@@ -14,6 +15,7 @@ priority  = 1
 [restricted]
 name      = AlienBob Restricted SlackBuilds
 enabled   = false
+arch      = x86,x86_64
 mirror    = http://bear.alienbase.nl/mirrors/people/alien/restricted_sbrepos/$release/$arch/
 changelog = http://bear.alienbase.nl/mirrors/people/alien/restricted_sbrepos/ChangeLog.txt
 priority  = 2

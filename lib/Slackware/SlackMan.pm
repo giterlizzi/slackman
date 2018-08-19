@@ -13,7 +13,7 @@ BEGIN {
 
   @ISA = qw(Exporter);
 
-  $VERSION   = 'v1.3.0';
+  $VERSION   = 'v1.4.0';
   @EXPORT_OK = ();
   @EXPORT    = qw(
     $slackman_opts
@@ -68,7 +68,7 @@ if ($root ne '' && ! -d $root) {
 }
 
 unless (-f $config_file) {
-  print "Configuration file '$config_file' not found!\n";
+  print "SlackMan configuration file '$config_file' not found!\n";
   exit(255);
 }
 
@@ -82,8 +82,16 @@ $slackman_conf->{'directory'}->{'repos'}   ||= "$root/etc/slackman/repos.d";
 $slackman_conf->{'directory'}->{'renames'} ||= "$root/etc/slackman/renames.d";
 $slackman_conf->{'directory'}->{'log'}     ||= "$root/var/log";
 $slackman_conf->{'directory'}->{'lib'}     ||= "$root/var/lib/slackman";
+$slackman_conf->{'directory'}->{'libexec'} ||= "$root/usr/libexec/slackman";
 $slackman_conf->{'directory'}->{'cache'}   ||= "$root/var/cache/slackman";
 $slackman_conf->{'directory'}->{'lock'}    ||= "$root/var/lock";
+
+# Set Slackware pkgtools directories
+$slackman_conf->{'pkgtools'}->{'packages'}          = "$root/var/log/packages";
+$slackman_conf->{'pkgtools'}->{'scripts'}           = "$root/var/log/scripts";
+$slackman_conf->{'pkgtools'}->{'setup'}             = "$root/var/log/setup";
+$slackman_conf->{'pkgtools'}->{'removed-packages'}  = "$root/var/log/removed_packages";
+$slackman_conf->{'pkgtools'}->{'removed-scripts'}   = "$root/var/log/removed_scripts";
 
 # Set default logger values
 $slackman_conf->{'logger'}->{'level'}      ||= 'debug';
@@ -203,7 +211,7 @@ L<https://github.com/LotarProject/slackman/wiki>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2016-2017 Giuseppe Di Terlizzi.
+Copyright 2016-2018 Giuseppe Di Terlizzi.
 
 This module is free software, you may distribute it under the same terms
 as Perl.

@@ -55,33 +55,33 @@ __slackman_list_config() {
 }
 
 __slackman_list_installed_packages() {
-  echo $(slackman list installed | grep ":" | awk '{ print $1 }')
+  echo $(slackman list installed --format=tsv | tail -n +2 | awk '{ print $1 }')
 }
 
 
 __slackman_list_packages() {
-  echo $(slackman list packages | grep ":" | awk '{ print $1 }')
+  echo $(slackman list packages --format=tsv | tail -n +2 | awk '{ print $1 }' | sort -u)
 }
 
 
 __slackman_list_no_installed_packages() {
-  echo $(slackman list packages --exclude-installed | grep ":" | awk '{ print $1 }')
+  echo $(slackman list packages --exclude-installed --format=tsv | tail -n +2 | awk '{ print $1 }' | sort -u)
 }
 
 
 __slackman_list_repos() {
 
-  local slackman_cmd="slackman repo list --color=never"
+  local slackman_cmd="slackman list repo --format=tsv | tail -n +2"
 
   case "$1" in
     enabled)
-      echo $($slackman_cmd | grep -i enabled | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | grep -i enabled | awk '{ print $1 }')
       ;;
     disabled)
-      echo $($slackman_cmd | grep -i disabled | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | grep -i disabled | awk '{ print $1 }')
       ;;
     *)
-      echo $($slackman_cmd | grep ":" | awk '{ print $1 }')
+      echo $($slackman_cmd | awk '{ print $1 }')
   esac
 
   return
@@ -160,6 +160,22 @@ _slackman_repo() {
 }
 
 
+_slackman_list_packages() {
+
+  local slackman_options="--repo"
+
+  __slackman_complete_options "$cur" "$prev" && return
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
+  __slackman_complete_options "$cur" "$prev" && return
+
+}
+
+
 _slackman_log() {
 
   local subcommands="help clean tail"
@@ -208,12 +224,17 @@ _slackman_update() {
 
 _slackman_upgrade() {
 
-  local slackman_options="--repo --exclude --no-priority --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local"
+  local slackman_options="--repo --exclude --no-priority --no-excludes --download-only --summary --no-deps --category --no-gpg-check --no-md5-check --local --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
+  if [[ "$prev" == "--local" ]]; then
+    _filedir 't[bglx]z'
     return 0
   fi
 
@@ -225,7 +246,7 @@ _slackman_upgrade() {
 
 _slackman_changelog() {
 
-  local slackman_options="--repo --limit --details --security-fix --before --after --cve"
+  local slackman_options="--repo --limit --details --security-fix --before --after --cve --announces"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -239,12 +260,17 @@ _slackman_changelog() {
 
 _slackman_install() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check --local"
+  local slackman_options="--repo --exclude --no-excludes --download-only --new-packages --no-deps --category --no-gpg-check --no-md5-check --local --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "$slackman_options" -- "$cur" ) )
+    return 0
+  fi
+
+  if [[ "$prev" == "--local" ]]; then
+    _filedir 't[bglx]z'
     return 0
   fi
 
@@ -258,7 +284,7 @@ _slackman_install() {
 
 _slackman_reinstall() {
 
-  local slackman_options="--repo --exclude --no-excludes --download-only --category --no-gpg-check --no-md5-check"
+  local slackman_options="--repo --exclude --no-excludes --download-only --category --no-gpg-check --no-md5-check --terse"
 
   __slackman_complete_options "$cur" "$prev" && return
 
@@ -308,7 +334,7 @@ _slackman_help() {
 
 _slackman_list() {
 
-  local slackman_options="--exclude-installed --after --before"
+  local slackman_options="--exclude-installed --after --before --format"
 
   __slackman_complete_options "$cur" "$prev" && return
 

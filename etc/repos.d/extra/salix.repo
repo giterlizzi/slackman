@@ -12,9 +12,11 @@
 [packages]
 name    = Salix packages
 enabled = false
-mirror  = http://slackware.uk/salix/$arch.family/$release.real/
+arch    = x86:i486,x86_64,arm
+mirror  = http://slackware.uk/salix/$arch/$release.real/
 
 [extra]
 name    = Salix extra
 enabled = false
-mirror  = http://slackware.uk/salix/$arch.family/extra-$release.real/
+arch    = x86:i486,x86_64,arm
+mirror  = http://slackware.uk/salix/$arch/extra-$release.real/

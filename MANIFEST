@@ -22,7 +22,7 @@ etc/repos.d/extra/csb.repo
 etc/repos.d/extra/ktown.repo
 etc/repos.d/extra/microlinux.repo
 etc/repos.d/extra/msb.repo
-etc/repos.d/extra/README.md
+etc/repos.d/extra/ponce.repo
 etc/repos.d/extra/repo.sample
 etc/repos.d/extra/rlworkman.repo
 etc/repos.d/extra/salix.repo
@@ -30,6 +30,7 @@ etc/repos.d/extra/slacke18.repo
 etc/repos.d/extra/slackers.repo
 etc/repos.d/extra/slackonly.repo
 etc/repos.d/extra/slacky.repo
+etc/repos.d/extra/slint.repo
 etc/repos.d/extra/studioware.repo
 etc/repos.d/slackware.repo
 etc/slackman-cron.conf
@@ -39,9 +40,7 @@ etc/slackman.cron
 etc/slackman.logrotate
 INSTALL.md
 lib/Slackware/SlackMan.pm
-lib/Slackware/SlackMan/Base.pm
 lib/Slackware/SlackMan/Command.pm
-lib/Slackware/SlackMan/Command/About.pm
 lib/Slackware/SlackMan/Command/Clean.pm
 lib/Slackware/SlackMan/Command/Config.pm
 lib/Slackware/SlackMan/Command/DB.pm
@@ -82,6 +81,7 @@ t/00-load.t
 t/01-package-info.t
 t/02-variables.t
 t/03-config.t
+t/10-slackman.t
 t/99-fake-root.t
 t/manifest.t
 t/pod-coverage.t

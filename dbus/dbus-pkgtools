@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use lib qw(/usr/share/slackman-libsupport/lib);
+use lib qw(/usr/share/slackman/lib/perl5);
 
 use Net::DBus;
 
