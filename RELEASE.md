@@ -1,8 +1,8 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
-## [Develop]
+## [v1.4.0]
 
-This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second. Improved download information (added speed, ETA, etc).
+This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second. Improved download information (added speed, ETA, etc). Added information of supported arch in all `.repo` config file.
 
 ## Added
 
@@ -11,6 +11,7 @@ This release introduce the automatic detection of Slackware `-current` release u
   * Added new entry for `00-default.renames` file
   * Added `--format` option for `slackman list` commands
   * Added support for Slint repository (`slint.repo`)
+  * Added supported arch in `.repo` files
   * Accept multiple `--exclude` option for `slackman install` and `slackman upgrade` commands
   * #11 - Added automatic detection of Slackware-current (since **14.2+** release)
   * #12 - Added `org.LotarProject.SlackMan.Announces` D-Bus method to retrieve ChangeLog announces
@@ -167,6 +168,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.4.0]: https://github.com/LotarProject/slackman/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/LotarProject/slackman/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/LotarProject/slackman/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/LotarProject/slackman/compare/v1.1.1...v1.2.0

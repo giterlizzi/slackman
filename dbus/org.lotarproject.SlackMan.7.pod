@@ -79,6 +79,12 @@ slackware (out 's')
 
 Return the Slackware version (eg. I<14.2> or I<current>)
 
+=head2 isCurrent
+
+isCurrent (out 'b')
+
+Return I<true> if this is I<Slackware-current>
+
 =head1 SIGNALS
 
 =head2 PackageInstalled
