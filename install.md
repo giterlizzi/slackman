@@ -8,7 +8,7 @@ Module        | Usage
 --------------|-----------------------------------------------------------------
 `DBD::SQLite` | SQLite library to manage SlackMan database
 `Net::DBus`   | Notify new packages update and expose SlackMan methods via D-Bus
-`IO::Socket::SSL`, `Net::SSLeay` | Add SSL/TLS support for `HTTP::Tiny` package
+`IO::Socket::SSL`, `Net::SSLeay` | Add SSL/TLS support for `HTTP::Tiny` module
 
 ### Install required modules using slackman-libsupport package
 
