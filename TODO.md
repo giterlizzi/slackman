@@ -6,6 +6,7 @@
  - [ ] Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
  - [ ] Notify the user of changed or installed `/etc/rc.d`
  - [ ] Follow logger category for logging
+ - [ ] Plugin system (via hooks / events)
 
 
 ## SlackMan 1.1
@@ -47,7 +48,7 @@
  - [x] Increase SlackMan bootstrap and module loading
 
 
-## Next SlackMan release
+## SlackMan 1.4
 
  - [x] #11 - Use `/etc/slackware-version` to automatically detect Slackware -current (post 14.2)
  - [x] #11 - Add `--terse` options for `slackman` command
