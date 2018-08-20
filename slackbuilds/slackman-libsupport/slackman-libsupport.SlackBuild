@@ -24,7 +24,7 @@
 
 
 PRGNAM=slackman-libsupport
-VERSION=${VERSION:-1.4.0}
+VERSION=${VERSION:-1.4.1}
 BUILD=${BUILD:-1}
 TAG=${TAG:-_lotar}
 
@@ -73,12 +73,11 @@ if [ ! -e $CPANM ]; then
   curl -L https://cpanmin.us -o $CWD/cpanm
 fi
 
-for MODULE in $MODULES; do
-  perl $CPANM -L $PKG/usr/share/slackman --self-contained \
-    --configure-args="--cflags=$SLKCFLAGS" --verbose --notest $MODULE
-done
+perl $CPANM -L $PKG/usr/share/slackman --self-contained \
+  --configure-args="--cflags=$SLKCFLAGS" --verbose --notest $MODULES
 
 rm -rf $PKG/usr/share/slackman/bin
+rm -rf $PKG/usr/share/slackman/man
 
 find $PKG -print0 | xargs -0 file | grep -e "executable" -e "shared object" | grep ELF \
   | cut -f 1 -d : | xargs strip --strip-unneeded 2> /dev/null || true
