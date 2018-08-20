@@ -6,6 +6,8 @@ use warnings FATAL => 'all';
 use Test::More;
 use File::Basename;
 
+use lib qw(/usr/share/slackman/lib/perl5);
+
 my $current_directory = dirname(__FILE__);
 $ENV{ROOT} = "$current_directory/root";
 

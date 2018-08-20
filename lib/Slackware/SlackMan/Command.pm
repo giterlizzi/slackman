@@ -11,7 +11,7 @@ BEGIN {
 
   require Exporter;
 
-  $VERSION     = 'v1.4.0';
+  $VERSION     = 'v1.4.1';
   @ISA         = qw(Exporter);
   @EXPORT_OK   = qw(
     run
@@ -126,21 +126,6 @@ $SIG{INT} = sub {
 };
 
 sub run {
-
-  my ($ssl_check, $ssl_reason) = HTTP::Tiny->can_ssl;
-
-  unless ($ssl_check) {
-
-    $ssl_reason =~ s/^/ - /gm;
-
-    print "Problem with SSL support for HTTP::Tiny module:\n\n";
-    print "$ssl_reason\n";
-    print "Please install the required modules and execute this command again.\n\n";
-
-    exit(100);
-
-  }
-
 
   my @lock_commands = qw(update install upgrade remove reinstall clean);
   my @skip_lock     = qw(log.tail);
