@@ -1,10 +1,23 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [v1.4.1]
+
+Fixed some incompatibility issue with previous Slackware releases.
+
+### Fixed
+
+  * #14 - Undefined subroutine "HTTP::Tiny->can_ssl" on Slackware 14.2
+
+### Changed
+
+  * `t/*` - Added support of `slackman-libsupport`
+
+
 ## [v1.4.0]
 
 This release introduce the automatic detection of Slackware `-current` release using the new `/etc/slackware-version` format (eg. `14.2+`). Added parsing of Slackware Announce in ChangeLog. General optimizations and reduced the `slackman` command startup by ~0.3 second. Improved download information (added speed, ETA, etc). Added information of supported arch in all `.repo` config file.
 
-## Added
+### Added
 
   * Added `--terse` option for display only a single description line when install or upgrade package
   * Added `slackman clean removed` command for delete removed packages and scripts file in pkgtools directory (`/var/log/removed_{packages,scripts}`)
@@ -18,7 +31,7 @@ This release introduce the automatic detection of Slackware `-current` release u
   * #12 - Added `slackman changelog --announces` option to retrieve Slackware ChangeLog announces
   * #13 - Added `arch` config option in `.repo` files with supported repository arch
 
-## Changed
+### Changed
 
   * Re-added `HTTP::Tiny` support with check of SSL Perl modules (`IO::Socket::SSL` and `Net::SSLeay`)
   * Optimization for `slackman.bash` completion file
@@ -31,7 +44,7 @@ This release introduce the automatic detection of Slackware `-current` release u
 
 This release introduce new options (`--local` for install or upgrade from local package) and new feature (`.renames` configuration file). Now SlackMan use cURL command for download th packages and repository metadata. Added new D-Bus methods and signals and improved `slackman-notifier` client.
 
-## Added
+### Added
 
   * Added missing options in Bash completion script
   * Added new D-Bus methods (see `org.lotarproject.SlackMan(7)`)
@@ -40,13 +53,13 @@ This release introduce new options (`--local` for install or upgrade from local 
   * Added new TAP test
   * Added support of `slackman-libsupport` package
 
-## Removed
+### Removed
 
   * Removed check of require modules
   * Drop support of `HTTP::Tiny` module
   * Drop support of "experimental" Perl feature
 
-## Changed
+### Changed
 
   * DB schema optimization for `manifest` table
   * Use Perl sub for `REGEXP` SQLite function
@@ -55,7 +68,7 @@ This release introduce new options (`--local` for install or upgrade from local 
   * Reduced required Perl modules
   * Optimization for `SlackMan/Config.pm` module
 
-## Fixed
+### Fixed
 
   * Fixed `repos.d/slackware.repo` URL
 
@@ -68,7 +81,7 @@ This release fix an issue for SlackMan build (#10 thanks to @axpira)
 
 This release introduce new features, new commands and improved the stability and performance. Added new D-Bus methods/properties and integrated SlackMan via PolicyKit.
 
-## Added
+### Added
 
   * #2: Add new repo via URL or via local file (`slackman repo add REPOSITORY-FILE`)
   * #3: Added `--tag` option for upgrade installed package with specified package tag (eg. `slackman upgrade --repo slackonly:packages --tag SBo`)
@@ -88,11 +101,11 @@ This release introduce new features, new commands and improved the stability and
   * Added new option to search a CVE (Common Vulnerabilities and Exposures) into the ChangeLogs (`--cve=CVE-YYYY-NNNN`)
   * Added `slackman repo config` command to edit via CLI repository configuration
 
-## Fixed
+### Fixed
 
   * #8: Optimizations of Slackware database parsing
 
-## Removed
+### Removed
 
   * Removed `slackman update installed` command (merged into `slackman update history`)
   * Removed `unlink` after package upgrade and install. Remember to launch `slackman clean cache` command periodically
@@ -100,11 +113,11 @@ This release introduce new features, new commands and improved the stability and
 
 ## [v1.1.2]
 
-## Added
+### Added
 
   * Added `--after` and `--before` in `slackman.bash` completion script
 
-## Fixed
+### Fixed
 
   * Fixed paser for `--after` and `--before` options
   * Fixed `notify` sub callback for `slackman-notifier` command
@@ -168,6 +181,7 @@ This release introduce new features, new commands & params and new DBus service 
   * [v1.0.0]
 
 [Develop]: https://github.com/LotarProject/slackman/compare/master...develop
+[v1.4.1]: https://github.com/LotarProject/slackman/compare/v1.4.0...v1.4.1
 [v1.4.0]: https://github.com/LotarProject/slackman/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/LotarProject/slackman/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/LotarProject/slackman/compare/v1.2.0...v1.2.1
