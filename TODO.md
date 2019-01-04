@@ -4,14 +4,14 @@
  - [ ] Remove package and all "directed" dependencies (`slackman remove routersploit --remove-dependencies`)
  - [ ] Display installed date in `slackman history` for packages installed and removed (never upgraded). Now dsplay only the removed date
  - [ ] Add option `--append` (or `-A`) for `slackman config` and `slackman repo config` for append a text in config file
- - [ ] Notify the user of changed or installed `/etc/rc.d`
+ - [ ] Notify changed or installed `/etc/rc.d` files
  - [ ] Follow logger category for logging
  - [ ] Plugin system (via hooks / events)
- - [ ] Restyling `slackman update` output
- - [ ] Move all repo config in `/usr/share/slackman/repos.d`
- - [ ] Add option to force downgrade with local package
+ - [x] Restyling `slackman update` output
+ - [ ] Move all extra repo config in `/usr/share/slackman/repos.d`
+ - [ ] Add option to force downgrade package with a local package
  - [ ] Add `slackman download PACKAGE` command for download only the package (alias of `slackman install --download-only PACKAGE` and `slackman upgrade --download-only PACKAGE`)
- - [ ] Unload DBUS module when Slackware is started in 0 runlevel or in container (Docker)
+ - [ ] Unload DBUS module when Slackware is started in `0` runlevel or in container (Docker)
  - [ ] Add excluded package from command line `slackman excluded add kernel*`
  - [ ] Remove excluded package from command line `slackman excluded remove kernel*`
  - [ ] List excluded package `slackman excluded list` or `slackman list excluded`
