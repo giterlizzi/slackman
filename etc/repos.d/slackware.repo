@@ -13,7 +13,7 @@
 #       Slackware "packages" repository
 #
 # NOTE: KDE and Calligra (KOffice) localization packages are excluded by default.
-#       If you can install/upgrade this packages use "-no-excludes" options
+#       If you can install/upgrade this packages use "--no-excludes" options
 
 [packages]
 name      = Slackware{$release.suffix}-$release
