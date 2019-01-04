@@ -29,10 +29,11 @@ GetOptions( $options,
   'man'
 );
 
-show_help()    if ($options->{'help'});
-show_version() if ($options->{'version'});
+$SIG{CHLD} = 'IGNORE';
 
-pod2usage(-exitval => 0, -verbose => 2) if $options->{'man'};
+show_help()                              if ($options->{'help'});
+show_version()                           if ($options->{'version'});
+pod2usage(-exitval => 0, -verbose => 2)  if ($options->{'man'});
 
 my $home_dir         = $ENV{'HOME'};
 my $user_config_file = "$home_dir/.slackman-notifier";
@@ -119,27 +120,6 @@ sub notify {
 }
 
 
-# Create a simple UNIX daemon
-#
-sub daemonize {
-
-  my ($cmd) = @_;
-
-  chdir("/")                  || die "can't chdir to /: $!";
-  open(STDIN,  "< /dev/null") || die "can't read /dev/null: $!";
-  #open(STDOUT, "> /dev/null") || die "can't write to /dev/null: $!";
-  defined(my $pid = fork())   || die "can't fork: $!";
-  exit if $pid;               # non-zero now means I am the parent
-  (setsid() != -1)            || die "Can't start a new session: $!";
-  open(STDERR, ">&STDOUT")    || die "can't dup stdout: $!";
-
-  system($cmd);
-
-  return $$; # Return effective PID
-
-}
-
-
 sub check_upgrade {
 
   logger->info('Check packages upgrade using SlackMan D-Bus service');
@@ -181,7 +161,7 @@ sub check_upgrade {
 
   notify({
     'icon'    => 'system-software-update',
-    'summary' => 'Slackware Package Updates Available',
+    'summary' => 'Upgrade available',
     'body'    => $upgrades_body,
   });
 
