@@ -1,5 +1,24 @@
 # SlackMan - Slackware Package Manager ChangeLog
 
+## [Develop]
+
+Improved `slackman update` commands workflow and layout. Removed `slackware.version` configuration item in `slackware.conf` file. Now `-current` release is automatically detected via `/etc/slackware-version` file (since *v1.4.x* release).
+
+### Added
+
+  * Added `slackman update pkgtools` (alias of `slackman update history`)
+  * Added `$release.arch` variable (alias of `$release.suffix`)
+
+### Changed
+
+  * Improved workflow and layout of `slackman update` command (and all subcommands)
+
+### Removed
+
+  * Removed `slackware.version` configuration item in `slackware.conf` file
+  * Removed unused code
+
+
 ## [v1.4.1]
 
 Fixed some incompatibility issue with previous Slackware releases.
