@@ -748,8 +748,7 @@ sub parse_variables {
   elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; $release_arch = ''; }
   elsif ($arch =~ /arm(.*)/)       { $arch_bit = 32; $arch_family = 'arm'; $release_arch = 'arm'; }
 
-  $release_suffix = $arch_family if ($arch_family eq 'arm');
-  $release_suffix = $arch_bit    if ($arch_bit eq '64');
+  $release_suffix = $release_arch;
 
   # Remove "{" and "}" chars from string
   $string =~ s/(\{|\})//g;
