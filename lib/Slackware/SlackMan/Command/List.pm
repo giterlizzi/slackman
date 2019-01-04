@@ -122,7 +122,7 @@ sub call_list_obsoletes {
 sub call_list_variables {
 
   my @variables = ( 'arch', 'arch.bit', 'arch.family',
-                    'release', 'release.real', 'release.suffix' );
+                    'release', 'release.real', 'release.suffix', 'release.arch' );
 
   my @rows = ();
 

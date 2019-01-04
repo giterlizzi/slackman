@@ -738,15 +738,15 @@ sub parse_variables {
 
   my $arch_family    = $arch;
   my $arch_bit       = $arch;
-  my $release_conf   = $release;
+  my $release_real   = $release;
   my $release_suffix = '';
+  my $release_arch   = '';
 
-  $release_conf = $slackman_conf->{'slackware'}->{'version'} if (defined $slackman_conf->{'slackware'});
-  $release_conf = 'current' if (is_slackware_current());
+  $release = 'current' if (is_slackware_current());
 
-     if ($arch eq 'x86_64')        { $arch_bit = 64; }
-  elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; }
-  elsif ($arch =~ /arm(.*)/)       { $arch_bit = 32; $arch_family = 'arm'; }
+     if ($arch eq 'x86_64')        { $arch_bit = 64; $release_arch = 64; }
+  elsif ($arch =~ /x86|i[3456]86/) { $arch_bit = 32; $arch_family = 'x86'; $release_arch = ''; }
+  elsif ($arch =~ /arm(.*)/)       { $arch_bit = 32; $arch_family = 'arm'; $release_arch = 'arm'; }
 
   $release_suffix = $arch_family if ($arch_family eq 'arm');
   $release_suffix = $arch_bit    if ($arch_bit eq '64');
@@ -760,9 +760,10 @@ sub parse_variables {
   $string =~ s/\$arch/$arch/g;
 
   # Replace $release variables
+  $string =~ s/\$release.arch/$release_arch/g;
   $string =~ s/\$release\.suffix/$release_suffix/g;
-  $string =~ s/\$release\.real/$release/g;
-  $string =~ s/\$release/$release_conf/g;
+  $string =~ s/\$release\.real/$release_real/g;
+  $string =~ s/\$release/$release/g;
 
   return $string;
 

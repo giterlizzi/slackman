@@ -355,14 +355,14 @@ Slackware::SlackMan::Config - SlackMan Config module
   my $cfg = Slackware::SlackMan::Config->new('/etc/slackman/slackman.conf');
 
   # get value
-  $cfg->param('slackware.version');
+  $cfg->param('logger.level');
 
-  $cfg->get('slackware.version');
+  $cfg->get('logger.level');
 
   # set value
-  $cfg->param('slackware.version', 'current');
+  $cfg->param('logger.level', 'debug');
 
-  $cfg->set('slackware.version', 'current');
+  $cfg->set('logger.level', 'debug');
 
   # Stringify config
   my $config_string = $cfg->stringify();
@@ -374,10 +374,10 @@ Slackware::SlackMan::Config - SlackMan Config module
   $cfg->save('/tmp/slackman.conf.bak');
 
   # Replace config value and return a string
-  my $config_string = $cfg->replace('slackware.version', 'current');
+  my $config_string = $cfg->replace('logger.level', 'debug');
 
   # Replace config value and save (preserve the comments)
-  $cfg->replaceAndSave('slackware.version', 'current');
+  $cfg->replaceAndSave('logger.level', 'debug');
 
   # Return config hash
   my $config = $cfg->data();
