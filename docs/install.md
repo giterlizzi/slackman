@@ -8,6 +8,7 @@ Module        | Usage
 --------------|-----------------------------------------------------------------
 `DBD::SQLite` | SQLite library to manage SlackMan database
 `Net::DBus`   | Notify new packages update and expose SlackMan methods via D-Bus
+`IO::Socket::SSL`, `Net::SSLeay` | Add SSL/TLS support for `HTTP::Tiny` module
 
 ### Install required modules using slackman-libsupport package
 
@@ -22,7 +23,9 @@ You can download and compile the SlackBuild of required modules from [SlackBuild
 or via `sbopkg`:
 
     sbopkg -i perl-DBD-SQLite \
-           -i perl-net-dbus
+           -i perl-net-dbus \
+           -i perl-IO-Socket-SSL \
+           -i Net-SSLeay
 
 ## Create SlackBuild package
 

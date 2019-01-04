@@ -341,6 +341,12 @@ Return Slackware version ( eg, _14.2_, _current_ )
 
     STRING org.lotarproject.SlackMan.slackware
 
+##### org.lotarproject.SlackMan.isCurrent
+
+Return `true` if the actual version is _Slackware-current_
+
+    STRING org.lotarproject.SlackMan.isCurrent
+
 
 ## SlackMan Notifier
 
