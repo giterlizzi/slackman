@@ -2,7 +2,7 @@
 
 ## [v1.4.1]
 
-Fixed some incompatibilty issue with previous Slackware releases.
+Fixed some incompatibility issue with previous Slackware releases.
 
 ### Fixed
 
