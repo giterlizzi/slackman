@@ -749,9 +749,12 @@ sub gpg_verify {
 
   my ($file) = @_;
 
-  logger->debug(qq/[GPG] verify file "$file" with "$file.asc"/);
+  my $cmd = "gpg --verify $file.asc $file 2>/dev/null";
 
-  system("gpg --verify $file.asc $file 2>/dev/null");
+  logger->info(qq/[GPG] Verify file "$file" with "$file.asc"/);
+  logger->debug("[GPG] $cmd");
+
+  system($cmd);
   return ($?) ? 0 : 1;
 
 }
@@ -760,14 +763,23 @@ sub gpg_verify {
 sub gpg_import_key {
 
   my ($key_file)   = @_;
+
   my $key_contents = file_read($key_file);
      $key_contents =~ /uid\s+(.*)/;
   my $key_uid      = $1;
 
-  logger->debug(qq/[GPG] Import key file with "$key_uid" uid/);
+  my $cmd_delete_key = "/usr/bin/gpg --yes --batch --delete-key '$key_uid' &>/dev/null";
+  my $cmd_import_key = "/usr/bin/gpg --import $key_file &>/dev/null";
 
-  system("/usr/bin/gpg --yes --batch --delete-key '$key_uid' &>/dev/null") if ($key_uid);
-  system("/usr/bin/gpg --import $key_file &>/dev/null");
+  logger->info(qq/[GPG] Import key file with "$key_uid" uid/);
+
+  if ($key_uid) {
+    logger->debug("[GPG] $cmd_delete_key");
+    system($cmd_delete_key);
+  }
+
+  logger->debug("[GPG] $cmd_import_key");
+  system($cmd_import_key);
 
 }
 
@@ -840,6 +852,8 @@ sub md5_check {
 
   my $md5 = Digest::MD5->new;
   my $file_checksum = $md5->addfile(new IO::File("$file", "r"))->hexdigest;
+
+  logger->info(qq/[CHECKSUM] Verify file "$file" with "$checksum" checksum/);
 
   return 1 if ($checksum eq $file_checksum);
   return 0;
@@ -916,6 +930,7 @@ sub str_pad {
   return $result;
 
 }
+
 
 sub terminal_width {
 
