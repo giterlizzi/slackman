@@ -7,7 +7,14 @@
  - [ ] Notify the user of changed or installed `/etc/rc.d`
  - [ ] Follow logger category for logging
  - [ ] Plugin system (via hooks / events)
-
+ - [ ] Restyling `slackman update` output
+ - [ ] Move all repo config in `/usr/share/slackman/repos.d`
+ - [ ] Add option to force downgrade with local package
+ - [ ] Add `slackman download PACKAGE` command for download only the package (alias of `slackman install --download-only PACKAGE` and `slackman upgrade --download-only PACKAGE`)
+ - [ ] Unload DBUS module when Slackware is started in 0 runlevel or in container (Docker)
+ - [ ] Add excluded package from command line `slackman excluded add kernel*`
+ - [ ] Remove excluded package from command line `slackman excluded remove kernel*`
+ - [ ] List excluded package `slackman excluded list` or `slackman list excluded`
 
 ## SlackMan 1.1
 
