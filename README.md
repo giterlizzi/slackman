@@ -85,6 +85,6 @@ Bash Completion:
 
 ## Copyright
 
- - Copyright 2016-2017 © Giuseppe Di Terlizzi
+ - Copyright 2016-2018 © Giuseppe Di Terlizzi
  - Slackware® is a Registered Trademark of Patrick Volkerding
  - Linux is a Registered Trademark of Linus Torvalds
