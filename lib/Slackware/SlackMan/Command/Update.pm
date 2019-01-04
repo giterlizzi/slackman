@@ -38,9 +38,11 @@ use constant COMMANDS_DISPATCHER => {
   'update.changelog' => \&call_update_repo_changelog,
   'update.gpg-key'   => \&call_update_repo_gpg_key,
   'update.help'      => \&call_update_help,
-  'update.history'   => \&call_update_history,
+  'update.history'   => \&call_update_pkgtools,
+  'update.pkgtools'  => \&call_update_pkgtools,
   'update.manifest'  => \&call_update_repo_manifest,
   'update.packages'  => \&call_update_repo_packages,
+  'update.test'      => \&_update_metadata,
 };
 
 use constant COMMANDS_MAN => {
@@ -73,168 +75,172 @@ sub call_update_help {
 
 }
 
+
 sub call_update_repo_packages {
 
-  STDOUT->printflush("\nUpdate repository packages metadata:\n\n");
+  _update_metadata('Packages');
+  _update_pkgtools();
 
-  my @repos       = get_enabled_repositories();
-  my $repo_option = $slackman_opts->{'repo'};
-
-  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
-    @repos = ( $slackman_opts->{'repo'} );
-  }
-
-  foreach my $repo (@repos) {
-
-    logger->info(qq/Update "$repo" repository packages/);
-    my $repo_data = get_repository($repo);
-
-    STDOUT->printflush(sprintf(" - %-30s", $repo));
-    parse_packages($repo_data, \&callback_status);
-    STDOUT->printflush(colored("done\n", 'green'));
-
-  }
-
-  print "\n";
-
-  # Set last-metadata-update
-  db_meta_set('last-metadata-update', time());
-
-  # Notify update via D-Bus
-  dbus_slackman->Notify( 'UpdatedPackages', undef, undef );
+  exit(0);
 
 }
+
 
 sub call_update_repo_gpg_key {
 
-  STDOUT->printflush("\nUpdate repository GPG key:\n\n");
-
-  my @repos       = get_enabled_repositories();
-  my $repo_option = $slackman_opts->{'repo'};
-
-  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
-    @repos = ( $slackman_opts->{'repo'} );
-  }
-
-  foreach my $repo (@repos) {
-
-    logger->info(qq/Update "$repo" repository GPG-KEY/);
-    my $repo_data = get_repository($repo);
-
-    STDOUT->printflush(sprintf(" - %-30s", $repo));
-
-    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{'directory'}->{'cache'}, $repo);
-
-    if (download_repository_metadata($repo, 'gpgkey')) {
-      gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
-    }
-
-    STDOUT->printflush(colored("done\n", 'green'));
-
-  }
-
-  print "\n";
+  _update_metadata('GPG-KEY');
+  exit(0);
 
 }
+
 
 sub call_update_repo_changelog {
 
-  STDOUT->printflush("\nUpdate repository ChangeLog:\n\n");
-
-  my @repos       = get_enabled_repositories();
-  my $repo_option = $slackman_opts->{'repo'};
-
-  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
-    @repos = ( $slackman_opts->{'repo'} );
-  }
-
-  foreach my $repo (@repos) {
-
-    logger->info(qq/Update "$repo" repository ChangeLog/);
-    my $repo_data = get_repository($repo);
-
-    STDOUT->printflush(sprintf(" - %-30s", $repo));
-    parse_changelog($repo_data, \&callback_status);
-    STDOUT->printflush(colored("done\n", 'green'));
-
-  }
-
-  print "\n";
-
-  # Notify update via D-Bus
-  dbus_slackman->Notify( 'UpdatedChangeLog', undef, undef );
+  _update_metadata('ChangeLog');
+  exit(0);
 
 }
+
 
 sub call_update_repo_manifest {
 
-  STDOUT->printflush("\nUpdate repository Manifest (very slow for big repository ... be patient):\n\n");
-
-  my @repos       = get_enabled_repositories();
-  my $repo_option = $slackman_opts->{'repo'};
-
-  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
-    @repos = ( $slackman_opts->{'repo'} );
-  }
-
-  foreach my $repo (@repos) {
-
-    my $repo_data = get_repository($repo);
-
-    STDOUT->printflush(sprintf(" - %-30s", $repo));
-    parse_manifest($repo_data, \&callback_status);
-    STDOUT->printflush(colored("done\n", 'green'));
-
-  }
-
-  print "\n";
-
-  # Notify update via D-Bus
-  dbus_slackman->Notify( 'UpdatedManifest', undef, undef );
+  _update_metadata('Manifest');
+  exit(0);
 
 }
 
-sub call_update_history {
 
-  STDOUT->printflush("\nUpdate history (installed, upgraded & removed) packages metadata: ");
+sub _update_pkgtools {
+
+  STDOUT->printflush("Update pkgtools (installed, upgraded & removed packages) metadata: ");
   parse_history(\&callback_status);
+  STDOUT->printflush(colored("done\n", 'green'));
+  STDOUT->printflush("\n");
+
+}
+
+
+sub call_update_metadata {
+
+  _update_metadata('Packages', 'ChangeLog');
+  _update_pkgtools();
+
+  exit(0);
+
+}
+
+
+sub call_update_pkgtools {
+
+  _update_pkgtools();
+  exit(0);
+
+}
+
+
+sub call_update_all_metadata {
+
+  _update_metadata('Packages', 'ChangeLog', 'Manifest', 'GPG-KEY');
+  _update_pkgtools();
+
+  exit(0);
+
+}
+
+
+sub _update_packages {
+
+  my ($repo_data) = @_;
+
+  STDOUT->printflush(sprintf("  - %-15s", 'Packages'));
+  parse_packages($repo_data, \&callback_status);
   STDOUT->printflush(colored("done\n", 'green'));
 
 }
 
-sub call_update_metadata {
 
-  call_update_repo_packages();
-  call_update_repo_changelog();
+sub _update_changelog {
 
-  call_update_history();
+  my ($repo_data) = @_;
 
-  print "\n";
+  STDOUT->printflush(sprintf("  - %-15s", 'ChangeLog'));
+  parse_changelog($repo_data, \&callback_status);
+  STDOUT->printflush(colored("done\n", 'green'));
+
+}
+
+
+sub _update_manifest {
+
+  my ($repo_data) = @_;
+
+  STDOUT->printflush(sprintf("  - %-15s", 'Manifest'));
+  parse_manifest($repo_data, \&callback_status);
+  STDOUT->printflush(colored("done\n", 'green'));
+
+}
+
+
+sub _update_gpg_key {
+
+  my ($repo) = @_;
+
+  STDOUT->printflush(sprintf("  - %-15s", 'GPG-KEY'));
+
+  if (download_repository_metadata($repo, 'gpgkey')) {
+    my $gpg_key_path = sprintf('%s/%s/GPG-KEY', $slackman_conf->{'directory'}->{'cache'}, $repo);
+    gpg_import_key($gpg_key_path) if (-e $gpg_key_path);
+  }
+
+  STDOUT->printflush(colored("done\n", 'green'));
+
+}
+
+
+sub _update_metadata {
+
+  my (@metadata) = @_;
+
+  return 0 unless (@metadata);
+
+  STDOUT->printflush("\nUpdate repository metadata (". commify_series(@metadata) ."):\n\n");
+
+  my @repos       = get_enabled_repositories();
+  my $repo_option = $slackman_opts->{'repo'};
+
+  if ($slackman_opts->{'repo'} && grep(/^$repo_option$/, get_enabled_repositories)) {
+    @repos = ( $slackman_opts->{'repo'} );
+  }
+
+  foreach my $repo (@repos) {
+
+    if ($repo_option) {
+      next unless ($repo =~ /^$repo_option/);
+    }
+
+    my $repo_data = get_repository($repo);
+
+    STDOUT->printflush(colored("$repo\n", 'bold'));
+
+    _update_packages($repo_data)   if (grep(/packages/i,  @metadata));
+    _update_changelog($repo_data)  if (grep(/changelog/i, @metadata));
+    _update_manifest($repo_data)   if (grep(/manifest/i,  @metadata));
+    _update_gpg_key($repo)         if (grep(/gpg-key/i,   @metadata));
+
+    STDOUT->printflush("\n");
+
+  }
+
+  # Notify update via D-Bus
+  dbus_slackman->Notify( 'UpdatedPackages',  undef, undef )  if (grep(/packages/i,  @metadata));
+  dbus_slackman->Notify( 'UpdatedChangeLog', undef, undef )  if (grep(/changelog/i, @metadata));
+  dbus_slackman->Notify( 'UpdatedManifest',  undef, undef )  if (grep(/manifest/i,  @metadata));
 
   # Set last-metadata-update
   db_meta_set('last-metadata-update', time());
 
-  exit(0);
-
 }
 
-sub call_update_all_metadata {
-
-  call_update_repo_gpg_key();
-  call_update_repo_packages();
-  call_update_repo_changelog();
-  call_update_repo_manifest();
-
-  call_update_history();
-
-  print "\n";
-
-  # Set last-metadata-update
-  db_meta_set('last-metadata-update', time());
-
-  exit(0);
-
-}
 
 1;
 __END__
@@ -244,9 +250,6 @@ slackman-update - Perform update of repository metadata
 
 =head1 SYNOPSIS
 
-  slackman update installed
-  slackman update history
-
   slackman update [--repo=REPOSITORY]
   slackman update packages  [--repo=REPOSITORY]
   slackman update changelog [--repo=REPOSITORY]
@@ -254,6 +257,7 @@ slackman-update - Perform update of repository metadata
   slackman update gpg-key [--repo=REPOSITORY]
   slackman update all [--repo=REPOSITORY]
 
+  slackman update pkgtools
   slackman update help
 
 =head1 DESCRIPTION
@@ -278,18 +282,19 @@ To see the current location of C<directory.cache> use L<slackman-config(8)> comm
 
 =head1 COMMANDS
 
-  slackman update                      Update repository and local history packages metadata
-  slackman update history              Update local packages history metadata (installed, upgraded & removed)
+  slackman update                      Update repository and local pkgtools (installed, upgraded & removed packages) metadata
+  slackman update pkgtools             Update local pkgtools metadata (installed, upgraded & removed packages)
   slackman update packages             Update repository metadata (using PACKAGES.TXT file)
-  slackman update changelog            Update repository ChangeLog (using ChangeLog.txt)
-  slackman update manifest             Update repository Manifest (using MANIFEST.bz2)
+  slackman update changelog            Update repository ChangeLog (using ChangeLog.txt file)
+  slackman update manifest             Update repository Manifest (using MANIFEST.bz2 file)
   slackman update gpg-key              Update repository GPG-KEY
-  slackman update all                  Update all metadata (packages, gpg-key, changelog, etc.)
+  slackman update all                  Update all metadata (Packages, GPG-KEY, ChangeLog, etc.)
   slackman update help                 Display update command help usage
 
 =head1 OPTIONS
 
   --repo=REPOSITORY                    Use specified repository during update
+  -f, --force                          Force update
   -h, --help                           Display help and exit
   --man                                Display man pages
   --version                            Display version information

@@ -20,6 +20,7 @@ BEGIN {
     callback_status
     changelog_date_to_time
     check_perl_module
+    commify_series
     confirm
     confirm_choice
     create_lock
@@ -1018,6 +1019,14 @@ sub table {
 
   return $table;
 
+}
+
+
+sub commify_series {
+  (@_ == 0) ? ''                                      :
+  (@_ == 1) ? $_[0]                                   :
+  (@_ == 2) ? join(" and ", @_)                       :
+              join(", ", @_[0 .. ($#_-1)], "and $_[-1]");
 }
 
 
