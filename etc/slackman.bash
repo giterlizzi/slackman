@@ -122,7 +122,7 @@ _slackman_slackman() {
   local slackman_options slackman_commands
 
   slackman_options="-h --help --man --version -c --config --root --color"
-  slackman_commands="changelog clean config db file-search help history install info
+  slackman_commands="changelog clean config db file-search help pkgtools install info
                      list log new-config reinstall remove repo search update upgrade"
 
   if [[ "$cur" == -* ]]; then
@@ -207,7 +207,7 @@ _slackman_info() {
 
 _slackman_update() {
 
-  local subcommands="help packages history changelog manifest gpg-key all"
+  local subcommands="help packages pkgtools changelog manifest gpg-key all"
 
   if [[ "$cur" == -* ]]; then
     COMPREPLY=( $( compgen -W "--repo --force" -- "$cur" ) )
