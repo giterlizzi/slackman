@@ -15,7 +15,7 @@ use Net::DBus::Reactor;
 
 use Slackware::SlackMan::DBus;
 
-my $VERSION = "v1.2.1";
+my $VERSION = "v1.4.1";
 my $options = {};
 
 GetOptions( $options,
